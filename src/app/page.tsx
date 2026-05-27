@@ -245,7 +245,7 @@ export default function HomePage() {
             Let&apos;s work together
           </h2>
           <p className="mt-4 text-slate-300 max-w-lg mx-auto">
-            Have a project in mind, a question, or just want to say hello? I'd
+            Have a project in mind, a question, or just want to say hello? I&apos;d
             love to hear from you.
           </p>
           <Link

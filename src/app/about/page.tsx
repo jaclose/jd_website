@@ -70,7 +70,7 @@ export default function AboutPage() {
             </p>
             <p className="mt-4 text-slate-300 leading-relaxed">
               [Third paragraph — current focus. What are you building right
-              now? What problems excite you? What's next?]
+              now? What problems excite you? What&apos;s next?]
             </p>
           </div>
           <div className="mt-8 flex gap-4">
