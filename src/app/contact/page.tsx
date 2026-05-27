@@ -71,7 +71,7 @@ export default function ContactPage() {
               Send a Message
             </h2>
             <form
-              action="https://formspree.io/f/YOUR_FORM_ID"
+              action={`https://formspree.io/f/${process.env.NEXT_PUBLIC_FORMSPREE_ID ?? "YOUR_FORM_ID"}`}
               method="POST"
               className="flex flex-col gap-5"
             >
@@ -154,11 +154,11 @@ export default function ContactPage() {
                 >
                   Formspree
                 </a>
-                . Update{" "}
+                . Set{" "}
                 <code className="text-xs font-mono text-slate-400">
-                  YOUR_FORM_ID
+                  NEXT_PUBLIC_FORMSPREE_ID
                 </code>{" "}
-                with your ID.
+                in your environment to activate.
               </p>
             </form>
           </section>
