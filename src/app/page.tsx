@@ -68,8 +68,7 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-300 leading-relaxed sm:text-xl">
-            [Update this tagline] — Builder, thinker, and writer. I work on
-            things I care about and share what I learn along the way.
+            Curious by nature. Building things that matter to me.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
             <Link
