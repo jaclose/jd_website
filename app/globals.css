@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space: #06070b;
+  --color-space-deep: #030408;
+  --color-ink: #e8e6e1;
+  --color-faint: #8a8f98;
+  --color-dim: #5b606a;
+  --color-hairline: rgba(232, 230, 225, 0.12);
+  --color-starlight: #d4b886;
+  --color-comet: #9fd8e8;
+  --color-leaf: #9fce8f;
+
+  --font-display: var(--font-fraunces), "Fraunces", georgia, serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", georgia, serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-space);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+::selection {
+  background: rgba(212, 184, 134, 0.28);
+  color: var(--color-ink);
+}
+
+/* ————— micro-label: uppercase mono, wide tracking ————— */
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.hairline {
+  border-color: var(--color-hairline);
+}
+
+/* ————— film grain over everything ————— */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 80;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain-shift 9s steps(6) infinite;
+}
+
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -2%); }
+  80% { transform: translate(3%, 3%); }
+}
+
+/* ————— prose: migrated WordPress essays ————— */
+.prose-space {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  line-height: 1.85;
+  color: rgba(232, 230, 225, 0.88);
+}
+.prose-space p {
+  margin-bottom: 1.6em;
+}
+.prose-space strong,
+.prose-space b {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.prose-space em,
+.prose-space i {
+  font-style: italic;
+}
+.prose-space h2,
+.prose-space h3,
+.prose-space h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-ink);
+  margin: 2.2em 0 0.9em;
+  line-height: 1.25;
+}
+.prose-space h2 { font-size: 1.8em; }
+.prose-space h3 { font-size: 1.4em; }
+.prose-space blockquote {
+  border-left: 1px solid var(--color-starlight);
+  padding-left: 1.5em;
+  margin: 2em 0;
+  font-style: italic;
+  color: rgba(232, 230, 225, 0.72);
+}
+.prose-space ul,
+.prose-space ol {
+  margin: 0 0 1.6em 1.4em;
+}
+.prose-space ul { list-style: none; }
+.prose-space ul li::before {
+  content: "✦";
+  color: var(--color-starlight);
+  font-size: 0.6em;
+  margin-right: 0.9em;
+  vertical-align: 0.25em;
+}
+.prose-space ol { list-style: decimal; }
+.prose-space li { margin-bottom: 0.5em; }
+.prose-space a {
+  color: var(--color-starlight);
+  text-decoration: underline;
+  text-decoration-color: rgba(212, 184, 134, 0.35);
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 0.3s;
+}
+.prose-space a:hover {
+  text-decoration-color: var(--color-starlight);
+}
+.prose-space sup {
+  font-family: var(--font-mono);
+  font-size: 0.55em;
+  letter-spacing: 0.1em;
+  color: var(--color-faint);
+}
+.prose-space hr {
+  border: none;
+  text-align: center;
+  margin: 3em 0;
+}
+.prose-space hr::after {
+  content: "✦ ✦ ✦";
+  color: var(--color-dim);
+  font-size: 0.8rem;
+  letter-spacing: 1em;
+}
+.prose-space img {
+  border-radius: 2px;
+  margin: 2em auto;
+  max-width: 100%;
+  height: auto;
+  opacity: 0.92;
+}
+.prose-space figure {
+  margin: 2em 0;
+}
+
+/* first letter of an essay */
+.prose-space.dropcap > p:first-of-type::first-letter {
+  font-family: var(--font-display);
+  float: left;
+  font-size: 4.6em;
+  line-height: 0.82;
+  padding-right: 0.12em;
+  color: var(--color-starlight);
+}
+
+/* ————— underline reveal for index links ————— */
+.link-reveal {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-reveal:hover {
+  background-size: 100% 1px;
+}
+
+/* thin scrollbar, space-styled */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-space-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: #1d2230;
+  border: 2px solid var(--color-space-deep);
+  border-radius: 6px;
+}
