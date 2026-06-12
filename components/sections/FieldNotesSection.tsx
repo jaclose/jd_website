@@ -7,7 +7,15 @@ import Reveal from "@/components/Reveal";
 
 export default function FieldNotesSection() {
   return (
-    <section id="field-notes" className="mx-auto max-w-6xl px-6 py-28 md:px-10">
+    <section
+      id="field-notes"
+      className="relative px-6 py-28 md:px-10"
+      style={{
+        background:
+          "radial-gradient(90% 50% at 50% 0%, rgba(159,216,232,0.05) 0%, transparent 70%)",
+      }}
+    >
+      <div className="mx-auto max-w-6xl">
       <Reveal>
         <SectionHeading
           index="03"
@@ -16,30 +24,21 @@ export default function FieldNotesSection() {
         />
       </Reveal>
 
-      {/* the monitor strip — worry, then time heals */}
-      <Reveal>
-        <figure className="relative mb-16 h-[150px] overflow-hidden border border-[rgba(232,230,225,0.08)] md:h-[190px]">
-          <Image
-            src="/images/ecg.jpg"
-            alt="An ECG trace labelled worry, settling into a slow wave labelled time heals"
-            fill
-            sizes="(max-width: 1152px) 100vw, 1152px"
-            className="object-cover opacity-80"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-space via-transparent to-space" />
-          <figcaption className="label absolute bottom-3 right-4 !text-[8px] !tracking-[0.3em] text-dim">
-            TELEMETRY · THE PULSE SETTLES
-          </figcaption>
-        </figure>
-      </Reveal>
-
       <div className="grid gap-10 md:grid-cols-3 md:gap-8">
         {fieldNotes.map((n, i) => {
           const m = noteMeta[n.slug];
           return (
             <Reveal key={n.slug} delay={i * 0.08}>
               <Link href={`/field-notes#${n.slug}`} className="group block">
-                <div className="relative aspect-[4/5] overflow-hidden">
+                <div
+                  className={`relative overflow-hidden ${
+                    m?.aspect === "landscape"
+                      ? "aspect-[3/2] md:aspect-[4/5]"
+                      : m?.aspect === "square"
+                        ? "aspect-square md:aspect-[4/5]"
+                        : "aspect-[4/5]"
+                  }`}
+                >
                   {m && (
                     <Image
                       src={m.cover}
@@ -67,6 +66,7 @@ export default function FieldNotesSection() {
             </Reveal>
           );
         })}
+      </div>
       </div>
     </section>
   );

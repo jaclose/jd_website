@@ -1,6 +1,7 @@
 import { achievements, unlockedCount } from "@/data/achievements";
 import Reveal from "@/components/Reveal";
 import ConstellationMap from "./ConstellationMap";
+import VisitorRecord from "./VisitorRecord";
 
 export default function AchievementsGrid() {
   return (
@@ -58,9 +59,7 @@ export default function AchievementsGrid() {
       </div>
 
       <Reveal>
-        <p className="label mt-8 !text-[9px] text-dim">
-          VISITOR ACHIEVEMENTS ARRIVE WITH THE SUPABASE LINK-UP — CORRESPONDENCE, GUESTBOOK, FIRST CONTACT
-        </p>
+        <VisitorRecord />
       </Reveal>
     </section>
   );

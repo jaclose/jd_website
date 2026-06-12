@@ -59,7 +59,15 @@ export default function TransmissionLog() {
   let lastYear = "";
 
   return (
-    <section id="log" className="mx-auto max-w-5xl px-6 py-28 md:px-10">
+    <section
+      id="log"
+      className="relative px-6 py-28 md:px-10"
+      style={{
+        background:
+          "radial-gradient(80% 50% at 50% 100%, rgba(159,206,143,0.045) 0%, transparent 70%)",
+      }}
+    >
+      <div className="mx-auto max-w-5xl">
       <Reveal>
         <SectionHeading
           index="05"
@@ -149,6 +157,7 @@ export default function TransmissionLog() {
           </div>
         </div>
       </Reveal>
+      </div>
     </section>
   );
 }

@@ -2,6 +2,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useRouter } from "next/navigation";
 import { bodies, gardenState, type CelestialBody } from "@/data/system";
 import {
@@ -505,7 +506,9 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
     // orbital motion, slowing to a halt as the body docks —
     // and pausing under the cursor so it can be tracked and clicked
     if (body) {
-      const hovered = hero.hovered === body.id;
+      const hovered =
+        hero.hovered === body.id ||
+        (hero.hovered?.startsWith(`${body.id}-moon`) ?? false);
       slow.current = damp(slow.current, hovered ? 0.04 : 1, 6, dt);
       lift.current = damp(lift.current, hovered && e < 0.5 ? 1.13 : 1, 8, dt);
       const speed = ((Math.PI * 2) / body.period) * (reduced ? 0.25 : 1);
@@ -596,18 +599,101 @@ function HitSphere({ body, factor = 1.6 }: { body: CelestialBody; factor?: numbe
   );
 }
 
+/** one of the giant's moons — a real destination: the essay it carries */
+function Moon({
+  radius,
+  orbitR,
+  phase,
+  color,
+  moonId,
+  href,
+  registerRef,
+}: {
+  radius: number;
+  orbitR: number;
+  phase: number;
+  color: string;
+  moonId: string;
+  href: string;
+  registerRef: (g: THREE.Group | null) => void;
+}) {
+  const router = useRouter();
+  return (
+    <group
+      ref={registerRef}
+      position={[Math.cos(phase) * orbitR, 0, Math.sin(phase) * orbitR]}
+    >
+      <mesh>
+        <sphereGeometry args={[radius, 20, 20]} />
+        <meshStandardMaterial color={color} roughness={1} />
+      </mesh>
+      {/* generous, invisible hit target — moons are small and precious */}
+      <mesh
+        scale={radius * 5.5}
+        onPointerOver={(ev) => {
+          if (hero.pS > 0.5) return;
+          ev.stopPropagation();
+          setHovered(moonId);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          requestUnhover(moonId);
+          document.body.style.cursor = "";
+        }}
+        onClick={(ev) => {
+          if (hero.pS > 0.5) return; // docked: the giant owns the click
+          ev.stopPropagation();
+          const touch =
+            (ev.nativeEvent as PointerEvent).pointerType === "touch";
+          if (touch && hero.hovered !== moonId) {
+            setHovered(moonId, true);
+          } else {
+            document.body.style.cursor = "";
+            router.push(href);
+          }
+        }}
+      >
+        <sphereGeometry args={[1, 10, 10]} />
+        <meshBasicMaterial visible={false} />
+      </mesh>
+    </group>
+  );
+}
+
 function GasGiant({ body, index, count }: BodyProps) {
   const group = useRef<THREE.Group>(null!);
   const sphere = useRef<THREE.Mesh>(null!);
   const moons = useRef<THREE.Group>(null!);
+  const moonRefs = useRef<(THREE.Group | null)[]>([]);
+  const moonSpeed = useRef(1);
   const update = useGenie(body, index, count);
+  const { camera, size } = useThree();
   const map = useMemo(() => gasGiantTexture(body.color, body.accent), [body]);
   const rings = useMemo(() => ringTexture(body.accent), [body]);
+  const vWorld = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, dt) => {
     update(group.current, dt);
     sphere.current.rotation.y += dt * 0.12;
-    moons.current.rotation.y += dt * 0.3;
+    // a hovered moon freezes its orbit so it stays under the pointer
+    const moonHover = hero.hovered?.startsWith(`${body.id}-moon`) ?? false;
+    moonSpeed.current = damp(moonSpeed.current, moonHover ? 0.02 : 1, 7, dt);
+    moons.current.rotation.y += dt * 0.3 * moonSpeed.current;
+
+    // publish each moon's screen position for the hover panel + reticle
+    const cam = camera as THREE.PerspectiveCamera;
+    moonRefs.current.forEach((m, i) => {
+      if (!m) return;
+      m.getWorldPosition(vWorld);
+      const dist = vWorld.distanceTo(cam.position);
+      const worldR = (0.16 + i * 0.025) * group.current.scale.x;
+      const ndc = vWorld.project(cam);
+      hero.screen.set(`${body.id}-moon-${i}`, {
+        x: ((ndc.x + 1) / 2) * size.width,
+        y: ((1 - ndc.y) / 2) * size.height,
+        r: Math.max(6, worldR / worldPerPixel(cam, size.height, dist)),
+      });
+    });
   });
 
   return (
@@ -629,23 +715,21 @@ function GasGiant({ body, index, count }: BodyProps) {
           depthWrite={false}
         />
       </mesh>
-      {/* three moons — the three most recent essays */}
+      {/* three moons — the three most recent essays, each clickable */}
       <group ref={moons} rotation={[0.2, 0, 0]}>
         {[2.5, 3.05, 3.6].map((r, i) => (
           <group key={i}>
-            <mesh
-              position={[
-                Math.cos((i / 3) * Math.PI * 2) * r,
-                0,
-                Math.sin((i / 3) * Math.PI * 2) * r,
-              ]}
-            >
-              <sphereGeometry args={[0.16 + i * 0.025, 16, 16]} />
-              <meshStandardMaterial
-                color={["#cfc4b4", "#b9c2cf", "#cfb9a9"][i]}
-                roughness={1}
-              />
-            </mesh>
+            <Moon
+              radius={0.16 + i * 0.025}
+              orbitR={r}
+              phase={(i / 3) * Math.PI * 2}
+              color={["#cfc4b4", "#b9c2cf", "#cfb9a9"][i]}
+              moonId={`${body.id}-moon-${i}`}
+              href={body.links[i]?.href ?? body.href}
+              registerRef={(g) => {
+                moonRefs.current[i] = g;
+              }}
+            />
             {/* moon orbit hairline */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[r - 0.008, r + 0.008, 64]} />
@@ -660,7 +744,7 @@ function GasGiant({ body, index, count }: BodyProps) {
           </group>
         ))}
       </group>
-      <HitSphere body={body} factor={2.2} />
+      <HitSphere body={body} factor={1.5} />
     </group>
   );
 }
@@ -729,16 +813,47 @@ function RockyPlanet(props: BodyProps) {
   );
 }
 
-const TAIL_COUNT = 140;
-const DUST_COUNT = 90;
+const TAIL_COUNT = 220;
+const DUST_COUNT = 130;
+
+/** craggy nucleus: icosahedron with seeded radial displacement */
+function nucleusGeometry(size: number): THREE.BufferGeometry {
+  const g = new THREE.IcosahedronGeometry(size, 2);
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
+  let seed = 1184;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  // displace by a few low-frequency lobes so shared vertices stay welded
+  const lobes = Array.from({ length: 6 }, () => ({
+    dir: new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize(),
+    amp: 0.1 + rnd() * 0.22,
+    freq: 1.5 + rnd() * 2.5,
+  }));
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const n = v.clone().normalize();
+    let d = 1;
+    for (const l of lobes) d += l.amp * Math.sin(n.dot(l.dir) * l.freq * Math.PI);
+    v.copy(n.multiplyScalar(size * (0.78 + 0.22 * d)));
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
 
 function Comet({ body, index, count }: BodyProps) {
   const group = useRef<THREE.Group>(null!);
+  const nucleus = useRef<THREE.Mesh>(null!);
   const coma = useRef<THREE.Sprite>(null!);
+  const comaWide = useRef<THREE.Sprite>(null!);
   const tailMat = useRef<THREE.PointsMaterial>(null!);
   const dustMat = useRef<THREE.PointsMaterial>(null!);
   const update = useGenie(body, index, count);
   const glow = useMemo(() => glowTexture(), []);
+  const rockGeom = useMemo(() => nucleusGeometry(body.size), [body.size]);
   const jitter = useMemo(() => {
     const arr = new Float32Array(TAIL_COUNT * 3);
     for (let i = 0; i < arr.length; i++) arr[i] = (Math.random() - 0.5) * 2;
@@ -788,28 +903,42 @@ function Comet({ body, index, count }: BodyProps) {
     const len = 5.6 * (1 - e) * scale + 0.4;
     fill(tailGeom, TAIL_COUNT, dir, len, 0.8);
     fill(dustGeom, DUST_COUNT, dustDir, len * 0.55, 1.5);
-    tailMat.current.opacity = (0.5 - e * 0.35) * hero.intro;
-    dustMat.current.opacity = (0.3 - e * 0.22) * hero.intro;
+    tailMat.current.opacity = (0.45 - e * 0.32) * hero.intro;
+    dustMat.current.opacity = (0.26 - e * 0.2) * hero.intro;
+    nucleus.current.rotation.x += dt * 0.4;
+    nucleus.current.rotation.y += dt * 0.23;
     if (coma.current) {
-      (coma.current.material as THREE.SpriteMaterial).opacity = (0.55 - e * 0.3) * hero.intro;
-      coma.current.scale.setScalar(body.size * 7 * (1 - e * 0.5));
+      (coma.current.material as THREE.SpriteMaterial).opacity = (0.6 - e * 0.35) * hero.intro;
+      coma.current.scale.setScalar(body.size * 5 * (1 - e * 0.5));
+    }
+    if (comaWide.current) {
+      (comaWide.current.material as THREE.SpriteMaterial).opacity =
+        (0.13 - e * 0.1) * hero.intro;
+      comaWide.current.scale.setScalar(body.size * 9 * (1 - e * 0.5));
     }
   });
 
   return (
     <>
       <group ref={group}>
-        <mesh>
-          <icosahedronGeometry args={[body.size, 1]} />
+        <mesh ref={nucleus} geometry={rockGeom}>
           <meshStandardMaterial
-            color={body.color}
+            color="#7e8b95"
             emissive={body.accent}
-            emissiveIntensity={0.7}
-            roughness={0.55}
-            flatShading
+            emissiveIntensity={0.32}
+            roughness={0.9}
           />
         </mesh>
         <sprite ref={coma}>
+          <spriteMaterial
+            map={glow}
+            color="#e9f6fb"
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </sprite>
+        <sprite ref={comaWide}>
           <spriteMaterial
             map={glow}
             color={body.accent}
@@ -986,6 +1115,17 @@ export default function SystemScene() {
 
   return (
     <>
+      {/* gentle bloom — only the brightest pixels (sun, stars, comas) glow */}
+      {!reduced && (
+        <EffectComposer multisampling={0}>
+          <Bloom
+            intensity={0.55}
+            luminanceThreshold={0.55}
+            luminanceSmoothing={0.3}
+            mipmapBlur
+          />
+        </EffectComposer>
+      )}
       <Choreographer />
       <ambientLight intensity={0.4} color="#aab4cc" />
       <hemisphereLight intensity={0.22} color="#bcc8e0" groundColor="#1a1410" />

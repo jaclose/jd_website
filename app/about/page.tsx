@@ -3,6 +3,7 @@ import Image from "next/image";
 import { about } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import LifeMap from "@/components/about/LifeMap";
 import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function AboutPage() {
   return (
     <>
       <SiteHeader current="about" />
-      <main className="mx-auto max-w-4xl px-6 pb-28 pt-36 md:px-8">
+      <main className="mx-auto max-w-5xl px-6 pb-28 pt-36 md:px-8">
         <Reveal>
           <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:gap-10">
             <Image
@@ -47,6 +48,16 @@ export default function AboutPage() {
             aim: to become someone steady in exhaustion, honest in hardship,
             and useful in the quiet battles no transcript will ever show.
           </blockquote>
+        </Reveal>
+
+        {/* the dominion — life as a strategic map */}
+        <Reveal delay={0.1}>
+          <div className="mt-20">
+            <p className="label mb-6 !text-[9px] text-starlight/70">
+              CARTOGRAPHY · EVERY PROVINCE A CHAPTER
+            </p>
+            <LifeMap />
+          </div>
         </Reveal>
 
         {/* two frames from the surface */}

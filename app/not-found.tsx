@@ -1,10 +1,12 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import UnlockOnMount from "@/components/UnlockOnMount";
 
 export default function NotFound() {
   return (
     <>
       <SiteHeader />
+      <UnlockOnMount id="beyond-heliopause" />
       <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <p className="label mb-6 text-dim">ERR 404 · BEYOND THE HELIOPAUSE</p>
         <h1 className="font-display text-[clamp(2.6rem,8vw,5.5rem)] font-light leading-none text-ink">

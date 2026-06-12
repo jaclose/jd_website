@@ -1,13 +1,14 @@
-import type { Skill } from "@/data/garden";
+import type { Skill, Species } from "@/data/garden";
 
 /**
  * Procedural tree, drawn deterministically from the skill's id.
  * Growth stage controls recursion depth and foliage:
  * 0 seed · 1 sprout · 2 sapling · 3 young · 4 grown · 5 flourishing
  *
- * Branches are curved and tapered; the canopy is layered in three
- * tones over a soft mass, lit from the upper left. `ghost` renders
- * the same tree as a faint survey drawing — used for stage previews.
+ * Four species share the seed and sprout stages, then diverge:
+ * oak (broad recursive), spruce (conical tiers), acacia (flat-top
+ * umbrella), palm (curved trunk, radiating fronds). `ghost` renders
+ * the same tree as a faint survey drawing — used for projections.
  */
 function mulberry32(seed: number) {
   return () => {
@@ -79,16 +80,220 @@ function grow(
   }
 }
 
+/* ————— species: spruce — conical needle tiers on a straight trunk ————— */
+function Spruce({
+  rnd,
+  stage,
+  ghost,
+  W,
+  groundY,
+}: {
+  rnd: () => number;
+  stage: number;
+  ghost: boolean;
+  W: number;
+  groundY: number;
+}) {
+  const ink = "rgba(232,230,225,0.34)";
+  const h = 46 + stage * 24; // total height
+  const tiers = 2 + stage; // needle tiers
+  const baseW = 16 + stage * 7;
+  const trunk = ghost ? ink : "#7a6248";
+  const tones = ghost
+    ? [ink, ink]
+    : stage >= 4
+      ? ["#2e4a36", "#4a7350"]
+      : ["#2c4234", "#3f5f44"];
+  const lean = (rnd() - 0.5) * 4;
+  return (
+    <g opacity={ghost ? 0.55 : 1}>
+      <path
+        d={`M${W / 2},${groundY} L${W / 2 + lean},${groundY - h}`}
+        stroke={trunk}
+        strokeWidth={2 + stage * 0.6}
+        strokeLinecap="round"
+      />
+      {Array.from({ length: tiers }, (_, t) => {
+        const k = t / tiers; // 0 bottom → 1 top
+        const y = groundY - 8 - k * (h - 16);
+        const w = baseW * (1 - k * 0.78);
+        const droop = 4 + (1 - k) * 5;
+        const cx = W / 2 + lean * k;
+        return (
+          <g key={t}>
+            <path
+              d={`M${cx},${y - 7} Q${cx - w * 0.62},${y - 2} ${cx - w},${y + droop} L${cx},${y - 1.5} Z`}
+              fill={tones[t % 2]}
+              opacity={ghost ? 0.3 : 0.88}
+            />
+            <path
+              d={`M${cx},${y - 7} Q${cx + w * 0.62},${y - 2} ${cx + w},${y + droop} L${cx},${y - 1.5} Z`}
+              fill={tones[(t + 1) % 2]}
+              opacity={ghost ? 0.3 : 0.82}
+            />
+          </g>
+        );
+      })}
+      {/* crown spike */}
+      <path
+        d={`M${W / 2 + lean},${groundY - h - 9} L${W / 2 + lean - 4},${groundY - h + 4} L${W / 2 + lean + 4},${groundY - h + 4} Z`}
+        fill={tones[1]}
+        opacity={ghost ? 0.3 : 0.9}
+      />
+    </g>
+  );
+}
+
+/* ————— species: acacia — bare forking trunk, flat umbrella canopy ————— */
+function Acacia({
+  rnd,
+  stage,
+  ghost,
+  W,
+  groundY,
+}: {
+  rnd: () => number;
+  stage: number;
+  ghost: boolean;
+  W: number;
+  groundY: number;
+}) {
+  const ink = "rgba(232,230,225,0.34)";
+  const h = 40 + stage * 20;
+  const spread = 24 + stage * 13;
+  const trunk = ghost ? ink : "#8a6f50";
+  const canopy = ghost ? [ink, ink] : stage >= 4 ? ["#41603c", "#5e8453"] : ["#3c5238", "#52704a"];
+  const forkY = groundY - h * 0.55;
+  const topY = groundY - h;
+  const lean = (rnd() - 0.5) * 8;
+  return (
+    <g opacity={ghost ? 0.55 : 1}>
+      <path
+        d={`M${W / 2},${groundY} Q${W / 2 + lean},${forkY + 10} ${W / 2 + lean},${forkY}`}
+        stroke={trunk}
+        strokeWidth={2.5 + stage * 0.7}
+        fill="none"
+        strokeLinecap="round"
+      />
+      {[-1, 1].map((dir) => (
+        <path
+          key={dir}
+          d={`M${W / 2 + lean},${forkY} Q${W / 2 + lean + dir * spread * 0.34},${forkY - h * 0.2} ${W / 2 + lean + dir * spread * 0.62},${topY + 4}`}
+          stroke={trunk}
+          strokeWidth={1.6 + stage * 0.4}
+          fill="none"
+          strokeLinecap="round"
+        />
+      ))}
+      {/* the flat crown */}
+      <ellipse
+        cx={W / 2 + lean}
+        cy={topY}
+        rx={spread}
+        ry={5 + stage * 1.6}
+        fill={canopy[0]}
+        opacity={ghost ? 0.28 : 0.85}
+      />
+      <ellipse
+        cx={W / 2 + lean - spread * 0.18}
+        cy={topY - 3.5}
+        rx={spread * 0.74}
+        ry={4 + stage * 1.2}
+        fill={canopy[1]}
+        opacity={ghost ? 0.24 : 0.8}
+      />
+    </g>
+  );
+}
+
+/* ————— species: palm — curved trunk, radiating fronds ————— */
+function Palm({
+  rnd,
+  stage,
+  ghost,
+  W,
+  groundY,
+}: {
+  rnd: () => number;
+  stage: number;
+  ghost: boolean;
+  W: number;
+  groundY: number;
+}) {
+  const ink = "rgba(232,230,225,0.34)";
+  const h = 42 + stage * 21;
+  const bend = 10 + rnd() * 12;
+  const trunk = ghost ? ink : "#94785a";
+  const frond = ghost ? ink : stage >= 4 ? "#5e8453" : "#4d6c46";
+  const topX = W / 2 + bend;
+  const topY = groundY - h;
+  const fronds = 4 + stage;
+  return (
+    <g opacity={ghost ? 0.55 : 1}>
+      <path
+        d={`M${W / 2 - 2},${groundY} Q${W / 2},${groundY - h * 0.6} ${topX},${topY}`}
+        stroke={trunk}
+        strokeWidth={3 + stage * 0.5}
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* trunk rings */}
+      {!ghost &&
+        Array.from({ length: 4 + stage }, (_, i) => {
+          const t = (i + 1) / (5 + stage);
+          const x = W / 2 - 2 + (topX - W / 2 + 2) * t * t;
+          const y = groundY - (groundY - topY) * t * (2 - t) * 0.55;
+          return (
+            <line
+              key={i}
+              x1={x - 2.4}
+              y1={y}
+              x2={x + 2.4}
+              y2={y}
+              stroke="#6e5a44"
+              strokeWidth={0.8}
+            />
+          );
+        })}
+      {Array.from({ length: fronds }, (_, i) => {
+        const a = (i / (fronds - 1)) * Math.PI - Math.PI * 0.02;
+        const len = (16 + stage * 5) * (0.8 + rnd() * 0.35);
+        const ex = topX + Math.cos(a) * len * (a > Math.PI / 2 ? 1.1 : 1);
+        const ey = topY - Math.sin(a) * len * 0.6 + 8;
+        return (
+          <path
+            key={i}
+            d={`M${topX},${topY} Q${topX + Math.cos(a) * len * 0.6},${topY - Math.sin(a) * len * 0.85} ${ex},${ey}`}
+            stroke={frond}
+            strokeWidth={1.8 + stage * 0.25}
+            fill="none"
+            strokeLinecap="round"
+            opacity={ghost ? 0.4 : 0.85}
+          />
+        );
+      })}
+      {stage >= 4 && !ghost && (
+        <>
+          <circle cx={topX - 3} cy={topY + 4} r={1.8} fill="#8a6f50" />
+          <circle cx={topX + 2.5} cy={topY + 4.6} r={1.8} fill="#7a6248" />
+        </>
+      )}
+    </g>
+  );
+}
+
 export default function TreeGlyph({
   skill,
   height = 180,
   className = "",
   ghost = false,
+  species = "oak",
 }: {
   skill: Pick<Skill, "id" | "stage">;
   height?: number;
   className?: string;
   ghost?: boolean;
+  species?: Species;
 }) {
   const W = 160;
   const H = 190;
@@ -97,8 +302,9 @@ export default function TreeGlyph({
   const limbs: Limb[] = [];
   const tips: Tip[] = [];
   const stage = skill.stage;
+  const speciesForm = species !== "oak" && stage >= 2;
 
-  if (stage >= 2) {
+  if (stage >= 2 && !speciesForm) {
     const depth = stage; // 2..5
     const trunkLen = 26 + stage * 13;
     grow(
@@ -212,6 +418,17 @@ export default function TreeGlyph({
           fill={barkShade}
           opacity={ghost ? 0.5 : 0.9}
         />
+      )}
+
+      {/* non-oak species take their own silhouette from stage 2 up */}
+      {speciesForm && species === "spruce" && (
+        <Spruce rnd={rnd} stage={stage} ghost={ghost} W={W} groundY={groundY} />
+      )}
+      {speciesForm && species === "acacia" && (
+        <Acacia rnd={rnd} stage={stage} ghost={ghost} W={W} groundY={groundY} />
+      )}
+      {speciesForm && species === "palm" && (
+        <Palm rnd={rnd} stage={stage} ghost={ghost} W={W} groundY={groundY} />
       )}
 
       {/* soft canopy mass behind the clusters */}

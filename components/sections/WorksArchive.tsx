@@ -8,7 +8,15 @@ import Reveal from "@/components/Reveal";
  */
 export default function WorksArchive() {
   return (
-    <section id="archive" className="mx-auto max-w-6xl px-6 py-28 md:px-10">
+    <section
+      id="archive"
+      className="relative px-6 py-28 md:px-10"
+      style={{
+        background:
+          "repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(232,230,225,0.018) 48px), repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(232,230,225,0.018) 48px)",
+      }}
+    >
+      <div className="mx-auto max-w-6xl">
       <Reveal>
         <SectionHeading
           index="04"
@@ -61,6 +69,7 @@ export default function WorksArchive() {
           INSTRUMENTS RETIRED TO THE ARCHIVE · CHEMISTRY, PSYCHOLOGY, GEOLOGY, BIOETHICS
         </p>
       </Reveal>
+      </div>
     </section>
   );
 }

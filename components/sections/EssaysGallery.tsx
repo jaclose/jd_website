@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { essays, dispatchDate, readingTime } from "@/lib/content";
-import { essayMeta } from "@/data/meta";
+import { essayMeta, essayHighlights } from "@/data/meta";
 import SectionHeading from "@/components/SectionHeading";
+import FallbackCover from "@/components/FallbackCover";
 import Reveal from "@/components/Reveal";
 
 const ASPECT: Record<string, string> = {
@@ -64,7 +65,15 @@ export default function EssaysGallery() {
   }, []);
 
   return (
-    <section id="essays" className="mx-auto max-w-6xl px-6 py-28 md:px-10">
+    <section
+      id="essays"
+      className="relative px-6 py-28 md:px-10"
+      style={{
+        background:
+          "radial-gradient(90% 50% at 50% 0%, rgba(184,141,92,0.07) 0%, transparent 70%)",
+      }}
+    >
+      <div className="mx-auto max-w-6xl">
       <Reveal>
         <SectionHeading index="01" designation="JD-1184 b · GAS GIANT" title="Essays" />
       </Reveal>
@@ -113,6 +122,7 @@ export default function EssaysGallery() {
       <div ref={zone} onMouseLeave={() => setActive(null)}>
         {rest.map((e, i) => {
           const m = essayMeta[e.slug];
+          const highlight = m?.highlight ?? essayHighlights[e.slug];
           return (
             <Reveal key={e.slug} delay={i * 0.04}>
               <Link
@@ -124,8 +134,10 @@ export default function EssaysGallery() {
               >
                 {/* inline thumb (touch) / index number (desktop) */}
                 <span className="relative block aspect-square overflow-hidden md:hidden">
-                  {m && (
+                  {m ? (
                     <Image src={m.cover} alt="" fill sizes="64px" className="object-cover" />
+                  ) : (
+                    <FallbackCover title={e.title} />
                   )}
                 </span>
                 <span className="label hidden !text-[10px] text-dim transition-colors group-hover:text-starlight md:block">
@@ -135,9 +147,9 @@ export default function EssaysGallery() {
                   <span className="block font-display text-[clamp(1.3rem,2.8vw,2.1rem)] font-light leading-tight text-ink transition-all duration-300 group-hover:translate-x-2 group-hover:text-starlight">
                     {e.title}
                   </span>
-                  {m && (
+                  {highlight && (
                     <span className="mt-1.5 hidden font-serif text-[1.02rem] italic leading-snug text-dim transition-colors duration-300 group-hover:text-faint md:block">
-                      “{m.highlight}”
+                      “{highlight}”
                     </span>
                   )}
                 </span>
@@ -159,21 +171,18 @@ export default function EssaysGallery() {
       >
         {rest.map((e) => {
           const m = essayMeta[e.slug];
-          if (!m) return null;
           return (
             <motion.div
               key={e.slug}
-              className={`absolute left-0 top-0 w-full overflow-hidden ${ASPECT[m.aspect]}`}
+              className={`absolute left-0 top-0 w-full overflow-hidden ${ASPECT[m?.aspect ?? "portrait"]}`}
               animate={{ opacity: active === e.slug ? 1 : 0 }}
               transition={{ duration: 0.25 }}
             >
-              <Image
-                src={m.cover}
-                alt=""
-                fill
-                sizes="240px"
-                className="object-cover"
-              />
+              {m ? (
+                <Image src={m.cover} alt="" fill sizes="240px" className="object-cover" />
+              ) : (
+                <FallbackCover title={e.title} />
+              )}
               <div className="absolute inset-0 border border-[rgba(232,230,225,0.18)]" />
             </motion.div>
           );
@@ -191,6 +200,7 @@ export default function EssaysGallery() {
           </Link>
         </p>
       </Reveal>
+      </div>
     </section>
   );
 }

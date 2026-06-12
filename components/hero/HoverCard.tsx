@@ -12,21 +12,59 @@ import {
   BAR_H,
 } from "./store";
 
-const CARD_W = 330;
-const GAP = 30;
+const CARD_W = 300;
+const GAP = 20;
+const ROMAN = ["I", "II", "III"];
+
+interface Panel {
+  designation: string;
+  kindLabel: string;
+  name: string;
+  line?: string;
+  links: { label: string; href: string; meta?: string }[];
+  footnote?: string;
+  href: string;
+}
+
+/** panel content for a body id or a moon id like "essays-moon-1" */
+function panelFor(id: string): Panel | null {
+  const moon = id.match(/^(.+)-moon-(\d)$/);
+  if (moon) {
+    const parent = bodies.find((b) => b.id === moon[1]);
+    const link = parent?.links[Number(moon[2])];
+    if (!parent || !link) return null;
+    return {
+      designation: `${parent.designation} ${ROMAN[Number(moon[2])] ?? ""}`,
+      kindLabel: "moon",
+      name: link.label,
+      line: link.meta ? `Transmitted ${link.meta}.` : undefined,
+      links: [],
+      footnote: "click to read the essay",
+      href: link.href,
+    };
+  }
+  const b = bodies.find((x) => x.id === id);
+  if (!b) return null;
+  return {
+    designation: b.designation,
+    kindLabel: b.kind.replace("-", " "),
+    name: b.name,
+    line: b.blurb,
+    links: b.links,
+    footnote: b.footnote,
+    href: b.href,
+  };
+}
 
 /**
- * The scan card: a thin line draws from the hovered body to a panel of
- * information. Positions are updated imperatively from the scene's
- * published screen coordinates — React only mounts/unmounts the card.
- *
- * The card never appears before it has a valid position (it mounts
- * hidden), chooses its side from the body's half of the screen, and
- * glides after the body each frame instead of jumping.
+ * The target panel — planet-select style. It hangs directly over the
+ * hovered body (or under it when there's no headroom), tethered by a
+ * short vertical line, and rides along as the body drifts. Docked mode
+ * hangs it below the nav bar instead.
  */
 export default function HoverCard() {
   const hovered = useHovered();
-  const body = bodies.find((b) => b.id === hovered);
+  const panel = hovered ? panelFor(hovered) : null;
 
   const card = useRef<HTMLDivElement>(null);
   const line = useRef<SVGLineElement>(null);
@@ -34,7 +72,7 @@ export default function HoverCard() {
   const drawStart = useRef(0);
 
   useEffect(() => {
-    if (!hovered || !body) return;
+    if (!hovered) return;
     drawStart.current = performance.now();
     const idx = bodies.findIndex((b) => b.id === hovered);
     let raf = 0;
@@ -51,29 +89,28 @@ export default function HoverCard() {
       if (s && el && Number.isFinite(s.x) && Number.isFinite(s.y)) {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        const cardH = el.offsetHeight || 200;
-        const docked = hero.pS > 0.7;
+        const cardH = el.offsetHeight || 160;
+        const docked = hero.pS > 0.7 && idx >= 0;
 
         let tx: number, ty: number;
         let ax = s.x,
-          ay = s.y,
-          r = s.r;
+          ay = s.y;
+        let above = true;
         if (docked) {
-          // card hangs below the bar, under its slot — slot x is stable
           const slotX = slotCenters(bodies.length, w)[idx] ?? s.x;
           tx = Math.min(Math.max(slotX - CARD_W / 2, 14), w - CARD_W - 14);
           ty = BAR_H + 22;
           ax = slotX;
           ay = BAR_H / 2 + 8;
-          r = 10;
+          above = false;
         } else {
-          // side comes from the body's half of the screen — stable, no flip
-          const side = s.x < w * 0.55 ? 1 : -1;
-          tx = side > 0 ? s.x + r + GAP : s.x - r - GAP - CARD_W;
-          tx = Math.min(Math.max(tx, 14), w - CARD_W - 14);
-          ty = s.y - cardH - GAP * 0.8;
-          if (ty < BAR_H + 12) ty = Math.min(s.y + r + GAP * 0.8, h - cardH - 20);
-          ty = Math.min(Math.max(ty, 14), h - cardH - 14);
+          // directly over the body; below it if the sky is too low
+          tx = Math.min(Math.max(s.x - CARD_W / 2, 12), w - CARD_W - 12);
+          ty = s.y - s.r - GAP - cardH;
+          if (ty < 14) {
+            ty = Math.min(s.y + s.r + GAP, h - cardH - 14);
+            above = false;
+          }
         }
 
         if (!placed) {
@@ -82,33 +119,25 @@ export default function HoverCard() {
           el.style.visibility = "visible";
           placed = true;
         } else {
-          // glide after the target — frame-rate independent
-          const k = 1 - Math.exp(-16 * dt);
+          const k = 1 - Math.exp(-18 * dt);
           cur.x += (tx - cur.x) * k;
           cur.y += (ty - cur.y) * k;
         }
         el.style.transform = `translate3d(${cur.x}px, ${cur.y}px, 0)`;
 
-        // connector: from the body's edge to the nearest card corner
-        const cornerX =
-          Math.abs(cur.x - ax) > Math.abs(cur.x + CARD_W - ax) ? cur.x + CARD_W : cur.x;
-        const cornerY =
-          Math.abs(cur.y - ay) > Math.abs(cur.y + cardH - ay) ? cur.y + cardH : cur.y;
-        const dx = cornerX - ax;
-        const dy = cornerY - ay;
-        const dist = Math.hypot(dx, dy) || 1;
-        const sx = ax + (dx / dist) * (r + 3);
-        const sy = ay + (dy / dist) * (r + 3);
-
-        const drawT = Math.min(1, (now - drawStart.current) / 320);
+        // tether: from the body's rim straight to the panel's near edge
+        const exitY = above ? cur.y + cardH : cur.y;
+        const startY = above ? ay - s.r - 2 : ay + s.r + 2;
+        const anchorX = Math.min(Math.max(ax, cur.x + 18), cur.x + CARD_W - 18);
+        const drawT = Math.min(1, (now - drawStart.current) / 280);
         const ease = 1 - Math.pow(1 - drawT, 3);
         if (line.current && dot.current) {
-          line.current.setAttribute("x1", String(sx));
-          line.current.setAttribute("y1", String(sy));
-          line.current.setAttribute("x2", String(sx + (cornerX - sx) * ease));
-          line.current.setAttribute("y2", String(sy + (cornerY - sy) * ease));
-          dot.current.setAttribute("cx", String(sx));
-          dot.current.setAttribute("cy", String(sy));
+          line.current.setAttribute("x1", String(ax));
+          line.current.setAttribute("y1", String(startY));
+          line.current.setAttribute("x2", String(ax + (anchorX - ax) * ease));
+          line.current.setAttribute("y2", String(startY + (exitY - startY) * ease));
+          dot.current.setAttribute("cx", String(ax));
+          dot.current.setAttribute("cy", String(startY));
         }
       }
       raf = requestAnimationFrame(tick);
@@ -121,67 +150,81 @@ export default function HoverCard() {
   return (
     <div className="pointer-events-none fixed inset-0 z-50">
       <AnimatePresence>
-        {body && (
+        {panel && (
           <motion.svg
-            key={`line-${body.id}`}
+            key={`line-${hovered}`}
             className="absolute inset-0 h-full w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.15 } }}
           >
-            <line ref={line} stroke="rgba(212,184,134,0.55)" strokeWidth="1" />
+            <line ref={line} stroke="rgba(212,184,134,0.6)" strokeWidth="1" />
             <circle ref={dot} r="2.5" fill="#d4b886" />
           </motion.svg>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {body && (
+        {panel && (
           <motion.div
-            key={body.id}
+            key={hovered}
             ref={card}
-            className="pointer-events-auto absolute left-0 top-0 border border-[rgba(232,230,225,0.14)] bg-[rgba(5,6,10,0.88)] backdrop-blur-md"
+            className="pointer-events-auto absolute left-0 top-0 border border-[rgba(212,184,134,0.35)] bg-[rgba(5,6,10,0.92)] shadow-[0_0_40px_rgba(212,184,134,0.08)] backdrop-blur-md"
             style={{ width: CARD_W, visibility: "hidden" }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
-            exit={{ opacity: 0, y: 6, transition: { duration: 0.18 } }}
-            onMouseEnter={() => setHovered(body.id)}
-            onMouseLeave={() => requestUnhover(body.id)}
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+            }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+            onMouseEnter={() => hovered && setHovered(hovered)}
+            onMouseLeave={() => hovered && requestUnhover(hovered)}
           >
-            <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] px-5 py-3">
-              <span className="label !text-[10px] text-starlight">
-                {body.designation}
+            {/* corner ticks — targeting brackets */}
+            {["left-0 top-0 border-l border-t", "right-0 top-0 border-r border-t", "left-0 bottom-0 border-l border-b", "right-0 bottom-0 border-r border-b"].map(
+              (pos) => (
+                <span
+                  key={pos}
+                  aria-hidden
+                  className={`absolute h-2.5 w-2.5 border-starlight ${pos}`}
+                />
+              )
+            )}
+            <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] px-4 py-2.5">
+              <span className="label !text-[9px] text-starlight">
+                {panel.designation}
               </span>
-              <span className="label !text-[9px] !tracking-[0.2em] text-dim">
-                {body.kind.replace("-", " ")}
+              <span className="label !text-[8px] !tracking-[0.2em] text-dim">
+                {panel.kindLabel}
               </span>
             </div>
-            <div className="px-5 pb-4 pt-4">
+            <div className="px-4 pb-3.5 pt-3">
               <Link
-                href={body.href}
-                className="font-display text-[1.7rem] leading-none text-ink transition-colors hover:text-starlight"
+                href={panel.href}
+                className="font-display text-[1.35rem] leading-tight text-ink transition-colors hover:text-starlight"
                 onClick={() => setHovered(null)}
               >
-                {body.name}
+                {panel.name}
               </Link>
-              <p className="mt-3 font-serif text-[1.02rem] leading-relaxed text-[rgba(232,230,225,0.75)]">
-                {body.blurb}
-              </p>
-              {body.links.length > 0 && (
-                <ul className="mt-4 space-y-2 border-t border-[rgba(232,230,225,0.08)] pt-3.5">
-                  {body.links.map((l) => (
+              {panel.line && (
+                <p className="mt-2 font-serif text-[0.98rem] leading-snug text-[rgba(232,230,225,0.72)]">
+                  {panel.line}
+                </p>
+              )}
+              {panel.links.length > 0 && (
+                <ul className="mt-3 space-y-1.5 border-t border-[rgba(232,230,225,0.08)] pt-2.5">
+                  {panel.links.map((l) => (
                     <li key={l.href + l.label}>
                       <Link
                         href={l.href}
                         onClick={() => setHovered(null)}
-                        className="group flex items-baseline gap-2.5 font-mono text-[0.72rem] tracking-wide text-faint transition-colors hover:text-starlight"
+                        className="group flex items-baseline gap-2 font-mono text-[0.68rem] tracking-wide text-faint transition-colors hover:text-starlight"
                       >
-                        <span className="text-starlight/60 transition-transform duration-300 group-hover:translate-x-0.5">
-                          ↳
-                        </span>
+                        <span className="text-starlight/60">↳</span>
                         <span className="link-reveal leading-snug">{l.label}</span>
                         {l.meta && (
-                          <span className="ml-auto shrink-0 text-[0.62rem] text-dim">
+                          <span className="ml-auto shrink-0 text-[0.6rem] text-dim">
                             {l.meta}
                           </span>
                         )}
@@ -190,11 +233,10 @@ export default function HoverCard() {
                   ))}
                 </ul>
               )}
-              {body.footnote && (
-                <p className="label mt-4 !text-[9px] !tracking-[0.22em] text-dim">
-                  {body.footnote}
-                </p>
-              )}
+              <p className="label mt-3 flex items-center justify-between !text-[8px] !tracking-[0.22em] text-dim">
+                <span>{panel.footnote ?? ""}</span>
+                <span className="text-starlight/80">VISIT ⏎</span>
+              </p>
             </div>
           </motion.div>
         )}

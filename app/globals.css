@@ -185,6 +185,26 @@ body {
   color: var(--color-starlight);
 }
 
+/* ————— achievement unlock shine ————— */
+.achievement-shine {
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(212, 184, 134, 0.12) 48%,
+    rgba(232, 230, 225, 0.16) 52%,
+    rgba(212, 184, 134, 0.12) 56%,
+    transparent 74%
+  );
+  background-size: 260% 100%;
+  animation: shine-sweep 4.2s ease-in-out infinite;
+}
+
+@keyframes shine-sweep {
+  0%, 55%, 100% { background-position: 120% 0; }
+  25% { background-position: -40% 0; }
+}
+
 /* ————— underline reveal for index links ————— */
 .link-reveal {
   background-image: linear-gradient(currentColor, currentColor);

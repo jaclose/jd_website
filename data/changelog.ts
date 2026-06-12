@@ -15,6 +15,22 @@ export const changelog: LogEntry[] = [
     date: "2026-06-12",
     type: "feat",
     message:
+      "biomes & bloom — the forest scene, the Dominion life-map, the Vault opens · moons become destinations · hidden achievements seeded",
+    additions: 2376,
+    deletions: 437,
+  },
+  {
+    date: "2026-06-12",
+    type: "fix",
+    message:
+      "every image returned to its rightful essay — covers and inline art now match the source, unadulterated",
+    additions: 64,
+    deletions: 58,
+  },
+  {
+    date: "2026-06-12",
+    type: "feat",
+    message:
       "the masterpiece pass — deep sky, ring systems, magnetic hover · DabbaghMed comes aboard · essays become a gallery",
     additions: 2746,
     deletions: 608,

@@ -126,6 +126,24 @@ export const bodies: CelestialBody[] = [
     links: [{ label: "Who is writing this", href: "/about" }],
   },
   {
+    id: "vault",
+    designation: "STN V-1184",
+    name: "The Vault",
+    kind: "rocky",
+    href: "/vault",
+    orbit: 6.8,
+    size: 0.42,
+    period: 58,
+    phase: 0.4,
+    tilt: 0.14,
+    color: "#6e7681",
+    accent: "#aeb8c4",
+    blurb:
+      "A hollowed asteroid station for travelers. Leave a journal entry, choose a starter seed, and grow a garden of your own — your record stays with you.",
+    links: [{ label: "Dock and sign the log", href: "/vault" }],
+    footnote: "visitor journal · open to all callsigns",
+  },
+  {
     id: "quote",
     designation: "PSR J1184+22",
     name: "Quote of the Week",
@@ -166,6 +184,7 @@ export const navOrder = [
   "field-notes",
   "garden",
   "about",
+  "vault",
   "quote",
   "achievements",
 ];

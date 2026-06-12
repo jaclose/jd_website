@@ -37,7 +37,7 @@ export default function SiteHeader({ current }: { current?: string }) {
               key={b.id}
               href={b.href}
               className={`group items-center gap-2 ${
-                b.id === "achievements" ? "hidden sm:flex" : "flex"
+                b.id === "achievements" || b.id === "vault" ? "hidden sm:flex" : "flex"
               } ${
                 current === b.id ? "opacity-100" : "opacity-70"
               } transition-opacity hover:opacity-100`}

@@ -16,9 +16,12 @@
  *     planted: "2021-09-01",       // when the pursuit began
  *     stage: 0,                    // 0–5, raise it as the work deepens
  *     note: "The long road.",      // one line shown on its plot
+ *     species: "spruce",           // optional — defaults from the domain
  *   },
  * ─────────────────────────────────────────────────────────────────────
  */
+export type Species = "oak" | "spruce" | "acacia" | "palm";
+
 export interface Skill {
   id: string;
   name: string;
@@ -26,6 +29,20 @@ export interface Skill {
   planted: string; // ISO date the pursuit began
   stage: 0 | 1 | 2 | 3 | 4 | 5;
   note: string;
+  /** tree silhouette in the forest; defaults from the domain */
+  species?: Species;
+}
+
+/** each domain grows its own kind of tree */
+export const DOMAIN_SPECIES: Record<Skill["domain"], Species> = {
+  mind: "spruce", // patient, conical, evergreen
+  craft: "oak", // broad, branching, load-bearing
+  body: "palm", // flexible, storm-bent, coastal
+  spirit: "acacia", // deep roots, wide shade
+};
+
+export function speciesOf(s: Pick<Skill, "domain" | "species">): Species {
+  return s.species ?? DOMAIN_SPECIES[s.domain];
 }
 
 /** Nothing planted yet — the ground is prepared. */

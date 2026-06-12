@@ -31,6 +31,7 @@ export default function Footer() {
             ["Field Notes", "/field-notes"],
             ["The Garden", "/garden"],
             ["The Archive", "/#archive"],
+            ["The Vault", "/vault"],
             ["About", "/about"],
           ].map(([label, href]) => (
             <Link key={href} href={href} className="label link-reveal !text-[10px] text-faint hover:text-ink">

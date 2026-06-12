@@ -5,8 +5,13 @@ export default function QuoteOfWeek() {
   return (
     <section
       id="quote"
-      className="relative mx-auto max-w-4xl scroll-mt-24 px-6 py-32 text-center md:px-10"
+      className="relative scroll-mt-24 px-6 py-32 text-center md:px-10"
+      style={{
+        background:
+          "radial-gradient(60% 55% at 50% 38%, rgba(160,140,210,0.06) 0%, transparent 70%)",
+      }}
     >
+      <div className="mx-auto max-w-4xl">
       <Reveal>
         <p className="label mb-10 text-starlight/70">
           PSR J1184+22 · QUOTE OF THE WEEK
@@ -43,6 +48,7 @@ export default function QuoteOfWeek() {
           ))}
         </div>
       </Reveal>
+      </div>
     </section>
   );
 }

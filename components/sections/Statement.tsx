@@ -12,7 +12,10 @@ const LINE = "Chasing truth in struggle and stillness.";
 export default function Statement() {
   const words = LINE.split(" ");
   return (
-    <section className="relative flex min-h-[88vh] items-center justify-center px-6 py-32 text-center">
+    <section
+      id="statement"
+      className="relative flex min-h-[88vh] items-center justify-center px-6 py-32 text-center"
+    >
       <div className="max-w-4xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
