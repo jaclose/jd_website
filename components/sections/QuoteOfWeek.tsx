@@ -15,8 +15,18 @@ export default function QuoteOfWeek() {
           aria-hidden
           className="mx-auto mb-10 block h-2 w-2 animate-pulse rounded-full bg-starlight shadow-[0_0_24px_6px_rgba(212,184,134,0.45)]"
         />
-        <blockquote className="font-serif text-[clamp(1.7rem,4vw,3rem)] font-medium italic leading-snug text-ink">
-          “{quoteOfTheWeek.text}”
+        <blockquote>
+          {quoteOfTheWeek.arabic && (
+            <p
+              lang="ar"
+              className="arabic mb-7 text-[clamp(2rem,5vw,3.6rem)] leading-relaxed text-starlight"
+            >
+              {quoteOfTheWeek.arabic}
+            </p>
+          )}
+          <p className="font-serif text-[clamp(1.7rem,4vw,3rem)] font-medium italic leading-snug text-ink">
+            “{quoteOfTheWeek.text}”
+          </p>
         </blockquote>
         <p className="label mt-9 !text-[10px] text-faint">
           — {quoteOfTheWeek.source}

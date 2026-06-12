@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono, Amiri } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -21,6 +21,12 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400"],
+  variable: "--font-amiri",
+});
+
 export const metadata: Metadata = {
   title: "Jafar Dabbagh — the JD-1184 system",
   description:
@@ -34,7 +40,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         id="page-root"
-        className={`${fraunces.variable} ${cormorant.variable} ${plexMono.variable} grain`}
+        className={`${fraunces.variable} ${cormorant.variable} ${plexMono.variable} ${amiri.variable} grain`}
       >
         {children}
       </body>

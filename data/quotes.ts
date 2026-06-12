@@ -2,6 +2,8 @@ export interface Quote {
   text: string;
   source: string;
   week: string; // ISO date of the Monday this quote took the sky
+  /** original-language text, shown above the translation */
+  arabic?: string;
 }
 
 /** Most recent first. The first entry is the quote of the week. */
@@ -10,6 +12,7 @@ export const quotes: Quote[] = [
     text: "Verily, with hardship comes ease.",
     source: "Qur'an 94:6",
     week: "2026-06-08",
+    arabic: "إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا",
   },
   {
     text: "The point of a test is to become someone who carries the next one with grace.",

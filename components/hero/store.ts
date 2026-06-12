@@ -76,10 +76,28 @@ export const BAR_H = 76;
 
 /** x centers (px) of the docked slots, right-aligned cluster */
 export function slotCenters(n: number, w: number): number[] {
-  const compact = w < 768;
-  const spacing = compact ? Math.min(54, (w - 32) / (n + 1)) : Math.min(104, (w * 0.58) / n);
-  const center = compact ? w / 2 + 8 : w - spacing * ((n - 1) / 2) - Math.max(40, w * 0.06) - 36;
+  if (w < 768) {
+    // compact: the cluster fills the bar after the sun (x≈26)
+    const left = 70;
+    const right = w - 16;
+    const spacing = Math.min(54, (right - left) / (n - 1));
+    const start = left + (right - left - spacing * (n - 1)) / 2;
+    return Array.from({ length: n }, (_, i) => start + i * spacing);
+  }
+  const spacing = Math.min(104, (w * 0.58) / n);
+  const center = w - spacing * ((n - 1) / 2) - Math.max(40, w * 0.06) - 36;
   return Array.from({ length: n }, (_, i) => center + (i - (n - 1) / 2) * spacing);
+}
+
+/**
+ * On narrow viewports the system compresses: orbits shrink and the camera
+ * pulls back so the whole dance stays in frame.
+ */
+export function orbitScale(aspect: number): number {
+  return Math.min(1, Math.max(0.52, aspect / 1.45));
+}
+export function cameraDistance(aspect: number): number {
+  return 26 / Math.min(1, Math.max(0.62, aspect / 1.45));
 }
 
 /** docked radius (px) by body kind */

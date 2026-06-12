@@ -12,6 +12,27 @@ export interface LogEntry {
 
 export const changelog: LogEntry[] = [
   {
+    date: "2026-06-12",
+    type: "feat",
+    message: "GLD-7 charted — achievements constellation · the pulsar speaks Arabic",
+    additions: 318,
+    deletions: 6,
+  },
+  {
+    date: "2026-06-12",
+    type: "feat",
+    message: "meteors over the system · mobile framing · reading progress · signal-lost page",
+    additions: 412,
+    deletions: 28,
+  },
+  {
+    date: "2026-06-12",
+    type: "fix",
+    message: "vercel framework preset — the system reaches production",
+    additions: 4,
+    deletions: 0,
+  },
+  {
     date: "2026-06-11",
     type: "feat",
     message: "spatial navigation — the JD-1184 system goes live",

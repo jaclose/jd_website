@@ -69,7 +69,7 @@ export default function SeedCutscene() {
         />
       )}
 
-      {/* impact dust */}
+      {/* impact dust + shockwave ripple */}
       {stage !== "falling" && !reduced && (
         <div className="absolute left-1/2" style={{ top: groundY }}>
           {[-38, -22, -9, 9, 22, 38].map((dx, i) => (
@@ -80,6 +80,17 @@ export default function SeedCutscene() {
               initial={{ x: 0, y: 0, opacity: 0.9, scale: 1 }}
               animate={{ x: dx, y: -14 - Math.abs(dx) * 0.35, opacity: 0, scale: 0.4 }}
               transition={{ duration: 0.9, delay: i * 0.03, ease: "easeOut" }}
+            />
+          ))}
+          {[0, 0.18].map((delay, i) => (
+            <motion.span
+              key={`r-${i}`}
+              aria-hidden
+              className="absolute rounded-[50%] border border-[#8a7a5c]"
+              style={{ width: 56, height: 14, marginLeft: -28, marginTop: -7 }}
+              initial={{ scale: 0.2, opacity: 0.7 }}
+              animate={{ scale: 2.6 + i, opacity: 0 }}
+              transition={{ duration: 1.1, delay, ease: "easeOut" }}
             />
           ))}
         </div>

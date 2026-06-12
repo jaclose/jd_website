@@ -43,8 +43,9 @@ node scripts/screenshot.mjs   # visual smoke test (needs a running server)
 
 ## Deploy
 
-**Vercel:** import the GitHub repo at vercel.com/new — zero config needed
-(framework auto-detected). Every push to `main` deploys.
+**Vercel:** import the GitHub repo at vercel.com/new. `vercel.json` pins the
+framework to Next.js (the project must not use the "Other" preset / a
+`public` output directory). Every push to `main` deploys.
 
 **Supabase (when ready):** create a project, run
 `supabase/migrations/0001_init.sql` in the SQL editor, then set

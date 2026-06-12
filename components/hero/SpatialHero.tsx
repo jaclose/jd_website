@@ -6,6 +6,9 @@ import SystemScene from "./SystemScene";
 import NavBar from "./NavBar";
 import HoverCard from "./HoverCard";
 import { hero, setHovered, clamp01, smoothstep } from "./store";
+import { gardenState } from "@/data/system";
+import { essays, fieldNotes } from "@/lib/content";
+import { unlockedCount, achievements } from "@/data/achievements";
 
 /**
  * The spatial hero. A fixed full-viewport canvas hosts the JD-1184 system;
@@ -15,11 +18,17 @@ import { hero, setHovered, clamp01, smoothstep } from "./store";
  */
 export default function SpatialHero() {
   const [root, setRoot] = useState<HTMLElement | null>(null);
+  const [sol, setSol] = useState<string | null>(null);
   const title = useRef<HTMLDivElement>(null);
   const hint = useRef<HTMLDivElement>(null);
+  const hud = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setRoot(document.getElementById("page-root"));
+    const d = new Date();
+    setSol(
+      `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`
+    );
 
     const onScroll = () => {
       hero.p = clamp01(window.scrollY / (window.innerHeight * 0.82));
@@ -36,6 +45,7 @@ export default function SpatialHero() {
         title.current.style.transform = `translateY(${hero.pS * -34}px)`;
       }
       if (hint.current) hint.current.style.opacity = String(fade);
+      if (hud.current) hud.current.style.opacity = String(fade);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -91,6 +101,34 @@ export default function SpatialHero() {
           </p>
           <p className="label mt-6 !text-[9px] text-dim">
             HOVER A BODY TO SCAN — CLICK TO TRAVEL
+          </p>
+        </motion.div>
+      </div>
+
+      {/* mission HUD, upper right — live readings from the system */}
+      <div
+        ref={hud}
+        className="pointer-events-none fixed right-6 top-6 z-20 hidden text-right md:right-14 md:block"
+      >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.4, delay: 1.1 }}
+          className="space-y-1.5"
+        >
+          <p className="label !text-[9px] text-faint">
+            {sol ? `SOL ${sol}` : " "} · SYS JD-1184
+          </p>
+          <p className="label !text-[9px] text-dim">
+            {essays.length} ESSAYS IN ORBIT · {fieldNotes.length} DISPATCHES
+          </p>
+          <p className="label !text-[9px] text-dim">
+            BIOSPHERE {gardenState.points} PTS · VEG{" "}
+            {Math.round(gardenState.vegetation * 100)}%
+          </p>
+          <p className="label !text-[9px] text-dim">
+            ACHIEVEMENTS {unlockedCount}/{achievements.length} ·{" "}
+            <span className="text-leaf">ALL SYSTEMS NOMINAL</span>
           </p>
         </motion.div>
       </div>

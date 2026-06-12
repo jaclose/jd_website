@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { essays, essayBySlug, formatDate, readingTime } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import ReadingProgress from "@/components/ReadingProgress";
 
 export function generateStaticParams() {
   return essays.map((e) => ({ slug: e.slug }));
@@ -39,7 +40,14 @@ export default async function EssayPage({
   return (
     <>
       <SiteHeader current="essays" />
+      <ReadingProgress />
       <main className="mx-auto max-w-3xl px-6 pb-28 pt-36 md:px-8">
+        <Link
+          href="/essays"
+          className="label mb-10 inline-block !text-[9px] text-dim transition-colors hover:text-starlight"
+        >
+          ⟵ ALL TRANSMISSIONS
+        </Link>
         <header className="mb-16 text-center">
           <p className="label mb-6 !text-[10px] text-starlight/70">
             JD-1184 b · TRANSMISSION {String(essays.length - idx).padStart(2, "0")}

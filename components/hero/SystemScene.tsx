@@ -10,6 +10,8 @@ import {
   requestUnhover,
   slotCenters,
   dockRadius,
+  orbitScale,
+  cameraDistance,
   BAR_H,
   clamp01,
   easeInOutCubic,
@@ -87,11 +89,82 @@ function Choreographer() {
     const calm = 1 - hero.pS;
     const px = reduced ? 0 : state.pointer.x * 1.5 * calm;
     const py = reduced ? 0 : state.pointer.y * 0.7 * calm;
+    const aspect = state.size.width / state.size.height;
     camera.position.x = damp(camera.position.x, px, 2.2, d);
     camera.position.y = damp(camera.position.y, 7.5 - py, 2.2, d);
+    camera.position.z = damp(camera.position.z, cameraDistance(aspect), 2.2, d);
     camera.lookAt(0, 0.6, 0);
   });
   return null;
+}
+
+/* ————— meteors: an occasional streak across the upper sky ————— */
+
+function Meteors() {
+  const obj = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
+    const m = new THREE.LineBasicMaterial({
+      color: "#dfe8f4",
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const line = new THREE.Line(g, m);
+    line.frustumCulled = false;
+    return line;
+  }, []);
+  const s = useRef({
+    active: false,
+    t: 0,
+    wait: 3 + Math.random() * 5,
+    from: new THREE.Vector3(),
+    dir: new THREE.Vector3(),
+    tip: new THREE.Vector3(),
+    tail: new THREE.Vector3(),
+  });
+
+  useFrame((_, dt) => {
+    const st = s.current;
+    const mat = obj.material as THREE.LineBasicMaterial;
+    if (reduced || hero.pS > 0.4) {
+      mat.opacity = 0;
+      return;
+    }
+    if (!st.active) {
+      st.wait -= dt;
+      if (st.wait <= 0 && hero.intro > 0.9) {
+        st.active = true;
+        st.t = 0;
+        st.from.set(-34 + Math.random() * 68, 13 + Math.random() * 11, -26 + Math.random() * 12);
+        st.dir.set(
+          (Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 12),
+          -(6 + Math.random() * 6),
+          0
+        );
+      }
+      return;
+    }
+    const life = 1.0;
+    st.t += dt;
+    const k = st.t / life;
+    if (k >= 1) {
+      st.active = false;
+      st.wait = 6 + Math.random() * 10;
+      mat.opacity = 0;
+      return;
+    }
+    st.tip.copy(st.from).addScaledVector(st.dir, k);
+    st.tail.copy(st.tip).addScaledVector(st.dir, -0.14);
+    const pos = obj.geometry.attributes.position as THREE.BufferAttribute;
+    pos.setXYZ(0, st.tail.x, st.tail.y, st.tail.z);
+    pos.setXYZ(1, st.tip.x, st.tip.y, st.tip.z);
+    pos.needsUpdate = true;
+    mat.opacity = Math.sin(Math.PI * k) * 0.75;
+  });
+
+  return <primitive object={obj} />;
 }
 
 /* ————— starfield ————— */
@@ -115,10 +188,12 @@ function Starfield() {
     return [make(1100, 55, 110), make(160, 34, 60)];
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     const o = (1 - smoothstep(hero.pS, 0.2, 0.85)) * hero.intro;
     matFar.current.opacity = 0.65 * o;
-    matNear.current.opacity = 0.95 * o;
+    // the near layer breathes — a slow collective twinkle
+    matNear.current.opacity =
+      0.95 * o * (reduced ? 1 : 0.86 + 0.14 * Math.sin(state.clock.elapsedTime * 1.3));
   });
 
   return (
@@ -151,6 +226,8 @@ function Starfield() {
 
 function OrbitLine({ body }: { body: CelestialBody }) {
   const mat = useRef<THREE.LineBasicMaterial>(null!);
+  const loop = useRef<THREE.LineLoop>(null!);
+  const { size } = useThree();
   const geom = useMemo(() => {
     const pts: THREE.Vector3[] = [];
     const v = new THREE.Vector3();
@@ -163,11 +240,12 @@ function OrbitLine({ body }: { body: CelestialBody }) {
   useFrame(() => {
     mat.current.opacity =
       0.12 * (1 - smoothstep(hero.pS, 0.05, 0.5)) * smoothstep(hero.intro, 0.2, 1);
+    loop.current.scale.setScalar(orbitScale(size.width / size.height));
   });
 
   // eslint-disable-next-line react/no-unknown-property
   return (
-    <lineLoop geometry={geom}>
+    <lineLoop ref={loop} geometry={geom}>
       <lineBasicMaterial ref={mat} color="#9aa4b8" transparent depthWrite={false} />
     </lineLoop>
   );
@@ -206,6 +284,7 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
       }
       theta.current += dt * speed * kepler * (1 - e);
       orbitPoint(body, theta.current, vOrbit);
+      vOrbit.multiplyScalar(orbitScale(size.width / size.height));
     } else {
       vOrbit.set(0, 0, 0); // the sun
     }
@@ -562,6 +641,7 @@ export default function SystemScene() {
       <ambientLight intensity={0.45} color="#aab4cc" />
       <hemisphereLight intensity={0.25} color="#bcc8e0" groundColor="#1a1410" />
       <Starfield />
+      <Meteors />
       <Sun count={count} />
       {bodies.map((b) => (
         <OrbitLine key={`ring-${b.id}`} body={b} />

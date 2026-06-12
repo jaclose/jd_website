@@ -1,5 +1,6 @@
 import { achievements, unlockedCount } from "@/data/achievements";
 import Reveal from "@/components/Reveal";
+import ConstellationMap from "./ConstellationMap";
 
 export default function AchievementsGrid() {
   return (
@@ -15,6 +16,12 @@ export default function AchievementsGrid() {
           <span className="label !text-[10px] text-starlight">
             {unlockedCount} / {achievements.length}
           </span>
+        </div>
+      </Reveal>
+
+      <Reveal>
+        <div className="mb-16">
+          <ConstellationMap />
         </div>
       </Reveal>
 

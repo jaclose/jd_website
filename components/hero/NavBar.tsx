@@ -41,10 +41,12 @@ export default function NavBar() {
       className="fixed inset-x-0 top-0 z-30 border-b border-[rgba(232,230,225,0.1)] bg-[rgba(5,6,10,0.78)] backdrop-blur-md"
     >
       <nav aria-label="Primary" className="relative h-full">
-        {/* the sun docks at x≈26 — the wordmark sits just after it */}
+        {/* the sun docks at x≈26 — this hitbox makes it the home button */}
+        <Link href="/" aria-label="Home" className="absolute left-0 top-0 h-full w-12" />
+        {/* the wordmark sits just after the sun */}
         <Link
           href="/"
-          className="absolute left-12 top-1/2 -translate-y-1/2 font-display text-[0.95rem] tracking-[0.08em] text-ink transition-colors hover:text-starlight"
+          className="absolute left-12 top-1/2 hidden -translate-y-1/2 font-display text-[0.95rem] tracking-[0.08em] text-ink transition-colors hover:text-starlight md:block"
         >
           Jafar Dabbagh
         </Link>
@@ -62,7 +64,7 @@ export default function NavBar() {
               onMouseEnter={() => setHovered(b.id)}
               onMouseLeave={() => requestUnhover(b.id)}
               onClick={() => setHovered(null)}
-              className="group absolute top-0 flex h-full w-16 flex-col items-center justify-end pb-[7px]"
+              className="group absolute top-0 flex h-full w-12 flex-col items-center justify-end pb-[7px] sm:w-16"
               style={{ left: x - 32 }}
             >
               <span className="label hidden !text-[8px] !tracking-[0.18em] text-dim transition-colors group-hover:text-starlight sm:block">

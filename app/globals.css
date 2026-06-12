@@ -14,6 +14,12 @@
   --font-display: var(--font-fraunces), "Fraunces", georgia, serif;
   --font-serif: var(--font-cormorant), "Cormorant Garamond", georgia, serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --font-arabic: var(--font-amiri), "Amiri", "Geeza Pro", serif;
+}
+
+.arabic {
+  font-family: var(--font-arabic);
+  direction: rtl;
 }
 
 html {
