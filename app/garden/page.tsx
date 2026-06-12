@@ -50,12 +50,12 @@ export default function GardenPage() {
               ].map(([k, v, c]) => (
                 <div key={k as string}>
                   <div className="mb-2 flex justify-between">
-                    <span className="label !text-[8px] text-dim">{k}</span>
-                    <span className="label !text-[8px] text-faint">
+                    <span className="label text-[8px]! text-dim">{k}</span>
+                    <span className="label text-[8px]! text-faint">
                       {Math.round((v as number) * 100)}%
                     </span>
                   </div>
-                  <div className="h-px w-full bg-[rgba(232,230,225,0.12)]">
+                  <div className="h-px w-full bg-hairline">
                     <div
                       className={`h-px ${c}`}
                       style={{ width: `${(v as number) * 100}%` }}

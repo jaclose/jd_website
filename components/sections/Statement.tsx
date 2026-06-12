@@ -14,7 +14,7 @@ export default function Statement() {
   return (
     <section
       id="statement"
-      className="relative flex min-h-[88vh] items-center justify-center px-6 py-32 text-center"
+      className="relative flex min-h-svh items-center justify-center px-6 py-32 text-center"
     >
       <div className="max-w-4xl">
         <motion.div
@@ -38,7 +38,7 @@ export default function Statement() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 1, delay: 0.25 }}
-          className="label mb-8 !text-[10px] text-starlight/70"
+          className="label mb-8 text-[10px]! text-starlight/70"
         >
           DABBAGHMED · EST. 2025
         </motion.p>

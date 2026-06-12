@@ -36,16 +36,16 @@ export default function VisitorRecord() {
 
   return (
     <div className="mt-20">
-      <div className="mb-8 flex items-end justify-between border-b border-[rgba(232,230,225,0.12)] pb-4">
+      <div className="mb-8 flex items-end justify-between border-b border-hairline pb-4">
         <div>
-          <p className="label mb-2 !text-[9px] text-comet/80">
+          <p className="label mb-2 text-[9px]! text-comet/80">
             YOUR RECORD · EARNED BY EXPLORING
           </p>
           <h3 className="font-display text-2xl font-light text-ink">
             Visitor Achievements
           </h3>
         </div>
-        <span className="label !text-[10px] text-comet">
+        <span className="label text-[10px]! text-comet">
           {ready ? `${count} / ${visitorAchievements.length}` : "— / —"}
         </span>
       </div>
@@ -79,7 +79,7 @@ export default function VisitorRecord() {
                   <h4 className="truncate font-display text-base font-light text-ink">
                     {masked ? "???" : a.title}
                   </h4>
-                  <span className={`label shrink-0 !text-[7px] !tracking-[0.22em] ${TIER_COLOR[a.tier]}`}>
+                  <span className={`label shrink-0 text-[7px]! tracking-[0.22em]! ${TIER_COLOR[a.tier]}`}>
                     {TIER_LABEL[a.tier]}
                   </span>
                 </div>
@@ -90,7 +90,7 @@ export default function VisitorRecord() {
                       ? a.description
                       : a.condition}
                 </p>
-                <p className="label mt-2 !text-[7px] !tracking-[0.22em] text-dim">
+                <p className="label mt-2 text-[7px]! tracking-[0.22em]! text-dim">
                   {date ? `UNLOCKED ${date}` : masked ? "UNDISCOVERED" : "LOCKED"}
                 </p>
               </div>
@@ -98,7 +98,7 @@ export default function VisitorRecord() {
           );
         })}
       </div>
-      <p className="label mt-6 !text-[8px] !tracking-[0.24em] text-dim">
+      <p className="label mt-6 text-[8px]! tracking-[0.24em]! text-dim">
         YOUR RECORD LIVES IN THIS BROWSER · THE SUPABASE RELAY WILL CARRY IT TO THE SHARED ARCHIVE
       </p>
     </div>

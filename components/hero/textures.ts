@@ -155,8 +155,8 @@ export function sunTexture(): THREE.Texture {
 
 /** banded gas giant — layered flows, storm oval, polar darkening */
 export function gasGiantTexture(base: string, accent: string): THREE.Texture {
-  const w = 1024,
-    h = 512;
+  const w = 2048,
+    h = 1024;
   const c = canvas(w, h);
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(1184);
@@ -182,7 +182,7 @@ export function gasGiantTexture(base: string, accent: string): THREE.Texture {
 
   // turbulent flow streaks inside the bands
   ctx.globalAlpha = 0.1;
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 560; i++) {
     const sy = rnd() * h;
     const sx = rnd() * w;
     const len = 40 + rnd() * 220;
@@ -276,17 +276,17 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(4242);
 
-  // barren base — rusted regolith with tonal drift
+  // barren base — Mars-rust regolith with tonal drift
   const base = ctx.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, "#6e5f48");
-  base.addColorStop(0.5, "#7d6c50");
-  base.addColorStop(1, "#665741");
+  base.addColorStop(0, "#7c4a33");
+  base.addColorStop(0.5, "#8d5a3e");
+  base.addColorStop(1, "#6e4230");
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
 
   // broad geological provinces
   for (let i = 0; i < 26; i++) {
-    ctx.fillStyle = rnd() > 0.5 ? "#8a7a5c" : "#5e4f3a";
+    ctx.fillStyle = rnd() > 0.5 ? "#9d6748" : "#5e3826";
     ctx.globalAlpha = 0.12 + rnd() * 0.1;
     const r = 40 + rnd() * 150;
     ctx.beginPath();
@@ -295,7 +295,7 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   }
   // fine speckle
   for (let i = 0; i < 1600; i++) {
-    ctx.fillStyle = rnd() > 0.5 ? "#94835f" : "#564834";
+    ctx.fillStyle = rnd() > 0.5 ? "#a8714f" : "#54301f";
     ctx.globalAlpha = 0.1 + rnd() * 0.16;
     const r = 1 + rnd() * 6;
     ctx.beginPath();
@@ -321,7 +321,7 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   }
   // dune streaks
   ctx.globalAlpha = 0.08;
-  ctx.strokeStyle = "#9a8a64";
+  ctx.strokeStyle = "#b07a58";
   for (let i = 0; i < 90; i++) {
     const sy = rnd() * h;
     ctx.lineWidth = 0.8 + rnd();
@@ -372,48 +372,60 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   return toTexture(c);
 }
 
-/** cratered rocky world */
+/** cratered rocky world — slate plains, frost at the poles */
 export function rockyTexture(base: string, fleck: string, seed = 7): THREE.Texture {
-  const w = 512,
-    h = 256;
+  const w = 1024,
+    h = 512;
   const c = canvas(w, h);
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(seed);
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
-  // maria — large dark plains
+  // maria — large dark blue-grey plains
   for (let i = 0; i < 14; i++) {
-    ctx.fillStyle = "rgba(30,26,24,0.5)";
+    ctx.fillStyle = "rgba(22,30,42,0.6)";
     ctx.globalAlpha = 0.16 + rnd() * 0.14;
-    const r = 22 + rnd() * 70;
+    const r = 44 + rnd() * 140;
     ctx.beginPath();
     ctx.ellipse(rnd() * w, rnd() * h, r * 1.4, r * 0.8, rnd() * 3, 0, Math.PI * 2);
     ctx.fill();
   }
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 1800; i++) {
     ctx.fillStyle = rnd() > 0.5 ? fleck : "#00000022";
     ctx.globalAlpha = 0.14 + rnd() * 0.18;
-    const r = 1 + rnd() * 6;
+    const r = 1 + rnd() * 8;
     ctx.beginPath();
     ctx.arc(rnd() * w, rnd() * h, r, 0, Math.PI * 2);
     ctx.fill();
   }
   // craters
-  for (let i = 0; i < 38; i++) {
+  for (let i = 0; i < 64; i++) {
     const x = rnd() * w;
     const y = rnd() * h;
-    const r = 2 + rnd() * 10;
+    const r = 3 + rnd() * 18;
     ctx.globalAlpha = 0.3;
-    ctx.fillStyle = "rgba(20,16,14,0.85)";
+    ctx.fillStyle = "rgba(14,18,26,0.85)";
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 0.42;
-    ctx.strokeStyle = "rgba(235,225,212,0.6)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(225,232,242,0.6)";
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.arc(x, y - r * 0.15, r, Math.PI * 1.1, Math.PI * 1.9);
     ctx.stroke();
+  }
+  // polar frost
+  for (const [py, dir] of [
+    [0, 1],
+    [h, -1],
+  ] as const) {
+    const cap = ctx.createLinearGradient(0, py, 0, py + dir * h * 0.1);
+    cap.addColorStop(0, "rgba(230,240,248,0.55)");
+    cap.addColorStop(1, "rgba(230,240,248,0)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = cap;
+    ctx.fillRect(0, Math.min(py, py + dir * h * 0.1), w, h * 0.1);
   }
   ctx.globalAlpha = 1;
   return toTexture(c);

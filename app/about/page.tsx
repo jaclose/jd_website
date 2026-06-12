@@ -24,7 +24,7 @@ export default function AboutPage() {
               alt="Jafar Dabbagh"
               width={116}
               height={116}
-              className="h-24 w-24 md:h-[116px] md:w-[116px]"
+              className="h-24 w-24 md:h-29 md:w-29"
               priority
             />
             <div>
@@ -53,7 +53,7 @@ export default function AboutPage() {
         {/* the dominion — life as a strategic map */}
         <Reveal delay={0.1}>
           <div className="mt-20">
-            <p className="label mb-6 !text-[9px] text-starlight/70">
+            <p className="label mb-6 text-[9px]! text-starlight/70">
               CARTOGRAPHY · EVERY PROVINCE A CHAPTER
             </p>
             <LifeMap />
@@ -64,7 +64,7 @@ export default function AboutPage() {
         <Reveal delay={0.12}>
           <div className="mt-20 grid gap-6 sm:grid-cols-[1fr_1.45fr]">
             <figure>
-              <div className="relative aspect-[3/4] overflow-hidden">
+              <div className="relative aspect-3/4 overflow-hidden">
                 <Image
                   src="/images/essays/hello-world.jpg"
                   alt="Graduation day — cap, gown, and the river behind"
@@ -73,12 +73,12 @@ export default function AboutPage() {
                   className="object-cover"
                 />
               </div>
-              <figcaption className="label mt-3 !text-[8px] text-dim">
+              <figcaption className="label mt-3 text-[8px]! text-dim">
                 THE FIVE-YEAR ROAD, WALKED IN TWO
               </figcaption>
             </figure>
             <figure>
-              <div className="relative aspect-[3/4] overflow-hidden sm:aspect-auto sm:h-full">
+              <div className="relative aspect-3/4 overflow-hidden sm:aspect-auto sm:h-full">
                 <Image
                   src="/images/horizon.jpg"
                   alt="Sitting above a sunlit coastline, two fingers raised"
@@ -87,7 +87,7 @@ export default function AboutPage() {
                   className="object-cover"
                 />
               </div>
-              <figcaption className="label mt-3 !text-[8px] text-dim">
+              <figcaption className="label mt-3 text-[8px]! text-dim">
                 BETWEEN CHAPTERS · THE WORLD KEEPS ITS LIGHT ON
               </figcaption>
             </figure>

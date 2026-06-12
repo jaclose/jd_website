@@ -42,10 +42,10 @@ export default function EssaysPage() {
             <div
               className={`relative overflow-hidden ${
                 leadMeta?.aspect === "portrait"
-                  ? "aspect-[3/4] md:max-h-[560px]"
+                  ? "aspect-3/4 md:max-h-140"
                   : leadMeta?.aspect === "square"
                     ? "aspect-square"
-                    : "aspect-[3/2]"
+                    : "aspect-3/2"
               }`}
             >
               {leadMeta ? (
@@ -60,10 +60,10 @@ export default function EssaysPage() {
               ) : (
                 <FallbackCover title={lead.title} index="01" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-space/60 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-space/60 to-transparent" />
             </div>
             <div>
-              <p className="label !text-[10px] text-dim">
+              <p className="label text-[10px]! text-dim">
                 01 · {dispatchDate(lead.date)} · {readingTime(lead.words)}
               </p>
               <h2 className="mt-4 font-display text-[clamp(1.9rem,4vw,3rem)] font-light leading-[1.08] text-ink transition-colors duration-300 group-hover:text-starlight">
@@ -74,7 +74,7 @@ export default function EssaysPage() {
                   “{leadMeta.highlight}”
                 </p>
               )}
-              <span className="label mt-8 inline-flex items-center gap-3 !text-[10px] text-starlight">
+              <span className="label mt-8 inline-flex items-center gap-3 text-[10px]! text-starlight">
                 READ <span aria-hidden>⟶</span>
               </span>
             </div>
@@ -89,20 +89,20 @@ export default function EssaysPage() {
             return (
               <Reveal key={e.slug} delay={(i % 2) * 0.08}>
                 <Link href={`/essays/${e.slug}`} className="group block">
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                  <div className="relative aspect-4/3 overflow-hidden">
                     {m ? (
                       <Image
                         src={m.cover}
                         alt={m.alt}
                         fill
                         sizes="(max-width: 640px) 100vw, 50vw"
-                        className="object-cover transition-[transform,filter] duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] [filter:saturate(0.85)] group-hover:scale-[1.045] group-hover:[filter:saturate(1)]"
+                        className="object-cover transition-[transform,filter] duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] filter-[saturate(0.85)] group-hover:scale-[1.045] group-hover:filter-[saturate(1)]"
                       />
                     ) : (
                       <FallbackCover title={e.title} />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-space/70 via-transparent to-transparent" />
-                    <span className="label absolute bottom-3 left-4 !text-[8px] text-ink/75">
+                    <div className="absolute inset-0 bg-linear-to-t from-space/70 via-transparent to-transparent" />
+                    <span className="label absolute bottom-3 left-4 text-[8px]! text-ink/75">
                       {String(i + 2).padStart(2, "0")} · {dispatchDate(e.date)} ·{" "}
                       {readingTime(e.words).toUpperCase()}
                     </span>

@@ -34,11 +34,11 @@ function DiffBlocks({ add, del }: { add: number; del: number }) {
   const total = add + del;
   const green = total === 0 ? 0 : Math.round((add / total) * 5);
   return (
-    <span className="inline-flex gap-[3px]" aria-hidden>
+    <span className="inline-flex gap-0.75" aria-hidden>
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
-          className="h-[7px] w-[7px]"
+          className="h-1.75 w-1.75"
           style={{
             background:
               i < green
@@ -61,13 +61,13 @@ export default function TransmissionLog() {
   return (
     <section
       id="log"
-      className="relative px-6 py-28 md:px-10"
+      className="relative flex min-h-svh flex-col justify-center px-6 py-24 md:px-10"
       style={{
         background:
-          "radial-gradient(80% 50% at 50% 100%, rgba(159,206,143,0.045) 0%, transparent 70%)",
+          "radial-gradient(80% 60% at 50% 100%, rgba(159,206,143,0.06) 0%, transparent 70%)",
       }}
     >
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto w-full max-w-5xl">
       <Reveal>
         <SectionHeading
           index="05"
@@ -91,11 +91,11 @@ export default function TransmissionLog() {
             </span>
           </div>
 
-          {/* the graph */}
-          <div className="relative px-5 py-2">
+          {/* the graph — scrolls inside its terminal */}
+          <div className="relative max-h-[58svh] overflow-y-auto px-5 py-2">
             <span
               aria-hidden
-              className="absolute bottom-4 left-[27px] top-4 w-px bg-[rgba(232,230,225,0.12)]"
+              className="absolute bottom-4 left-6.75 top-4 w-px bg-hairline"
             />
             {changelog.map((c, i) => {
               const year = c.date.slice(0, 4);
@@ -104,22 +104,22 @@ export default function TransmissionLog() {
               return (
                 <div key={i}>
                   {showYear && (
-                    <div className="relative flex items-center gap-4 py-3 pl-[18px]">
+                    <div className="relative flex items-center gap-4 py-3 pl-4.5">
                       <span
                         aria-hidden
-                        className="relative z-10 -ml-[3px] h-[9px] w-[9px] rotate-45 border border-[rgba(232,230,225,0.35)] bg-space"
+                        className="relative z-10 -ml-0.75 h-2.25 w-2.25 rotate-45 border border-[rgba(232,230,225,0.35)] bg-space"
                       />
-                      <span className="label !text-[9px] !tracking-[0.4em] text-faint">
+                      <span className="label text-[9px]! tracking-[0.4em]! text-faint">
                         {year}
                       </span>
                       <span className="h-px flex-1 bg-[rgba(232,230,225,0.07)]" />
                     </div>
                   )}
-                  <div className="group relative grid grid-cols-[14px_1fr] items-baseline gap-x-4 py-3 pl-[18px] font-mono text-[0.78rem] transition-colors duration-300 hover:bg-[rgba(232,230,225,0.025)] sm:grid-cols-[14px_4.6rem_3.6rem_1fr_auto]">
+                  <div className="group relative grid grid-cols-[14px_1fr] items-baseline gap-x-4 py-3 pl-4.5 font-mono text-[0.78rem] transition-colors duration-300 hover:bg-[rgba(232,230,225,0.025)] sm:grid-cols-[14px_4.6rem_3.6rem_1fr_auto]">
                     <span className="relative z-10 self-center">
                       <span
                         aria-hidden
-                        className="-ml-[3px] block h-[9px] w-[9px] rounded-full border-2 border-space transition-transform duration-300 group-hover:scale-125"
+                        className="-ml-0.75 block h-2.25 w-2.25 rounded-full border-2 border-space transition-transform duration-300 group-hover:scale-125"
                         style={{ background: TYPE_DOT[c.type] }}
                       />
                     </span>

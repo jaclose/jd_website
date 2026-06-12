@@ -11,7 +11,7 @@ export default function SiteHeader({ current }: { current?: string }) {
   const links = bodies.filter((b) => !b.href.startsWith("/#"));
   return (
     <header className="fixed inset-x-0 top-0 z-30 border-b border-[rgba(232,230,225,0.1)] bg-[rgba(5,6,10,0.78)] backdrop-blur-md">
-      <nav className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-4 sm:px-6 md:px-10">
+      <nav className="mx-auto flex h-15 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-10">
         <Link
           href="/"
           aria-label="Home"
@@ -26,7 +26,7 @@ export default function SiteHeader({ current }: { current?: string }) {
           />
           <span className="hidden sm:inline">
             Jafar Dabbagh
-            <span className="label ml-3 hidden !text-[7px] !tracking-[0.3em] text-dim lg:inline">
+            <span className="label ml-3 hidden text-[7px]! tracking-[0.3em]! text-dim lg:inline">
               DABBAGHMED
             </span>
           </span>
@@ -47,7 +47,7 @@ export default function SiteHeader({ current }: { current?: string }) {
                 className="h-1.5 w-1.5 rounded-full transition-transform duration-300 group-hover:scale-150"
                 style={{ background: b.color }}
               />
-              <span className="label !text-[9px]">{b.name}</span>
+              <span className="label text-[9px]!">{b.name}</span>
             </Link>
           ))}
         </div>

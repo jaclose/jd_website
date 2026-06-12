@@ -1,74 +1,78 @@
+import Image from "next/image";
 import { works } from "@/data/works";
-import SectionHeading from "@/components/SectionHeading";
 import Reveal from "@/components/Reveal";
 
 /**
- * The Archive — deeper surveys. Four academic instruments, presented
- * the way his site framed them: "some of my most enjoyable works."
+ * The Archive as a gallery — the four instruments hang like plates in a
+ * records room, each wearing its actual title page. Grid-paper weather.
  */
 export default function WorksArchive() {
   return (
     <section
       id="archive"
-      className="relative px-6 py-28 md:px-10"
+      className="relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-24 md:px-12"
       style={{
         background:
-          "repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(232,230,225,0.018) 48px), repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(232,230,225,0.018) 48px)",
+          "repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(232,230,225,0.02) 48px), repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(232,230,225,0.02) 48px)",
       }}
     >
-      <div className="mx-auto max-w-6xl">
-      <Reveal>
-        <SectionHeading
-          index="04"
-          designation="DEEP SURVEYS · SOME OF MY MOST ENJOYABLE WORKS"
-          title="The Archive"
-        />
-      </Reveal>
+      <div className="mx-auto w-full max-w-7xl">
+        <Reveal>
+          <div className="mb-12 flex items-end justify-between border-b border-hairline pb-5">
+            <div>
+              <p className="label mb-3 text-starlight/70">
+                DEEP SURVEYS · SOME OF MY MOST ENJOYABLE WORKS
+              </p>
+              <h2 className="font-display text-[clamp(1.9rem,4vw,3.2rem)] font-light leading-none text-ink">
+                The Archive
+              </h2>
+            </div>
+            <span className="label hidden text-[10px]! text-dim sm:block">04</span>
+          </div>
+        </Reveal>
 
-      <div>
-        {works.map((w, i) => (
-          <Reveal key={w.id} delay={i * 0.05}>
-            <a
-              href={w.pdf}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group grid grid-cols-[2.6rem_1fr] items-baseline gap-5 border-b border-[rgba(232,230,225,0.08)] py-8 md:grid-cols-[2.6rem_1fr_auto] md:gap-8"
-            >
-              <span className="label !text-[10px] text-dim transition-colors group-hover:text-starlight">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span>
-                <span className="block font-display text-[clamp(1.3rem,2.6vw,2rem)] font-light leading-tight text-ink transition-all duration-300 group-hover:translate-x-2 group-hover:text-starlight">
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:gap-7">
+          {works.map((w, i) => (
+            <Reveal key={w.id} delay={i * 0.06}>
+              <a
+                href={w.pdf}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block"
+              >
+                <div className="relative aspect-[155/200] overflow-hidden border border-[rgba(232,230,225,0.1)] shadow-[0_18px_50px_rgba(0,0,0,0.5)] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-2">
+                  <Image
+                    src={`/images/works/${w.pdf.split("/").pop()!.replace(".pdf", ".jpg")}`}
+                    alt={`Title page of ${w.title}`}
+                    fill
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-[filter] duration-700 filter-[saturate(0.7)_brightness(0.82)] group-hover:filter-[saturate(1)_brightness(1)]"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-space/70 via-transparent to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-40" />
+                  <span className="label absolute bottom-3 left-3.5 text-[8px]! text-ink/85">
+                    {String(i + 1).padStart(2, "0")} · {w.year}
+                  </span>
+                  <span className="label absolute right-3.5 top-3 border border-[rgba(212,184,134,0.4)] bg-space/60 px-2 py-1 text-[7px]! tracking-[0.22em]! text-starlight backdrop-blur-sm">
+                    {w.discipline.toUpperCase()}
+                  </span>
+                </div>
+                <h3 className="mt-4 font-display text-[1.08rem] font-light leading-snug text-ink transition-colors duration-300 group-hover:text-starlight">
                   {w.title}
-                  {w.subtitle && (
-                    <span className="text-faint"> — {w.subtitle}</span>
-                  )}
-                </span>
-                <span className="mt-2 block max-w-2xl font-serif text-[1.05rem] italic leading-relaxed text-faint">
-                  {w.note}
-                </span>
-                <span className="label mt-3 block !text-[8px] !tracking-[0.26em] text-dim">
-                  {w.venue.toUpperCase()}
-                </span>
-              </span>
-              <span className="col-start-2 flex items-baseline gap-6 md:col-start-3 md:flex-col md:items-end md:gap-2">
-                <span className="label border border-[rgba(212,184,134,0.3)] px-2.5 py-1 !text-[8px] !tracking-[0.24em] text-starlight/90">
-                  {w.discipline.toUpperCase()}
-                </span>
-                <span className="label !text-[9px] text-dim">
-                  {w.year} · <span className="link-reveal transition-colors group-hover:text-starlight">OPEN PDF ↗</span>
-                </span>
-              </span>
-            </a>
-          </Reveal>
-        ))}
-      </div>
+                </h3>
+                <p className="label mt-2 text-[7px]! tracking-[0.22em]! text-dim">
+                  {w.venue.toUpperCase()} ·{" "}
+                  <span className="text-starlight/70">OPEN PDF ↗</span>
+                </p>
+              </a>
+            </Reveal>
+          ))}
+        </div>
 
-      <Reveal>
-        <p className="label mt-8 !text-[9px] text-dim">
-          INSTRUMENTS RETIRED TO THE ARCHIVE · CHEMISTRY, PSYCHOLOGY, GEOLOGY, BIOETHICS
-        </p>
-      </Reveal>
+        <Reveal>
+          <p className="label mt-10 text-[9px]! text-dim">
+            INSTRUMENTS RETIRED TO THE ARCHIVE · CHEMISTRY, PSYCHOLOGY, GEOLOGY, BIOETHICS
+          </p>
+        </Reveal>
       </div>
     </section>
   );

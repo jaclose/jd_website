@@ -21,7 +21,7 @@ export default function Footer() {
               </p>
             </div>
           </div>
-          <p className="label mt-5 !text-[9px] text-dim">
+          <p className="label mt-5 text-[9px]! text-dim">
             JD-1184 SYSTEM · EST. 2025 · TERRAFORMING IN PROGRESS
           </p>
         </div>
@@ -34,20 +34,20 @@ export default function Footer() {
             ["The Vault", "/vault"],
             ["About", "/about"],
           ].map(([label, href]) => (
-            <Link key={href} href={href} className="label link-reveal !text-[10px] text-faint hover:text-ink">
+            <Link key={href} href={href} className="label link-reveal text-[10px]! text-faint hover:text-ink">
               {label}
             </Link>
           ))}
           <a
             href="mailto:jafardabbagh@gmail.com"
-            className="label link-reveal !text-[10px] text-starlight/80 hover:text-starlight"
+            className="label link-reveal text-[10px]! text-starlight/80 hover:text-starlight"
           >
             Transmit a signal
           </a>
         </nav>
       </div>
       <div className="border-t border-[rgba(232,230,225,0.06)] py-5 text-center">
-        <p className="label !text-[8px] text-dim">
+        <p className="label text-[8px]! text-dim">
           © {new Date().getFullYear()} JAFAR DABBAGH — DABBAGHMED · BUILT BY HAND · DEPLOYED FROM EARTH VIA VERCEL
         </p>
       </div>

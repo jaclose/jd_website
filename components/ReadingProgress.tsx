@@ -27,10 +27,10 @@ export default function ReadingProgress() {
   }, []);
 
   return (
-    <div className="fixed inset-x-0 top-[60px] z-30 h-px bg-transparent">
+    <div className="fixed inset-x-0 top-15 z-30 h-px bg-transparent">
       <div
         ref={bar}
-        className="h-px origin-left bg-gradient-to-r from-starlight/40 to-starlight"
+        className="h-px origin-left bg-linear-to-r from-starlight/40 to-starlight"
         style={{ transform: "scaleX(0)" }}
       />
     </div>

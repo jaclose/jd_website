@@ -96,7 +96,7 @@ export const bodies: CelestialBody[] = [
     period: 70,
     phase: 2.2,
     tilt: 0.04,
-    color: "#8a7a5c",
+    color: "#9a5f43",
     accent: "#9fce8f",
     blurb:
       bio.count === 0
@@ -119,8 +119,8 @@ export const bodies: CelestialBody[] = [
     period: 48,
     phase: 5.1,
     tilt: 0.09,
-    color: "#a89a8f",
-    accent: "#d9cec5",
+    color: "#8fa0b6",
+    accent: "#d8e4f0",
     blurb:
       "The inner world. Never satisfied with surfaces — the thought before the action, the mercy inside the motion.",
     links: [{ label: "Who is writing this", href: "/about" }],

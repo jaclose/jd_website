@@ -9,6 +9,7 @@ import {
   setHovered,
   requestUnhover,
   slotCenters,
+  BAR_TOP,
   BAR_H,
 } from "./store";
 
@@ -97,11 +98,13 @@ export default function HoverCard() {
           ay = s.y;
         let above = true;
         if (docked) {
+          // hang below the pill, centered on the slot; tether drops from
+          // the docked planet straight to the panel
           const slotX = slotCenters(bodies.length, w)[idx] ?? s.x;
           tx = Math.min(Math.max(slotX - CARD_W / 2, 14), w - CARD_W - 14);
-          ty = BAR_H + 22;
+          ty = BAR_TOP + BAR_H + 16;
           ax = slotX;
-          ay = BAR_H / 2 + 8;
+          ay = BAR_TOP + 24;
           above = false;
         } else {
           // directly over the body; below it if the sky is too low
@@ -127,7 +130,8 @@ export default function HoverCard() {
 
         // tether: from the body's rim straight to the panel's near edge
         const exitY = above ? cur.y + cardH : cur.y;
-        const startY = above ? ay - s.r - 2 : ay + s.r + 2;
+        const rim = docked ? 12 : s.r;
+        const startY = above ? ay - rim - 2 : ay + rim + 2;
         const anchorX = Math.min(Math.max(ax, cur.x + 18), cur.x + CARD_W - 18);
         const drawT = Math.min(1, (now - drawStart.current) / 280);
         const ease = 1 - Math.pow(1 - drawT, 3);
@@ -192,10 +196,10 @@ export default function HoverCard() {
               )
             )}
             <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] px-4 py-2.5">
-              <span className="label !text-[9px] text-starlight">
+              <span className="label text-[9px]! text-starlight">
                 {panel.designation}
               </span>
-              <span className="label !text-[8px] !tracking-[0.2em] text-dim">
+              <span className="label text-[8px]! tracking-[0.2em]! text-dim">
                 {panel.kindLabel}
               </span>
             </div>
@@ -233,7 +237,7 @@ export default function HoverCard() {
                   ))}
                 </ul>
               )}
-              <p className="label mt-3 flex items-center justify-between !text-[8px] !tracking-[0.22em] text-dim">
+              <p className="label mt-3 flex items-center justify-between text-[8px]! tracking-[0.22em]! text-dim">
                 <span>{panel.footnote ?? ""}</span>
                 <span className="text-starlight/80">VISIT ⏎</span>
               </p>

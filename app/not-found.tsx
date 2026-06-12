@@ -18,7 +18,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="label mt-10 inline-flex items-center gap-3 !text-[11px] !tracking-[0.3em] text-starlight transition-colors hover:text-ink"
+          className="label mt-10 inline-flex items-center gap-3 text-[11px]! tracking-[0.3em]! text-starlight transition-colors hover:text-ink"
         >
           ⟵ RETURN TO JD-1184
         </Link>

@@ -36,16 +36,16 @@ export default function FieldNotesPage() {
               >
                 <span
                   aria-hidden
-                  className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-comet shadow-[0_0_14px_2px_rgba(159,216,232,0.5)]"
+                  className="absolute -left-1.25 top-1 h-2.5 w-2.5 rounded-full bg-comet shadow-[0_0_14px_2px_rgba(159,216,232,0.5)]"
                 />
-                <p className="label !text-[9px] text-comet/80">
+                <p className="label text-[9px]! text-comet/80">
                   DISPATCH · {dispatchDate(n.date)}
                 </p>
                 <h2 className="mt-3 font-display text-[clamp(1.5rem,3.5vw,2.2rem)] font-light leading-tight text-ink">
                   {n.title}
                 </h2>
                 <div
-                  className="prose-space mt-6 !text-[1.15rem]"
+                  className="prose-space mt-6 text-[1.15rem]!"
                   dangerouslySetInnerHTML={{ __html: n.html }}
                 />
               </article>
@@ -53,7 +53,7 @@ export default function FieldNotesPage() {
           ))}
         </div>
 
-        <p className="label mt-24 text-center !text-[9px] text-dim">
+        <p className="label mt-24 text-center text-[9px]! text-dim">
           THE COMET RETURNS · NEXT PERIHELION UNKNOWN
         </p>
       </main>

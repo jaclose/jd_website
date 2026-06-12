@@ -10,9 +10,11 @@ import {
   setHovered,
   requestUnhover,
   slotCenters,
+  sunSlotX,
   dockRadius,
   orbitScale,
   cameraDistance,
+  BAR_TOP,
   BAR_H,
   clamp01,
   easeInOutCubic,
@@ -32,8 +34,7 @@ import {
   rockyTexture,
 } from "./textures";
 
-const DOCK_DIST = 13; // how far in front of the camera the bar plane sits
-const SUN_SLOT_X = 26; // px — the sun docks beside the wordmark
+const DOCK_DIST = 13; // how far in front of the camera the pill plane sits
 
 const reduced =
   typeof window !== "undefined" &&
@@ -351,6 +352,55 @@ function DeepSky() {
   );
 }
 
+/* ————— zodiacal dust: fine motes drifting through the ecliptic ————— */
+
+function SpaceDust() {
+  const mat = useRef<THREE.PointsMaterial>(null!);
+  const pts = useRef<THREE.Points>(null!);
+  const star = useMemo(() => starTexture(), []);
+  const geom = useMemo(() => {
+    const count = 700;
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 3 + Math.pow(Math.random(), 0.6) * 19;
+      pos.set(
+        [Math.cos(a) * r, (Math.random() - 0.5) * (1.2 + r * 0.12), Math.sin(a) * r],
+        i * 3
+      );
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    return g;
+  }, []);
+
+  useFrame((state, dt) => {
+    pts.current.rotation.y += dt * 0.0065 * (reduced ? 0.2 : 1);
+    const t = state.clock.elapsedTime;
+    mat.current.opacity =
+      0.22 *
+      (1 - smoothstep(hero.pS, 0.05, 0.45)) *
+      smoothstep(hero.intro, 0.4, 1) *
+      (reduced ? 1 : 0.85 + 0.15 * Math.sin(t * 0.4));
+  });
+
+  return (
+    <points ref={pts} geometry={geom}>
+      <pointsMaterial
+        ref={mat}
+        map={star}
+        size={0.07}
+        sizeAttenuation
+        color="#cfd6e2"
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
 /* ————— the asteroid belt between the garden and the gas giant ————— */
 
 function Belt() {
@@ -525,10 +575,10 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
       vOrbit.set(0, 0, 0); // the sun
     }
 
-    // dock slot in world space
+    // dock slot in world space — planets sit in the pill's upper half
     const centers = slotCenters(count - 1, size.width);
-    const slotPx = body ? centers[index - 1] : SUN_SLOT_X;
-    const slotPy = BAR_H / 2 + 2;
+    const slotPx = body ? centers[index - 1] : sunSlotX(count - 1, size.width);
+    const slotPy = BAR_TOP + 24;
     dockWorld(cam, size.width, size.height, slotPx, slotPy, vDock);
 
     // genie path: quadratic bezier arcing upward into the bar
@@ -550,13 +600,22 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
     const scale = (1 + (dockScale - 1) * e) * intro * lift.current;
     group.scale.setScalar(Math.max(scale, 0.0001));
 
-    // publish screen position for the DOM overlays
+    // publish screen position for the DOM overlays — r is the VISUAL
+    // radius (rings, comas, atmospheres included) so the reticle and
+    // hover panel always clear the whole body
     const dist = vPos.distanceTo(cam.position);
     const ndc = vPos.clone().project(cam);
+    const visual = body
+      ? body.kind === "gas-giant"
+        ? radius * 2.32
+        : body.kind === "comet"
+          ? radius * 2.1
+          : radius * 1.18
+      : radius * 1.1;
     hero.screen.set(body ? body.id : "sun", {
       x: ((ndc.x + 1) / 2) * size.width,
       y: ((1 - ndc.y) / 2) * size.height,
-      r: (radius * scale) / worldPerPixel(cam, size.height, dist),
+      r: (visual * scale) / worldPerPixel(cam, size.height, dist),
     });
 
     return { e, scale };
@@ -813,6 +872,73 @@ function RockyPlanet(props: BodyProps) {
   );
 }
 
+/** STN V-1184 — a hollowed asteroid station with running lights */
+function Station({ body, index, count }: BodyProps) {
+  const group = useRef<THREE.Group>(null!);
+  const rock = useRef<THREE.Mesh>(null!);
+  const beacon = useRef<THREE.Sprite>(null!);
+  const lights = useRef<THREE.Group>(null!);
+  const update = useGenie(body, index, count);
+  const glow = useMemo(() => glowTexture(), []);
+  const geom = useMemo(() => nucleusGeometry(body.size), [body.size]);
+
+  useFrame((state, dt) => {
+    update(group.current, dt);
+    rock.current.rotation.y += dt * 0.1;
+    rock.current.rotation.z += dt * 0.03;
+    lights.current.rotation.y += dt * 0.1; // windows ride the rock
+    const t = state.clock.elapsedTime;
+    const blink = reduced ? 0.8 : Math.sin(t * 2.2) > 0.4 ? 1 : 0.15;
+    (beacon.current.material as THREE.SpriteMaterial).opacity = 0.85 * blink * hero.intro;
+  });
+
+  return (
+    <group ref={group}>
+      <mesh ref={rock} geometry={geom}>
+        <meshStandardMaterial color="#5a626c" roughness={0.55} metalness={0.45} />
+      </mesh>
+      {/* a belt of lit windows around the equator */}
+      <group ref={lights}>
+        {Array.from({ length: 9 }, (_, i) => {
+          const a = (i / 9) * Math.PI * 2;
+          return (
+            <sprite
+              key={i}
+              position={[
+                Math.cos(a) * body.size * 0.98,
+                ((i % 3) - 1) * body.size * 0.16,
+                Math.sin(a) * body.size * 0.98,
+              ]}
+              scale={0.085}
+            >
+              <spriteMaterial
+                map={glow}
+                color="#ffd9a0"
+                transparent
+                opacity={0.9}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </sprite>
+          );
+        })}
+      </group>
+      {/* docking beacon */}
+      <sprite ref={beacon} position={[0, body.size * 1.35, 0]} scale={0.16}>
+        <spriteMaterial
+          map={glow}
+          color="#e85d5d"
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </sprite>
+      <Atmosphere radius={body.size} color="#aeb8c4" intensity={0.16} />
+      <HitSphere body={body} factor={3} />
+    </group>
+  );
+}
+
 const TAIL_COUNT = 220;
 const DUST_COUNT = 130;
 
@@ -900,20 +1026,22 @@ function Comet({ body, index, count }: BodyProps) {
       }
       pos.needsUpdate = true;
     };
+    // tails and comas die out completely as the comet docks in the pill
     const len = 5.6 * (1 - e) * scale + 0.4;
     fill(tailGeom, TAIL_COUNT, dir, len, 0.8);
     fill(dustGeom, DUST_COUNT, dustDir, len * 0.55, 1.5);
-    tailMat.current.opacity = (0.45 - e * 0.32) * hero.intro;
-    dustMat.current.opacity = (0.26 - e * 0.2) * hero.intro;
+    tailMat.current.opacity = 0.45 * (1 - e) * hero.intro;
+    dustMat.current.opacity = 0.26 * (1 - e) * hero.intro;
     nucleus.current.rotation.x += dt * 0.4;
     nucleus.current.rotation.y += dt * 0.23;
     if (coma.current) {
-      (coma.current.material as THREE.SpriteMaterial).opacity = (0.6 - e * 0.35) * hero.intro;
+      (coma.current.material as THREE.SpriteMaterial).opacity =
+        0.6 * (1 - e * 0.92) * hero.intro;
       coma.current.scale.setScalar(body.size * 5 * (1 - e * 0.5));
     }
     if (comaWide.current) {
       (comaWide.current.material as THREE.SpriteMaterial).opacity =
-        (0.13 - e * 0.1) * hero.intro;
+        0.13 * (1 - e) * hero.intro;
       comaWide.current.scale.setScalar(body.size * 9 * (1 - e * 0.5));
     }
   });
@@ -1133,6 +1261,7 @@ export default function SystemScene() {
       <Starfield />
       <Meteors />
       <Belt />
+      <SpaceDust />
       <Sun count={count} />
       {bodies.map((b) => (
         <OrbitLine key={`ring-${b.id}`} body={b} />
@@ -1148,7 +1277,11 @@ export default function SystemScene() {
           case "terrestrial":
             return <GardenPlanet key={b.id} {...props} />;
           case "rocky":
-            return <RockyPlanet key={b.id} {...props} />;
+            return b.id === "vault" ? (
+              <Station key={b.id} {...props} />
+            ) : (
+              <RockyPlanet key={b.id} {...props} />
+            );
           case "comet":
             return <Comet key={b.id} {...props} />;
           default:

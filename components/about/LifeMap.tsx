@@ -2,7 +2,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { provinces, supplyRoute, type Province } from "@/data/lifemap";
+import { essays, fieldNotes } from "@/lib/content";
+import { works } from "@/data/works";
 import { unlockVisitor } from "@/lib/visitor";
+
+/** the national ledger — Hearts-of-Iron top-bar stats, distilled */
+const LEDGER: { icon: string; label: string; value: string; tone: string }[] = [
+  { icon: "✒", label: "political power", value: `${essays.length * 25}`, tone: "text-starlight" },
+  { icon: "▣", label: "civilian factories", value: String(works.length), tone: "text-faint" },
+  { icon: "✦", label: "divisions", value: String(fieldNotes.length), tone: "text-comet" },
+  { icon: "☪", label: "stability", value: "100%", tone: "text-leaf" },
+  { icon: "⚗", label: "research slots", value: "2", tone: "text-faint" },
+];
 
 const KIND_FILL: Record<Province["kind"], string> = {
   homeland: "rgba(212,184,134,0.10)",
@@ -77,12 +88,27 @@ export default function LifeMap() {
     <figure className="border border-[rgba(232,230,225,0.1)]">
       {/* chart header */}
       <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] bg-[rgba(232,230,225,0.025)] px-5 py-3">
-        <span className="label !text-[9px] !tracking-[0.3em] text-starlight/80">
+        <span className="label text-[9px]! tracking-[0.3em]! text-starlight/80">
           THE DOMINION · STRATEGIC SURVEY OF A LIFE
         </span>
-        <span className="label hidden !text-[8px] text-dim sm:block">
+        <span className="label hidden text-[8px]! text-dim sm:block">
           SURVEYED {visited.size} / {provinces.length}
         </span>
+      </div>
+
+      {/* the national ledger */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-[rgba(232,230,225,0.08)] px-5 py-2.5">
+        {LEDGER.map((s) => (
+          <span key={s.label} className="flex items-baseline gap-2 font-mono">
+            <span aria-hidden className={`text-[0.8rem] ${s.tone}`}>
+              {s.icon}
+            </span>
+            <span className={`text-[0.78rem] ${s.tone}`}>{s.value}</span>
+            <span className="label text-[7px]! tracking-[0.18em]! text-dim">
+              {s.label.toUpperCase()}
+            </span>
+          </span>
+        ))}
       </div>
 
       <div className="grid lg:grid-cols-[1.7fr_1fr]">
@@ -211,20 +237,20 @@ export default function LifeMap() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <p className="label !text-[8px] !tracking-[0.26em] text-dim">
+            <p className="label text-[8px]! tracking-[0.26em]! text-dim">
               {KIND_LABEL[current.kind].toUpperCase()} · {current.era.toUpperCase()}
             </p>
             <h3 className="mt-2 font-display text-2xl font-light text-ink">
               {current.name}
             </h3>
-            <p className="label mt-2 !text-[9px] !tracking-[0.2em] text-starlight/80">
+            <p className="label mt-2 text-[9px]! tracking-[0.2em]! text-starlight/80">
               {current.role.toUpperCase()}
             </p>
             <p className="mt-4 font-serif text-[1.05rem] leading-relaxed text-[rgba(232,230,225,0.78)]">
               {current.detail}
             </p>
             {current.classified && (
-              <p className="label mt-4 border border-[rgba(212,184,134,0.3)] px-3 py-2 !text-[8px] !tracking-[0.24em] text-starlight/70">
+              <p className="label mt-4 border border-[rgba(212,184,134,0.3)] px-3 py-2 text-[8px]! tracking-[0.24em]! text-starlight/70">
                 ⚠ INTEL PENDING — AWAITING DECLASSIFICATION BY THE AUTHOR
               </p>
             )}
@@ -238,7 +264,7 @@ export default function LifeMap() {
               ["▣", "factory"],
               ["⚓", "port"],
             ].map(([glyph, name]) => (
-              <span key={name} className="label !text-[8px] !tracking-[0.2em] text-dim">
+              <span key={name} className="label text-[8px]! tracking-[0.2em]! text-dim">
                 <span className="mr-2 text-faint">{glyph}</span>
                 {name.toUpperCase()}
               </span>
@@ -248,7 +274,7 @@ export default function LifeMap() {
       </div>
 
       <figcaption className="border-t border-[rgba(232,230,225,0.08)] px-5 py-3">
-        <span className="label !text-[8px] !tracking-[0.24em] text-dim">
+        <span className="label text-[8px]! tracking-[0.24em]! text-dim">
           HOVER THE PROVINCES TO SURVEY · DASHED LINE IS THE SUPPLY ROUTE OF A LIFE · SOME RECORDS REMAIN SEALED
         </span>
       </figcaption>

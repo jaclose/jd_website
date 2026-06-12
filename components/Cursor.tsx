@@ -77,20 +77,20 @@ export default function Cursor() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[90] hidden md:block">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-90 hidden md:block">
       <div
         ref={ring}
         className="absolute left-0 top-0 rounded-full border border-starlight/80 opacity-0"
       >
         {/* reticle ticks at the four cardinal points */}
-        <span className="absolute -top-[3px] left-1/2 h-[7px] w-px -translate-x-1/2 bg-starlight/90" />
-        <span className="absolute -bottom-[3px] left-1/2 h-[7px] w-px -translate-x-1/2 bg-starlight/90" />
-        <span className="absolute -left-[3px] top-1/2 h-px w-[7px] -translate-y-1/2 bg-starlight/90" />
-        <span className="absolute -right-[3px] top-1/2 h-px w-[7px] -translate-y-1/2 bg-starlight/90" />
+        <span className="absolute -top-0.75 left-1/2 h-1.75 w-px -translate-x-1/2 bg-starlight/90" />
+        <span className="absolute -bottom-0.75 left-1/2 h-1.75 w-px -translate-x-1/2 bg-starlight/90" />
+        <span className="absolute -left-0.75 top-1/2 h-px w-1.75 -translate-y-1/2 bg-starlight/90" />
+        <span className="absolute -right-0.75 top-1/2 h-px w-1.75 -translate-y-1/2 bg-starlight/90" />
       </div>
       <div
         ref={label}
-        className="label absolute left-0 top-0 w-[140px] text-center !text-[8px] !tracking-[0.26em] text-starlight opacity-0"
+        className="label absolute left-0 top-0 w-35 text-center text-[8px]! tracking-[0.26em]! text-starlight opacity-0"
       />
     </div>
   );

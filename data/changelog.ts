@@ -15,6 +15,14 @@ export const changelog: LogEntry[] = [
     date: "2026-06-12",
     type: "feat",
     message:
+      "the premium pass — pill nav, full-page scenes, forest you can walk, distinct worlds, zero warnings",
+    additions: 1199,
+    deletions: 885,
+  },
+  {
+    date: "2026-06-12",
+    type: "feat",
+    message:
       "biomes & bloom — the forest scene, the Dominion life-map, the Vault opens · moons become destinations · hidden achievements seeded",
     additions: 2376,
     deletions: 437,

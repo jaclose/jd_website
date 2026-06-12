@@ -74,21 +74,39 @@ export function useHovered() {
 
 /* ————— shared geometry between scene and nav bar ————— */
 
-export const BAR_H = 76;
+/**
+ * The system docks into a floating pill, centered at the top of the
+ * viewport. The sun parks at the pill's left edge (it is the home
+ * button); the bodies line up to its right, still rotating.
+ */
+export const BAR_TOP = 14;
+export const BAR_H = 58;
 
-/** x centers (px) of the docked slots, right-aligned cluster */
+/** px spacing between docked slots */
+export function slotSpacing(n: number, w: number): number {
+  return w < 560 ? Math.max(36, Math.min(46, (w - 104) / n)) : 56;
+}
+
+/** x centers (px) of the docked slots — a centered cluster */
 export function slotCenters(n: number, w: number): number[] {
-  if (w < 768) {
-    // compact: the cluster fills the bar after the sun (x≈26)
-    const left = 70;
-    const right = w - 16;
-    const spacing = Math.min(54, (right - left) / (n - 1));
-    const start = left + (right - left - spacing * (n - 1)) / 2;
-    return Array.from({ length: n }, (_, i) => start + i * spacing);
-  }
-  const spacing = Math.min(104, (w * 0.58) / n);
-  const center = w - spacing * ((n - 1) / 2) - Math.max(40, w * 0.06) - 36;
-  return Array.from({ length: n }, (_, i) => center + (i - (n - 1) / 2) * spacing);
+  const spacing = slotSpacing(n, w);
+  // shift right by half a slot so the sun (one slot left) balances the pill
+  const first = w / 2 - (spacing * (n - 1)) / 2 + spacing * 0.5;
+  return Array.from({ length: n }, (_, i) => first + i * spacing);
+}
+
+/** where the sun docks — one slot left of the cluster */
+export function sunSlotX(n: number, w: number): number {
+  return slotCenters(n, w)[0] - slotSpacing(n, w);
+}
+
+/** the pill's horizontal bounds, for the DOM bar */
+export function pillBounds(n: number, w: number): { left: number; width: number } {
+  const centers = slotCenters(n, w);
+  const spacing = slotSpacing(n, w);
+  const left = sunSlotX(n, w) - spacing * 0.62;
+  const right = centers[centers.length - 1] + spacing * 0.62;
+  return { left, width: right - left };
 }
 
 /**
@@ -102,19 +120,19 @@ export function cameraDistance(aspect: number): number {
   return 26 / Math.min(1, Math.max(0.62, aspect / 1.45));
 }
 
-/** docked radius (px) by body kind */
+/** docked radius (px) by body kind — sized so labels never clip */
 export function dockRadius(kind: string): number {
   switch (kind) {
     case "gas-giant":
-      return 13;
-    case "terrestrial":
       return 10;
-    case "rocky":
+    case "terrestrial":
       return 8;
+    case "rocky":
+      return 7;
     case "comet":
-      return 6;
+      return 5;
     default:
-      return 5; // stars
+      return 4; // stars
   }
 }
 

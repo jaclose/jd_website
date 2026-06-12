@@ -47,12 +47,12 @@ export default async function EssayPage({
       <main className="mx-auto max-w-3xl px-6 pb-28 pt-36 md:px-8">
         <Link
           href="/essays"
-          className="label mb-10 inline-block !text-[9px] text-dim transition-colors hover:text-starlight"
+          className="label mb-10 inline-block text-[9px]! text-dim transition-colors hover:text-starlight"
         >
           ⟵ ALL TRANSMISSIONS
         </Link>
         <header className="mb-16 text-center">
-          <p className="label mb-6 !text-[10px] text-starlight/70">
+          <p className="label mb-6 text-[10px]! text-starlight/70">
             JD-1184 b · TRANSMISSION {String(essays.length - idx).padStart(2, "0")}
           </p>
           <h1 className="font-display text-[clamp(2.2rem,6vw,4rem)] font-light leading-[1.08] text-ink">
@@ -64,16 +64,16 @@ export default async function EssayPage({
               alt=""
               width={26}
               height={26}
-              className="h-[26px] w-[26px]"
+              className="h-6.5 w-6.5"
             />
-            <p className="label !text-[10px] text-dim">
+            <p className="label text-[10px]! text-dim">
               BY JAFAR DABBAGH · {formatDate(essay.date).toUpperCase()} ·{" "}
               {readingTime(essay.words).toUpperCase()} READ
             </p>
           </div>
           <span
             aria-hidden
-            className="mx-auto mt-10 block h-px w-24 bg-gradient-to-r from-transparent via-starlight/60 to-transparent"
+            className="mx-auto mt-10 block h-px w-24 bg-linear-to-r from-transparent via-starlight/60 to-transparent"
           />
         </header>
 
@@ -82,10 +82,10 @@ export default async function EssayPage({
             <div
               className={`relative overflow-hidden ${
                 meta.aspect === "portrait"
-                  ? "mx-auto aspect-[3/4] max-w-md"
+                  ? "mx-auto aspect-3/4 max-w-md"
                   : meta.aspect === "square"
                     ? "mx-auto aspect-square max-w-lg"
-                    : "aspect-[3/2]"
+                    : "aspect-3/2"
               }`}
             >
               <Image
@@ -96,9 +96,9 @@ export default async function EssayPage({
                 sizes="(max-width: 768px) 100vw, 768px"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-space/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-space/40 to-transparent" />
             </div>
-            <figcaption className="label mt-4 text-center !text-[8px] !tracking-[0.26em] text-dim">
+            <figcaption className="label mt-4 text-center text-[8px]! tracking-[0.26em]! text-dim">
               {meta.alt.toUpperCase()}
             </figcaption>
           </figure>
@@ -120,7 +120,7 @@ export default async function EssayPage({
                 href={`/essays/${e.slug}`}
                 className={`group bg-space p-6 transition-colors hover:bg-[#0a0c14] ${align}`}
               >
-                <span className="label !text-[8px] text-dim">{label}</span>
+                <span className="label text-[8px]! text-dim">{label}</span>
                 <p className="mt-2 font-display text-lg font-light text-ink transition-colors group-hover:text-starlight">
                   {e.title}
                 </p>

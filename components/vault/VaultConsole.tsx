@@ -72,7 +72,7 @@ export default function VaultConsole() {
       {/* ——— starter seed ——— */}
       <Reveal delay={0.08}>
         <section className="mt-16">
-          <h2 className="label mb-6 !text-[10px] !tracking-[0.3em] text-starlight/80">
+          <h2 className="label mb-6 text-[10px]! tracking-[0.3em]! text-starlight/80">
             {starter ? "YOUR SEED" : "CHOOSE YOUR STARTER SEED"}
           </h2>
           <div className="grid grid-cols-2 gap-px border border-[rgba(232,230,225,0.1)] bg-[rgba(232,230,225,0.1)] md:grid-cols-4">
@@ -103,13 +103,13 @@ export default function VaultConsole() {
                     height={84}
                   />
                   <span
-                    className={`label !text-[9px] !tracking-[0.26em] ${
+                    className={`label text-[9px]! tracking-[0.26em]! ${
                       chosen ? "text-leaf" : "text-faint group-hover:text-ink"
                     }`}
                   >
                     {sp.toUpperCase()} {chosen && "✓"}
                   </span>
-                  <span className="label !text-[7px] !tracking-[0.14em] text-dim">
+                  <span className="label text-[7px]! tracking-[0.14em]! text-dim">
                     {line.toUpperCase()}
                   </span>
                 </button>
@@ -117,7 +117,7 @@ export default function VaultConsole() {
             })}
           </div>
           {!starter && (
-            <p className="label mt-4 !text-[8px] !tracking-[0.24em] text-dim">
+            <p className="label mt-4 text-[8px]! tracking-[0.24em]! text-dim">
               CHOOSE CAREFULLY — EVERY GARDENER REMEMBERS THEIR FIRST
             </p>
           )}
@@ -127,7 +127,7 @@ export default function VaultConsole() {
       {/* ——— your garden ——— */}
       <Reveal delay={0.1}>
         <section className="mt-16 border border-[rgba(232,230,225,0.1)] p-8 text-center">
-          <h2 className="label mb-2 !text-[10px] !tracking-[0.3em] text-leaf/80">
+          <h2 className="label mb-2 text-[10px]! tracking-[0.3em]! text-leaf/80">
             YOUR GARDEN
           </h2>
           {ready && (
@@ -138,7 +138,7 @@ export default function VaultConsole() {
                 height={130 + stage * 14}
                 className="mx-auto"
               />
-              <p className="label mt-2 !text-[8px] !tracking-[0.24em] text-dim">
+              <p className="label mt-2 text-[8px]! tracking-[0.24em]! text-dim">
                 {starter
                   ? `${starter.toUpperCase()} · STAGE ${stage} / 5 · ${journal.length} ${
                       journal.length === 1 ? "ENTRY" : "ENTRIES"
@@ -153,10 +153,10 @@ export default function VaultConsole() {
       {/* ——— the log ——— */}
       <Reveal delay={0.12}>
         <section className="mt-16">
-          <h2 className="label mb-6 !text-[10px] !tracking-[0.3em] text-starlight/80">
+          <h2 className="label mb-6 text-[10px]! tracking-[0.3em]! text-starlight/80">
             SIGN THE STATION LOG
           </h2>
-          <div className="border border-[rgba(232,230,225,0.12)]">
+          <div className="border border-hairline">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -173,14 +173,14 @@ export default function VaultConsole() {
               className="w-full resize-none bg-transparent px-5 py-4 font-serif text-lg leading-relaxed text-ink placeholder:text-dim focus:outline-none"
             />
             <div className="flex items-center justify-between border-t border-[rgba(232,230,225,0.08)] px-5 py-3">
-              <span className="label !text-[8px] text-dim">
+              <span className="label text-[8px]! text-dim">
                 STORED IN THIS BROWSER · THE SUPABASE RELAY WILL CARRY ENTRIES TO THE SHARED ARCHIVE
               </span>
               <button
                 type="button"
                 onClick={submit}
                 disabled={!text.trim()}
-                className="label border border-[rgba(212,184,134,0.4)] px-4 py-2 !text-[9px] !tracking-[0.3em] text-starlight transition-colors hover:bg-starlight/10 disabled:opacity-30"
+                className="label border border-[rgba(212,184,134,0.4)] px-4 py-2 text-[9px]! tracking-[0.3em]! text-starlight transition-colors hover:bg-starlight/10 disabled:opacity-30"
               >
                 TRANSMIT ⏎
               </button>
@@ -198,9 +198,9 @@ export default function VaultConsole() {
                 >
                   <span
                     aria-hidden
-                    className="absolute -left-[3px] top-1.5 h-1.5 w-1.5 rounded-full bg-[#aeb8c4]"
+                    className="absolute -left-0.75 top-1.5 h-1.5 w-1.5 rounded-full bg-[#aeb8c4]"
                   />
-                  <p className="label !text-[8px] text-dim">
+                  <p className="label text-[8px]! text-dim">
                     {new Date(e.date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",

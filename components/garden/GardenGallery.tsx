@@ -115,7 +115,7 @@ export default function GardenGallery() {
                   className="mx-auto"
                 />
                 <div className="pb-4 text-center md:text-left">
-                  <p className="label !text-[9px] text-leaf/80">{p.kicker}</p>
+                  <p className="label text-[9px]! text-leaf/80">{p.kicker}</p>
                   <h2
                     className={`mt-3 font-display text-[clamp(2rem,5vw,3.4rem)] font-light leading-none ${
                       p.ghost ? "text-faint" : "text-ink"
@@ -124,7 +124,7 @@ export default function GardenGallery() {
                     {p.title}
                   </h2>
                   {p.sub && (
-                    <p className="label mt-4 !text-[9px] text-dim">{p.sub}</p>
+                    <p className="label mt-4 text-[9px]! text-dim">{p.sub}</p>
                   )}
                   <p className="mt-5 max-w-md font-serif text-lg italic leading-relaxed text-faint">
                     {p.note}
@@ -139,16 +139,16 @@ export default function GardenGallery() {
                             ? "bg-leaf"
                             : n <= p.stage
                               ? "bg-leaf/35"
-                              : "bg-[rgba(232,230,225,0.12)]"
+                              : "bg-hairline"
                         }`}
                       />
                     ))}
-                    <span className="label ml-3 !text-[8px] text-dim">
+                    <span className="label ml-3 text-[8px]! text-dim">
                       STAGE {p.stage} / 5
                     </span>
                   </div>
                   {i === 0 && skills.length === 0 && (
-                    <p className="label mt-7 !text-[8px] !tracking-[0.24em] text-dim">
+                    <p className="label mt-7 text-[8px]! tracking-[0.24em]! text-dim">
                       WHEN A SKILL IS PLANTED, IT GROWS HERE — AND THE PLANET GREENS
                     </p>
                   )}
@@ -169,7 +169,7 @@ export default function GardenGallery() {
               style={{ scaleX: scrollYProgress }}
             />
           </div>
-          <p className="label mt-3 text-center !text-[8px] text-dim">
+          <p className="label mt-3 text-center text-[8px]! text-dim">
             {skills.length > 0
               ? `WALKING THE ROWS · ${plots.length} PLOTS`
               : `SURVEYING PROJECTED PLOTS · ${plots.length} FRAMES`}

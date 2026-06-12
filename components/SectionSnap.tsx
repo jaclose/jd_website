@@ -13,10 +13,9 @@ export default function SectionSnap({ ids }: { ids: string[] }) {
     if (!lenis) return;
 
     const snap = new Snap(lenis, {
-      type: "proximity",
-      distanceThreshold: "30%",
-      duration: 0.9,
-      debounce: 350,
+      type: "mandatory",
+      duration: 1.05,
+      debounce: 260,
     });
 
     // top of page — the full system
@@ -25,6 +24,9 @@ export default function SectionSnap({ ids }: { ids: string[] }) {
       const el = document.getElementById(id);
       if (el) snap.addElement(el, { align: ["start"] });
     }
+    // the footer is the final landing
+    const footer = document.querySelector("footer");
+    if (footer instanceof HTMLElement) snap.addElement(footer, { align: ["end"] });
     return () => {
       snap.destroy();
     };

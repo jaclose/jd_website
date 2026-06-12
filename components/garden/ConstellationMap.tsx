@@ -90,7 +90,7 @@ export default function ConstellationMap() {
           );
         })}
       </svg>
-      <figcaption className="label mt-4 text-center !text-[8px] text-dim">
+      <figcaption className="label mt-4 text-center text-[8px]! text-dim">
         GLD-7 CLUSTER · SURVEY CHART · THE LINE GROWS WITH THE WORK
       </figcaption>
     </figure>

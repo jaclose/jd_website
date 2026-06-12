@@ -77,29 +77,30 @@ export default function SpatialHero() {
         )}
       </div>
 
-      {/* editorial title, lower left */}
+      {/* editorial title, lower left — rides ABOVE the system, so planets
+          glide behind the name instead of eclipsing it */}
       <div
         ref={title}
-        className="pointer-events-none fixed bottom-[12vh] left-6 z-20 md:left-14"
+        className="pointer-events-none fixed bottom-[12vh] left-6 z-45 md:left-14"
       >
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.4, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <p className="label mb-4 text-starlight/80">
+          <p className="label mb-4 text-starlight/80 [text-shadow:0_1px_14px_rgba(3,4,8,0.9)]">
             JD-1184 · A PERSONAL UNIVERSE
           </p>
-          <h1 className="font-display text-[clamp(2.8rem,8vw,6.5rem)] font-light leading-[0.95] tracking-tight text-ink">
+          <h1 className="font-display text-[clamp(2.8rem,8vw,6.5rem)] font-light leading-[0.95] tracking-tight text-ink [text-shadow:0_2px_30px_rgba(3,4,8,0.95),0_0_60px_rgba(3,4,8,0.6)]">
             Jafar
             <br />
             Dabbagh
           </h1>
-          <p className="mt-5 max-w-sm font-serif text-lg italic leading-relaxed text-faint">
+          <p className="mt-5 max-w-sm font-serif text-lg italic leading-relaxed text-faint [text-shadow:0_1px_12px_rgba(3,4,8,0.9)]">
             Essays, field notes, and a garden that terraforms its planet —
             dispatches from study, faith, and the battle to stay present.
           </p>
-          <p className="label mt-6 !text-[9px] text-dim">
+          <p className="label mt-6 text-[9px]! text-dim">
             HOVER A BODY TO SCAN — CLICK TO TRAVEL
           </p>
         </motion.div>
@@ -108,7 +109,7 @@ export default function SpatialHero() {
       {/* mission HUD, upper right — live readings from the system */}
       <div
         ref={hud}
-        className="pointer-events-none fixed right-6 top-6 z-20 hidden text-right md:right-14 md:block"
+        className="pointer-events-none fixed right-6 top-6 z-45 hidden text-right md:right-14 md:block"
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -116,17 +117,17 @@ export default function SpatialHero() {
           transition={{ duration: 1.4, delay: 1.1 }}
           className="space-y-1.5"
         >
-          <p className="label !text-[9px] text-faint">
+          <p className="label text-[9px]! text-faint">
             {sol ? `SOL ${sol}` : " "} · SYS JD-1184
           </p>
-          <p className="label !text-[9px] text-dim">
+          <p className="label text-[9px]! text-dim">
             {essays.length} ESSAYS IN ORBIT · {fieldNotes.length} DISPATCHES
           </p>
-          <p className="label !text-[9px] text-dim">
+          <p className="label text-[9px]! text-dim">
             BIOSPHERE {gardenState.points} PTS · VEG{" "}
             {Math.round(gardenState.vegetation * 100)}%
           </p>
-          <p className="label !text-[9px] text-dim">
+          <p className="label text-[9px]! text-dim">
             ACHIEVEMENTS {unlockedCount}/{achievements.length} ·{" "}
             <span className="text-leaf">ALL SYSTEMS NOMINAL</span>
           </p>
@@ -136,7 +137,7 @@ export default function SpatialHero() {
       {/* scroll hint */}
       <div
         ref={hint}
-        className="pointer-events-none fixed bottom-7 left-1/2 z-20 -translate-x-1/2"
+        className="pointer-events-none fixed bottom-7 left-1/2 z-45 -translate-x-1/2"
       >
         <motion.div
           className="flex flex-col items-center gap-3"
@@ -144,11 +145,11 @@ export default function SpatialHero() {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 1.6 }}
         >
-          <span className="label !text-[9px] text-dim">
+          <span className="label text-[9px]! text-dim">
             SCROLL TO COLLAPSE THE SYSTEM
           </span>
           <motion.span
-            className="block h-9 w-px bg-gradient-to-b from-starlight/70 to-transparent"
+            className="block h-9 w-px bg-linear-to-b from-starlight/70 to-transparent"
             animate={{ scaleY: [1, 0.55, 1], opacity: [0.9, 0.4, 0.9] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           />

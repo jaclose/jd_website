@@ -38,7 +38,7 @@ export default function SeedCutscene() {
   return (
     <section className="relative h-screen overflow-hidden bg-[#05060c]">
       {/* sky — pre-dawn indigo with a breath of warmth at the horizon */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#04050b] via-[#0a0e1e] to-[#1a1610]" />
+      <div className="absolute inset-0 bg-linear-to-b from-[#04050b] via-[#0a0e1e] to-[#1a1610]" />
       <div
         aria-hidden
         className="absolute inset-x-0 h-[34vh]"
@@ -90,7 +90,7 @@ export default function SeedCutscene() {
 
       {/* soil */}
       <div
-        className="absolute inset-x-0 bottom-0 bg-gradient-to-b from-[#1b1712] to-[#0b0906]"
+        className="absolute inset-x-0 bottom-0 bg-linear-to-b from-[#1b1712] to-[#0b0906]"
         style={{ top: groundY }}
       />
       <div
@@ -121,7 +121,7 @@ export default function SeedCutscene() {
           <motion.span
             key={i}
             aria-hidden
-            className="absolute h-[2px] w-[2px] rounded-full bg-[#9a8a64]/40"
+            className="absolute h-0.5 w-0.5 rounded-full bg-[#9a8a64]/40"
             style={{ left: `${x}%`, top: `calc(${groundY} - ${30 + i * 18}px)` }}
             animate={{ y: [-6, -26], x: [0, i % 2 ? 14 : -12], opacity: [0, 0.7, 0] }}
             transition={{ duration: 7 + i * 1.4, repeat: Infinity, ease: "linear", delay: i * 1.1 }}
@@ -138,56 +138,52 @@ export default function SeedCutscene() {
         }
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        {/* the seed — falls within the still frame, with an after-image trail */}
-        {!reduced && stage !== "void" && (
-          <>
-            {[0, 0.08, 0.16].map((lag, i) => (
-              <motion.span
-                key={i}
-                aria-hidden
-                className="absolute left-1/2 h-4 w-3 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] bg-[#b88d5c]"
-                style={{ marginLeft: -6, opacity: i === 0 ? 1 : 0.22 - i * 0.06 }}
-                initial={{ top: "-6%", rotate: -30 }}
-                animate={
-                  stage === "falling"
-                    ? { top: "-6%" }
-                    : {
-                        top: `calc(${groundY} - 13px)`,
-                        rotate: 14,
-                        opacity: i === 0 ? 1 : 0,
-                      }
-                }
-                transition={{
-                  top: {
-                    duration: 1.5,
-                    delay: lag,
-                    ease: [0.45, 0.02, 0.78, 0.6], // gravity
-                  },
-                  rotate: { duration: 1.5, delay: lag },
-                  opacity: { duration: 0.3, delay: 1.2 },
-                }}
-              />
-            ))}
-          </>
-        )}
-        {/* at rest — the seed stays in the furrow it made */}
-        {(landed || reduced) && (
-          <motion.span
+        {/* ONE seed — it falls when the cutscene starts and simply stays */}
+        {(stage !== "void" || reduced) && (
+          <motion.svg
             aria-hidden
-            className="absolute left-1/2 h-4 w-3 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] bg-[#b88d5c]"
-            style={{ marginLeft: -6, top: `calc(${groundY} - 13px)`, rotate: 14 }}
-            initial={{ opacity: reduced ? 1 : 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
+            className="absolute left-1/2 -ml-1.5"
+            width="14"
+            height="19"
+            viewBox="0 0 20 27"
+            initial={
+              reduced
+                ? { top: `calc(${groundY} - 18px)`, rotate: 10 }
+                : { top: "-6%", rotate: -34 }
+            }
+            animate={{ top: `calc(${groundY} - 18px)`, rotate: 10 }}
+            transition={{
+              top: { duration: 1.5, ease: [0.45, 0.02, 0.78, 0.6] }, // gravity
+              rotate: { duration: 1.5 },
+            }}
           >
-            <span className="absolute left-[2px] top-[2px] h-[7px] w-[4px] rounded-full bg-[#d8b288]/80" />
-          </motion.span>
+            <defs>
+              <linearGradient id="seed-husk-g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#d8a468" />
+                <stop offset="0.45" stopColor="#b88d5c" />
+                <stop offset="1" stopColor="#7e5a36" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M10 1 C15.5 6 18.5 12 18 18 C17.5 23 14.2 26 10 26 C5.8 26 2.5 23 2 18 C1.5 12 4.5 6 10 1 Z"
+              fill="url(#seed-husk-g)"
+            />
+            <path
+              d="M7 6 C5.5 9 4.8 13 5.2 17"
+              fill="none"
+              stroke="#ecd2a8"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              opacity="0.75"
+            />
+            <ellipse cx="10" cy="2.4" rx="1.5" ry="1" fill="#5e3f22" opacity="0.9" />
+          </motion.svg>
         )}
         {/* the furrow */}
         {(landed || reduced) && (
           <motion.span
             aria-hidden
-            className="absolute left-1/2 h-[7px] w-7 -translate-x-1/2 rounded-[50%] border-b border-[rgba(232,230,225,0.25)]"
+            className="absolute left-1/2 h-1.75 w-7 -translate-x-1/2 rounded-[50%] border-b border-[rgba(232,230,225,0.25)]"
             style={{ top: `calc(${groundY} - 3px)` }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -270,7 +266,7 @@ export default function SeedCutscene() {
       </div>
 
       <motion.p
-        className="label absolute bottom-8 left-1/2 z-20 -translate-x-1/2 !text-[9px] text-dim"
+        className="label absolute bottom-8 left-1/2 z-20 -translate-x-1/2 text-[9px]! text-dim"
         initial={{ opacity: 0 }}
         animate={{ opacity: stage === "settled" ? 1 : 0 }}
         transition={{ delay: 0.6, duration: 1 }}

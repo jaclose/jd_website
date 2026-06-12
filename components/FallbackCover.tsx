@@ -28,11 +28,11 @@ export default function FallbackCover({
       {/* a small moon on the ring */}
       <span className="absolute left-[18%] top-[26%] h-1.5 w-1.5 rounded-full bg-starlight/70 shadow-[0_0_10px_2px_rgba(212,184,134,0.4)]" />
       {index && (
-        <span className="label absolute bottom-3 left-4 !text-[8px] !tracking-[0.3em] text-dim">
+        <span className="label absolute bottom-3 left-4 text-[8px]! tracking-[0.3em]! text-dim">
           {index}
         </span>
       )}
-      <span className="absolute inset-0 bg-gradient-to-t from-space/60 to-transparent" />
+      <span className="absolute inset-0 bg-linear-to-t from-space/60 to-transparent" />
     </div>
   );
 }
