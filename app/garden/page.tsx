@@ -26,14 +26,23 @@ export default function GardenPage() {
         <section className="mx-auto max-w-4xl px-6 py-28 text-center md:px-10">
           <Reveal>
             <p className="label mb-8 text-leaf/80">TERRAFORMING REPORT</p>
-            <p className="mx-auto max-w-2xl font-serif text-2xl leading-relaxed text-[rgba(232,230,225,0.85)]">
-              The planet keeps the score. <strong>{bio.points} growth points</strong>{" "}
-              across {bio.count} trees — vegetation at{" "}
-              {Math.round(bio.vegetation * 100)}%
-              {bio.water > 0
-                ? `, hydrosphere at ${Math.round(bio.water * 100)}%.`
-                : ". The first seas condense at 50 points."}
-            </p>
+            {bio.count === 0 ? (
+              <p className="mx-auto max-w-2xl font-serif text-2xl leading-relaxed text-[rgba(232,230,225,0.85)]">
+                The planet keeps the score — and the score is{" "}
+                <strong>zero</strong>. Regolith from pole to pole, waiting.
+                When the first skill is planted the green will show from orbit
+                at 15 growth points; the first seas condense at 50.
+              </p>
+            ) : (
+              <p className="mx-auto max-w-2xl font-serif text-2xl leading-relaxed text-[rgba(232,230,225,0.85)]">
+                The planet keeps the score. <strong>{bio.points} growth points</strong>{" "}
+                across {bio.count} trees — vegetation at{" "}
+                {Math.round(bio.vegetation * 100)}%
+                {bio.water > 0
+                  ? `, hydrosphere at ${Math.round(bio.water * 100)}%.`
+                  : ". The first seas condense at 50 points."}
+              </p>
+            )}
             <div className="mx-auto mt-12 max-w-md space-y-5">
               {[
                 ["VEGETATION", bio.vegetation, "bg-leaf"],

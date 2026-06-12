@@ -23,6 +23,8 @@ export const hero = {
   /** card pinned open by a touch tap */
   pinned: false,
   screen: new Map<string, ScreenPos>(),
+  /** current orbital angle per body — read by trails and the comet tail */
+  theta: new Map<string, number>(),
 };
 
 const listeners = new Set<() => void>();

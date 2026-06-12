@@ -2,6 +2,22 @@
  * The Garden — every skill, practice, or pursuit is a tree.
  * Stage advances as the work deepens:
  *   0 seed · 1 sprout · 2 sapling · 3 young tree · 4 grown · 5 flourishing
+ *
+ * ── HOW TO PLANT ──────────────────────────────────────────────────────
+ * Add an entry to `skills` below and everything updates by itself:
+ * the rows on /garden, the teaser on the homepage, the biosphere score,
+ * and the garden planet in the hero (green shows from orbit at 15
+ * points; the first seas condense at 50).
+ *
+ *   {
+ *     id: "medicine",              // unique slug — shapes the tree
+ *     name: "Medicine",
+ *     domain: "mind",              // mind | craft | body | spirit
+ *     planted: "2021-09-01",       // when the pursuit began
+ *     stage: 0,                    // 0–5, raise it as the work deepens
+ *     note: "The long road.",      // one line shown on its plot
+ *   },
+ * ─────────────────────────────────────────────────────────────────────
  */
 export interface Skill {
   id: string;
@@ -12,72 +28,8 @@ export interface Skill {
   note: string;
 }
 
-export const skills: Skill[] = [
-  {
-    id: "medicine",
-    name: "Medicine",
-    domain: "mind",
-    planted: "2021-09-01",
-    stage: 3,
-    note: "The long road. Years compressed into months, anatomy of the test after test.",
-  },
-  {
-    id: "writing",
-    name: "Writing",
-    domain: "craft",
-    planted: "2025-02-11",
-    stage: 3,
-    note: "Essays and field notes — learning to say the thing beneath the thing.",
-  },
-  {
-    id: "faith",
-    name: "Faith",
-    domain: "spirit",
-    planted: "2003-01-01",
-    stage: 4,
-    note: "Faith without forecasts. The oldest tree in the garden.",
-  },
-  {
-    id: "anthropology",
-    name: "Anthropology",
-    domain: "mind",
-    planted: "2022-01-15",
-    stage: 2,
-    note: "Reading the human record — threads of serendipity, veins of trial.",
-  },
-  {
-    id: "fiction",
-    name: "Fiction",
-    domain: "craft",
-    planted: "2025-03-07",
-    stage: 1,
-    note: "Cinders beneath a fading night. First experiments in story.",
-  },
-  {
-    id: "discipline",
-    name: "Discipline",
-    domain: "body",
-    planted: "2024-06-01",
-    stage: 2,
-    note: "How we behave when it matters least — practiced daily, in private.",
-  },
-  {
-    id: "web-craft",
-    name: "Web Craft",
-    domain: "craft",
-    planted: "2026-06-11",
-    stage: 1,
-    note: "This site. Building a small universe by hand.",
-  },
-  {
-    id: "arabic",
-    name: "Arabic",
-    domain: "spirit",
-    planted: "2020-01-01",
-    stage: 2,
-    note: "The language of the texts I keep returning to.",
-  },
-];
+/** Nothing planted yet — the ground is prepared. */
+export const skills: Skill[] = [];
 
 export const STAGE_NAMES = [
   "seed",
@@ -87,6 +39,8 @@ export const STAGE_NAMES = [
   "grown",
   "flourishing",
 ] as const;
+
+export const DOMAIN_NAMES = ["mind", "craft", "body", "spirit"] as const;
 
 /**
  * The greening function. The garden terraforms its planet:

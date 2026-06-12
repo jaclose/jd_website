@@ -98,9 +98,15 @@ export const bodies: CelestialBody[] = [
     tilt: 0.04,
     color: "#8a7a5c",
     accent: "#9fce8f",
-    blurb: `A terraforming world. ${bio.count} trees planted, ${bio.grown} fully grown — biosphere at ${bio.points} growth points. Each skill that matures turns it greener; at 50 points, the first seas condense.`,
+    blurb:
+      bio.count === 0
+        ? "A barren world, prepared for terraforming. Nothing has been planted yet — each skill that takes root will turn it greener, and at 50 growth points the first seas condense."
+        : `A terraforming world. ${bio.count} trees planted, ${bio.grown} fully grown — biosphere at ${bio.points} growth points. Each skill that matures turns it greener; at 50 points, the first seas condense.`,
     links: [{ label: "Enter the garden", href: "/garden" }],
-    footnote: `latest sapling · ${skills[skills.length - 1].name.toLowerCase()} (${STAGE_NAMES[skills[skills.length - 1].stage]})`,
+    footnote:
+      bio.count === 0
+        ? "surface survey · regolith, waiting"
+        : `latest sapling · ${skills[skills.length - 1].name.toLowerCase()} (${STAGE_NAMES[skills[skills.length - 1].stage]})`,
   },
   {
     id: "about",

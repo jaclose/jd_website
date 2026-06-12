@@ -22,7 +22,7 @@ function canvas(w: number, h: number) {
 function toTexture(c: HTMLCanvasElement) {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
+  t.anisotropy = 8;
   return t;
 }
 
@@ -40,39 +40,227 @@ export function glowTexture(): THREE.Texture {
   return toTexture(c);
 }
 
-/** banded gas giant */
-export function gasGiantTexture(base: string, accent: string): THREE.Texture {
+/** sharp-cored star dot — keeps the points round instead of square */
+export function starTexture(): THREE.Texture {
+  const c = canvas(64, 64);
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.18, "rgba(255,255,255,0.9)");
+  g.addColorStop(0.4, "rgba(255,255,255,0.25)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return toTexture(c);
+}
+
+/** anamorphic lens streak for the sun */
+export function streakTexture(): THREE.Texture {
+  const c = canvas(256, 32);
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 256, 0);
+  g.addColorStop(0, "rgba(255,255,255,0)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.9)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 32);
+  const v = ctx.createLinearGradient(0, 0, 0, 32);
+  v.addColorStop(0, "rgba(0,0,0,1)");
+  v.addColorStop(0.5, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, 256, 32);
+  return toTexture(c);
+}
+
+/** the distant galactic band — drawn as soft knots along a diagonal */
+export function milkyWayTexture(): THREE.Texture {
+  const w = 1024,
+    h = 512;
+  const c = canvas(w, h);
+  const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(777);
+  for (let i = 0; i < 420; i++) {
+    const t = rnd();
+    const x = t * w;
+    const y = h / 2 + (rnd() - 0.5) * h * (0.16 + 0.1 * Math.sin(t * Math.PI));
+    const r = 8 + rnd() * 46;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const warm = rnd() > 0.7;
+    const a = 0.015 + rnd() * 0.035;
+    g.addColorStop(0, warm ? `rgba(238,224,200,${a})` : `rgba(200,212,238,${a})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // bright knots
+  for (let i = 0; i < 140; i++) {
+    const x = rnd() * w;
+    const y = h / 2 + (rnd() - 0.5) * h * 0.2;
+    ctx.fillStyle = `rgba(235,238,245,${0.12 + rnd() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(x, y, 0.5 + rnd() * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return toTexture(c);
+}
+
+/** wispy nebula blot (tint via material color) */
+export function nebulaTexture(seed = 99): THREE.Texture {
+  const c = canvas(256, 256);
+  const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(seed);
+  for (let i = 0; i < 26; i++) {
+    const x = 70 + rnd() * 116;
+    const y = 70 + rnd() * 116;
+    const r = 24 + rnd() * 70;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(255,255,255,${0.05 + rnd() * 0.09})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
+  }
+  return toTexture(c);
+}
+
+/** the sun's granulated surface */
+export function sunTexture(): THREE.Texture {
   const w = 512,
     h = 256;
   const c = canvas(w, h);
   const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(1111);
+  ctx.fillStyle = "#ffe3ad";
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1400; i++) {
+    const x = rnd() * w;
+    const y = rnd() * h;
+    const r = 2 + rnd() * 9;
+    const hot = rnd() > 0.5;
+    ctx.fillStyle = hot ? "rgba(255,246,220,0.16)" : "rgba(216,150,74,0.13)";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // a few darker faculae near the "equator"
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = "rgba(190,120,52,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(rnd() * w, h * (0.35 + rnd() * 0.3), 5 + rnd() * 9, 3 + rnd() * 4, rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return toTexture(c);
+}
+
+/** banded gas giant — layered flows, storm oval, polar darkening */
+export function gasGiantTexture(base: string, accent: string): THREE.Texture {
+  const w = 1024,
+    h = 512;
+  const c = canvas(w, h);
+  const ctx = c.getContext("2d")!;
   const rnd = mulberry32(1184);
+
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
+
+  // wide soft latitude bands
+  const palette = [accent, "#8a5f37", "#e6d2b0", "#7a4f30", base, "#caa06e"];
   let y = 0;
   while (y < h) {
-    const bandH = 8 + rnd() * 26;
-    const a = 0.08 + rnd() * 0.3;
-    ctx.fillStyle = rnd() > 0.5 ? accent : "#3d2c1d";
-    ctx.globalAlpha = a;
-    // wobbly band
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x = 0; x <= w; x += 16) {
-      ctx.lineTo(x, y + Math.sin(x * 0.04 + y) * 3);
-    }
-    ctx.lineTo(w, y + bandH);
-    ctx.lineTo(0, y + bandH);
-    ctx.closePath();
-    ctx.fill();
-    y += bandH;
+    const bandH = 14 + rnd() * 52;
+    const col = palette[Math.floor(rnd() * palette.length)];
+    const grad = ctx.createLinearGradient(0, y, 0, y + bandH);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(0.5, col);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.globalAlpha = 0.32 + rnd() * 0.3;
+    ctx.fillRect(0, y, w, bandH);
+    y += bandH * (0.6 + rnd() * 0.5);
   }
-  // the great storm
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = accent;
+
+  // turbulent flow streaks inside the bands
+  ctx.globalAlpha = 0.1;
+  for (let i = 0; i < 260; i++) {
+    const sy = rnd() * h;
+    const sx = rnd() * w;
+    const len = 40 + rnd() * 220;
+    const amp = 1.5 + rnd() * 5;
+    const light = rnd() > 0.5;
+    ctx.strokeStyle = light ? "#f2e4c8" : "#5e3c22";
+    ctx.lineWidth = 1 + rnd() * 3;
+    ctx.beginPath();
+    for (let x = 0; x <= len; x += 8) {
+      const px = sx + x;
+      const py = sy + Math.sin(x * 0.05 + sy) * amp;
+      if (x === 0) ctx.moveTo(px % w, py);
+      else ctx.lineTo(px % w, py);
+    }
+    ctx.stroke();
+  }
+
+  // the great storm — a pale oval with a swirl
+  ctx.globalAlpha = 0.85;
+  const stx = w * 0.68,
+    sty = h * 0.6;
+  const storm = ctx.createRadialGradient(stx, sty, 2, stx, sty, 46);
+  storm.addColorStop(0, "#f4e6cb");
+  storm.addColorStop(0.55, accent);
+  storm.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = storm;
+  ctx.save();
+  ctx.translate(stx, sty);
+  ctx.scale(1.9, 1);
+  ctx.translate(-stx, -sty);
   ctx.beginPath();
-  ctx.ellipse(w * 0.68, h * 0.62, 26, 12, 0, 0, Math.PI * 2);
+  ctx.arc(stx, sty, 46, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = "#8a5f37";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(stx, sty, 56, 24, 0, 0.4, Math.PI * 1.7);
+  ctx.stroke();
+
+  // polar darkening
+  for (const [py, dir] of [
+    [0, 1],
+    [h, -1],
+  ] as const) {
+    const pole = ctx.createLinearGradient(0, py, 0, py + dir * h * 0.18);
+    pole.addColorStop(0, "rgba(40,24,12,0.55)");
+    pole.addColorStop(1, "rgba(40,24,12,0)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = pole;
+    ctx.fillRect(0, Math.min(py, py + dir * h * 0.18), w, h * 0.18);
+  }
+  ctx.globalAlpha = 1;
+  return toTexture(c);
+}
+
+/** ring system — concentric translucent bands with a Cassini-like gap */
+export function ringTexture(accent: string): THREE.Texture {
+  const s = 512;
+  const c = canvas(s, s);
+  const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(31);
+  const cx = s / 2;
+  ctx.translate(cx, cx);
+  for (let r = s * 0.18; r < s * 0.5; r += 1.2) {
+    const t = (r - s * 0.18) / (s * 0.32);
+    // density profile: bright inner band, gap at ~0.62, fainter outer
+    let a = 0.5 * Math.sin(t * Math.PI) + 0.18;
+    if (t > 0.58 && t < 0.68) a *= 0.12; // the gap
+    if (t > 0.9) a *= 0.5;
+    a *= 0.55 + rnd() * 0.45;
+    ctx.strokeStyle = rnd() > 0.75 ? "rgba(240,228,205,1)" : accent;
+    ctx.globalAlpha = Math.max(0, a) * 0.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.globalAlpha = 1;
   return toTexture(c);
 }
@@ -82,22 +270,71 @@ export function gasGiantTexture(base: string, accent: string): THREE.Texture {
  * barren regolith first, green creep as skills grow, seas after 50 points.
  */
 export function gardenTexture(vegetation: number, water: number): THREE.Texture {
-  const w = 512,
-    h = 256;
+  const w = 1024,
+    h = 512;
   const c = canvas(w, h);
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(4242);
 
-  // barren base
-  ctx.fillStyle = "#7d6c50";
+  // barren base — rusted regolith with tonal drift
+  const base = ctx.createLinearGradient(0, 0, 0, h);
+  base.addColorStop(0, "#6e5f48");
+  base.addColorStop(0.5, "#7d6c50");
+  base.addColorStop(1, "#665741");
+  ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 900; i++) {
-    ctx.fillStyle = rnd() > 0.5 ? "#8a7a5c" : "#6e5d44";
-    ctx.globalAlpha = 0.25;
-    const r = 2 + rnd() * 14;
+
+  // broad geological provinces
+  for (let i = 0; i < 26; i++) {
+    ctx.fillStyle = rnd() > 0.5 ? "#8a7a5c" : "#5e4f3a";
+    ctx.globalAlpha = 0.12 + rnd() * 0.1;
+    const r = 40 + rnd() * 150;
+    ctx.beginPath();
+    ctx.ellipse(rnd() * w, rnd() * h, r * (1.2 + rnd()), r * 0.6, rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // fine speckle
+  for (let i = 0; i < 1600; i++) {
+    ctx.fillStyle = rnd() > 0.5 ? "#94835f" : "#564834";
+    ctx.globalAlpha = 0.1 + rnd() * 0.16;
+    const r = 1 + rnd() * 6;
     ctx.beginPath();
     ctx.arc(rnd() * w, rnd() * h, r, 0, Math.PI * 2);
     ctx.fill();
+  }
+  // craters — rim light over shadowed floor
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * w;
+    const y = rnd() * h;
+    const r = 3 + rnd() * 16;
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle = "rgba(40,32,22,0.8)";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = "rgba(220,205,175,0.65)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(x, y - r * 0.18, r, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
+  }
+  // dune streaks
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = "#9a8a64";
+  for (let i = 0; i < 90; i++) {
+    const sy = rnd() * h;
+    ctx.lineWidth = 0.8 + rnd();
+    ctx.beginPath();
+    const sx = rnd() * w;
+    const len = 30 + rnd() * 120;
+    for (let x = 0; x <= len; x += 10) {
+      const px = sx + x;
+      const py = sy + Math.sin(x * 0.06 + sy) * 2;
+      if (x === 0) ctx.moveTo(px % w, py);
+      else ctx.lineTo(px % w, py);
+    }
+    ctx.stroke();
   }
 
   // seas condense first in lowlands
@@ -118,7 +355,6 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
     ctx.fillStyle = t > 0.66 ? "#9fce8f" : t > 0.33 ? "#5d8b54" : "#42693c";
     ctx.globalAlpha = 0.32;
     const r = 3 + rnd() * 16;
-    // denser near equator, like a habitable belt
     const band = h * (0.5 + (rnd() - 0.5) * (0.35 + vegetation * 0.6));
     ctx.beginPath();
     ctx.arc(rnd() * w, band, r, 0, Math.PI * 2);
@@ -136,22 +372,48 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   return toTexture(c);
 }
 
-/** speckled rocky world */
+/** cratered rocky world */
 export function rockyTexture(base: string, fleck: string, seed = 7): THREE.Texture {
-  const w = 256,
-    h = 128;
+  const w = 512,
+    h = 256;
   const c = canvas(w, h);
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(seed);
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 700; i++) {
+  // maria — large dark plains
+  for (let i = 0; i < 14; i++) {
+    ctx.fillStyle = "rgba(30,26,24,0.5)";
+    ctx.globalAlpha = 0.16 + rnd() * 0.14;
+    const r = 22 + rnd() * 70;
+    ctx.beginPath();
+    ctx.ellipse(rnd() * w, rnd() * h, r * 1.4, r * 0.8, rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (let i = 0; i < 900; i++) {
     ctx.fillStyle = rnd() > 0.5 ? fleck : "#00000022";
-    ctx.globalAlpha = 0.18 + rnd() * 0.2;
-    const r = 1 + rnd() * 7;
+    ctx.globalAlpha = 0.14 + rnd() * 0.18;
+    const r = 1 + rnd() * 6;
     ctx.beginPath();
     ctx.arc(rnd() * w, rnd() * h, r, 0, Math.PI * 2);
     ctx.fill();
+  }
+  // craters
+  for (let i = 0; i < 38; i++) {
+    const x = rnd() * w;
+    const y = rnd() * h;
+    const r = 2 + rnd() * 10;
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = "rgba(20,16,14,0.85)";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.42;
+    ctx.strokeStyle = "rgba(235,225,212,0.6)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y - r * 0.15, r, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
   }
   ctx.globalAlpha = 1;
   return toTexture(c);

@@ -30,7 +30,10 @@ export default function FieldNotesPage() {
         <div className="mt-20 space-y-20">
           {fieldNotes.map((n, i) => (
             <Reveal key={n.slug} delay={i * 0.05}>
-              <article className="relative border-l border-[rgba(159,216,232,0.25)] pl-8 md:pl-10">
+              <article
+                id={n.slug}
+                className="relative scroll-mt-28 border-l border-[rgba(159,216,232,0.25)] pl-8 md:pl-10"
+              >
                 <span
                   aria-hidden
                   className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-comet shadow-[0_0_14px_2px_rgba(159,216,232,0.5)]"

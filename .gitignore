@@ -30,3 +30,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw site-export assets (curated copies live in public/)
+04 ✍️ DabbaghMed/

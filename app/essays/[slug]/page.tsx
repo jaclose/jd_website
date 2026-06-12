@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { essays, essayBySlug, formatDate, readingTime } from "@/lib/content";
+import { essayMeta } from "@/data/meta";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import ReadingProgress from "@/components/ReadingProgress";
@@ -36,6 +38,7 @@ export default async function EssayPage({
   const idx = essays.findIndex((e) => e.slug === slug);
   const prev = essays[idx + 1]; // older
   const next = essays[idx - 1]; // newer
+  const meta = essayMeta[slug];
 
   return (
     <>
@@ -55,14 +58,51 @@ export default async function EssayPage({
           <h1 className="font-display text-[clamp(2.2rem,6vw,4rem)] font-light leading-[1.08] text-ink">
             {essay.title}
           </h1>
-          <p className="label mt-8 !text-[10px] text-dim">
-            {formatDate(essay.date).toUpperCase()} · {readingTime(essay.words).toUpperCase()} READ
-          </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Image
+              src="/brand/avatar.png"
+              alt=""
+              width={26}
+              height={26}
+              className="h-[26px] w-[26px]"
+            />
+            <p className="label !text-[10px] text-dim">
+              BY JAFAR DABBAGH · {formatDate(essay.date).toUpperCase()} ·{" "}
+              {readingTime(essay.words).toUpperCase()} READ
+            </p>
+          </div>
           <span
             aria-hidden
             className="mx-auto mt-10 block h-px w-24 bg-gradient-to-r from-transparent via-starlight/60 to-transparent"
           />
         </header>
+
+        {meta && (
+          <figure className="mb-16">
+            <div
+              className={`relative overflow-hidden ${
+                meta.aspect === "portrait"
+                  ? "mx-auto aspect-[3/4] max-w-md"
+                  : meta.aspect === "square"
+                    ? "mx-auto aspect-square max-w-lg"
+                    : "aspect-[3/2]"
+              }`}
+            >
+              <Image
+                src={meta.cover}
+                alt={meta.alt}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-space/40 to-transparent" />
+            </div>
+            <figcaption className="label mt-4 text-center !text-[8px] !tracking-[0.26em] text-dim">
+              {meta.alt.toUpperCase()}
+            </figcaption>
+          </figure>
+        )}
 
         <article
           className="prose-space dropcap"

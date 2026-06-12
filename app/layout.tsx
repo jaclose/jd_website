@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono, Amiri } from "next/font/google";
+import SmoothScroll from "@/components/SmoothScroll";
+import Cursor from "@/components/Cursor";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -42,7 +44,9 @@ export default function RootLayout({
         id="page-root"
         className={`${fraunces.variable} ${cormorant.variable} ${plexMono.variable} ${amiri.variable} grain`}
       >
+        <SmoothScroll />
         {children}
+        <Cursor />
       </body>
     </html>
   );

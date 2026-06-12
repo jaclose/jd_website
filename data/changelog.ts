@@ -14,6 +14,21 @@ export const changelog: LogEntry[] = [
   {
     date: "2026-06-12",
     type: "feat",
+    message:
+      "the masterpiece pass — deep sky, ring systems, magnetic hover · DabbaghMed comes aboard · essays become a gallery",
+    additions: 2746,
+    deletions: 608,
+  },
+  {
+    date: "2026-06-12",
+    type: "garden",
+    message: "the garden cleared to honest zero — one seed rests, unsown",
+    additions: 1,
+    deletions: 18,
+  },
+  {
+    date: "2026-06-12",
+    type: "feat",
     message: "GLD-7 charted — achievements constellation · the pulsar speaks Arabic",
     additions: 318,
     deletions: 6,
@@ -42,8 +57,8 @@ export const changelog: LogEntry[] = [
   {
     date: "2026-06-11",
     type: "garden",
-    message: "planted the garden — 8 trees, biosphere at 18 points",
-    additions: 8,
+    message: "garden plots surveyed — the greening function awaits its first seed",
+    additions: 1,
     deletions: 0,
   },
   {

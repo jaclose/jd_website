@@ -26,6 +26,18 @@ html {
   scroll-behavior: smooth;
 }
 
+/* lenis drives the scroll when active */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis {
+  scroll-behavior: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
 body {
   background: var(--color-space);
   color: var(--color-ink);

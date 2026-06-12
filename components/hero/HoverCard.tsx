@@ -3,7 +3,14 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { bodies } from "@/data/system";
-import { hero, useHovered, setHovered, requestUnhover, BAR_H } from "./store";
+import {
+  hero,
+  useHovered,
+  setHovered,
+  requestUnhover,
+  slotCenters,
+  BAR_H,
+} from "./store";
 
 const CARD_W = 330;
 const GAP = 30;
@@ -12,6 +19,10 @@ const GAP = 30;
  * The scan card: a thin line draws from the hovered body to a panel of
  * information. Positions are updated imperatively from the scene's
  * published screen coordinates — React only mounts/unmounts the card.
+ *
+ * The card never appears before it has a valid position (it mounts
+ * hidden), chooses its side from the body's half of the screen, and
+ * glides after the body each frame instead of jumping.
  */
 export default function HoverCard() {
   const hovered = useHovered();
@@ -23,57 +34,88 @@ export default function HoverCard() {
   const drawStart = useRef(0);
 
   useEffect(() => {
-    if (!hovered) return;
+    if (!hovered || !body) return;
     drawStart.current = performance.now();
+    const idx = bodies.findIndex((b) => b.id === hovered);
     let raf = 0;
-    const tick = () => {
+    let last = performance.now();
+    let placed = false;
+    const cur = { x: 0, y: 0 };
+
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
       const s = hero.screen.get(hovered);
       const el = card.current;
-      if (s && el) {
+
+      if (s && el && Number.isFinite(s.x) && Number.isFinite(s.y)) {
         const w = window.innerWidth;
         const h = window.innerHeight;
         const cardH = el.offsetHeight || 200;
-        const docked = hero.pS > 0.85;
+        const docked = hero.pS > 0.7;
 
-        let cx: number, cy: number;
+        let tx: number, ty: number;
+        let ax = s.x,
+          ay = s.y,
+          r = s.r;
         if (docked) {
-          // card hangs below the bar, under its slot
-          cx = Math.min(Math.max(s.x - CARD_W / 2, 14), w - CARD_W - 14);
-          cy = BAR_H + 22;
+          // card hangs below the bar, under its slot — slot x is stable
+          const slotX = slotCenters(bodies.length, w)[idx] ?? s.x;
+          tx = Math.min(Math.max(slotX - CARD_W / 2, 14), w - CARD_W - 14);
+          ty = BAR_H + 22;
+          ax = slotX;
+          ay = BAR_H / 2 + 8;
+          r = 10;
         } else {
-          const right = s.x + s.r + GAP + CARD_W < w - 14;
-          cx = right ? s.x + s.r + GAP : s.x - s.r - GAP - CARD_W;
-          cx = Math.min(Math.max(cx, 14), w - CARD_W - 14);
-          cy = s.y - cardH - GAP * 0.8;
-          if (cy < 70) cy = Math.min(s.y + s.r + GAP * 0.8, h - cardH - 20);
-          cy = Math.min(Math.max(cy, 14), h - cardH - 14);
+          // side comes from the body's half of the screen — stable, no flip
+          const side = s.x < w * 0.55 ? 1 : -1;
+          tx = side > 0 ? s.x + r + GAP : s.x - r - GAP - CARD_W;
+          tx = Math.min(Math.max(tx, 14), w - CARD_W - 14);
+          ty = s.y - cardH - GAP * 0.8;
+          if (ty < BAR_H + 12) ty = Math.min(s.y + r + GAP * 0.8, h - cardH - 20);
+          ty = Math.min(Math.max(ty, 14), h - cardH - 14);
         }
-        el.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+
+        if (!placed) {
+          cur.x = tx;
+          cur.y = ty;
+          el.style.visibility = "visible";
+          placed = true;
+        } else {
+          // glide after the target — frame-rate independent
+          const k = 1 - Math.exp(-16 * dt);
+          cur.x += (tx - cur.x) * k;
+          cur.y += (ty - cur.y) * k;
+        }
+        el.style.transform = `translate3d(${cur.x}px, ${cur.y}px, 0)`;
 
         // connector: from the body's edge to the nearest card corner
-        const cornerX = Math.abs(cx - s.x) > Math.abs(cx + CARD_W - s.x) ? cx + CARD_W : cx;
-        const cornerY = Math.abs(cy - s.y) > Math.abs(cy + cardH - s.y) ? cy + cardH : cy;
-        const dx = cornerX - s.x;
-        const dy = cornerY - s.y;
+        const cornerX =
+          Math.abs(cur.x - ax) > Math.abs(cur.x + CARD_W - ax) ? cur.x + CARD_W : cur.x;
+        const cornerY =
+          Math.abs(cur.y - ay) > Math.abs(cur.y + cardH - ay) ? cur.y + cardH : cur.y;
+        const dx = cornerX - ax;
+        const dy = cornerY - ay;
         const dist = Math.hypot(dx, dy) || 1;
-        const ax = s.x + (dx / dist) * (s.r + 3);
-        const ay = s.y + (dy / dist) * (s.r + 3);
+        const sx = ax + (dx / dist) * (r + 3);
+        const sy = ay + (dy / dist) * (r + 3);
 
-        const drawT = Math.min(1, (performance.now() - drawStart.current) / 320);
+        const drawT = Math.min(1, (now - drawStart.current) / 320);
         const ease = 1 - Math.pow(1 - drawT, 3);
         if (line.current && dot.current) {
-          line.current.setAttribute("x1", String(ax));
-          line.current.setAttribute("y1", String(ay));
-          line.current.setAttribute("x2", String(ax + (cornerX - ax) * ease));
-          line.current.setAttribute("y2", String(ay + (cornerY - ay) * ease));
-          dot.current.setAttribute("cx", String(ax));
-          dot.current.setAttribute("cy", String(ay));
+          line.current.setAttribute("x1", String(sx));
+          line.current.setAttribute("y1", String(sy));
+          line.current.setAttribute("x2", String(sx + (cornerX - sx) * ease));
+          line.current.setAttribute("y2", String(sy + (cornerY - sy) * ease));
+          dot.current.setAttribute("cx", String(sx));
+          dot.current.setAttribute("cy", String(sy));
         }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hovered]);
 
   return (
@@ -87,11 +129,7 @@ export default function HoverCard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.15 } }}
           >
-            <line
-              ref={line}
-              stroke="rgba(212,184,134,0.55)"
-              strokeWidth="1"
-            />
+            <line ref={line} stroke="rgba(212,184,134,0.55)" strokeWidth="1" />
             <circle ref={dot} r="2.5" fill="#d4b886" />
           </motion.svg>
         )}
@@ -103,7 +141,7 @@ export default function HoverCard() {
             key={body.id}
             ref={card}
             className="pointer-events-auto absolute left-0 top-0 border border-[rgba(232,230,225,0.14)] bg-[rgba(5,6,10,0.88)] backdrop-blur-md"
-            style={{ width: CARD_W }}
+            style={{ width: CARD_W, visibility: "hidden" }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
             exit={{ opacity: 0, y: 6, transition: { duration: 0.18 } }}

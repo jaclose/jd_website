@@ -15,14 +15,19 @@ export const quotes: Quote[] = [
     arabic: "إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا",
   },
   {
+    text: "When your heart is alive, you are always living in the present time.",
+    source: "Ibn ʿAṭāʾ Allāh al-Iskandarī",
+    week: "2026-06-01",
+  },
+  {
     text: "The point of a test is to become someone who carries the next one with grace.",
     source: "Anatomy of the Test",
-    week: "2026-06-01",
+    week: "2026-05-25",
   },
   {
     text: "Courteous in public, careless in private — character is who you are when it matters least.",
     source: "Field Note, 23.11.2025",
-    week: "2026-05-25",
+    week: "2026-05-18",
   },
 ];
 

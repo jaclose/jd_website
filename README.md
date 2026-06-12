@@ -21,6 +21,11 @@ tree with a growth stage 0–5. The garden planet's texture is generated from
 the cumulative score — at 15 growth points vegetation shows from orbit, at 50
 the first seas condense. Grow the skills, terraform the planet.
 
+The garden ships **barren** — `skills` is an empty array until the first
+pursuit is planted. Add an entry (a template lives at the top of
+`data/garden.ts`) and the rows, the homepage teaser, the achievements, and
+the hero planet all update on the next build.
+
 ## Stack
 
 - **Next.js 15** (App Router, static output) + **TypeScript**
@@ -55,7 +60,10 @@ framework to Next.js (the project must not use the "Other" preset / a
 
 - `content/essays.json`, `content/field-notes.json`, `content/about.json` —
   migrated writing (re-run the import script to refresh from WordPress)
-- `data/garden.ts` — the trees; bump a `stage` and the planet greens
+- `data/garden.ts` — the trees; plant one with the template, bump a `stage`,
+  and the planet greens
+- `data/meta.ts` — essay/field-note cover art + pull-quote highlights
+- `data/works.ts` — the Archive (PDFs live in `public/works/`)
 - `data/quotes.ts` — quote of the week (first entry wins)
 - `data/changelog.ts` — the transmission log
 - `data/achievements.ts` — unlock conditions computed from site state
