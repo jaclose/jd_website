@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono, Amiri } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import SmoothScroll from "@/components/SmoothScroll";
 import Cursor from "@/components/Cursor";
 import VisitTracker from "@/components/VisitTracker";
@@ -49,6 +50,7 @@ export default function RootLayout({
         <VisitTracker />
         {children}
         <Cursor />
+        <Analytics />
       </body>
     </html>
   );
