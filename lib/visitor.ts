@@ -4,6 +4,7 @@
  * Supabase relay comes online; every reader gets their own record.
  */
 import type { Species } from "@/data/garden";
+import { completionistTargets } from "@/data/achievements";
 
 const KEY = "jd1184-visitor";
 
@@ -19,6 +20,10 @@ export interface VisitorState {
   achievements: Record<string, string>;
   journal: JournalEntry[];
   starter?: Species;
+  /** the visitor's chosen name — their way back in */
+  callsign?: string;
+  /** ISO dates they've visited, for streaks */
+  visits?: string[];
 }
 
 const EMPTY: VisitorState = { achievements: {}, journal: [] };
@@ -33,6 +38,8 @@ export function visitorState(): VisitorState {
       achievements: parsed.achievements ?? {},
       journal: parsed.journal ?? [],
       starter: parsed.starter,
+      callsign: parsed.callsign,
+      visits: parsed.visits ?? [],
     };
   } catch {
     return { ...EMPTY, achievements: {}, journal: [] };
@@ -57,8 +64,39 @@ export function unlockVisitor(id: string): boolean {
   const state = visitorState();
   if (state.achievements[id]) return false;
   state.achievements[id] = new Date().toISOString().slice(0, 10);
+  // The Completionist crowns a full run
+  if (id !== "completionist" && !state.achievements.completionist) {
+    const have = new Set(Object.keys(state.achievements));
+    if (completionistTargets.every((t) => have.has(t))) {
+      state.achievements.completionist = new Date().toISOString().slice(0, 10);
+    }
+  }
   save(state);
   return true;
+}
+
+export function setCallsign(name: string) {
+  const state = visitorState();
+  state.callsign = name.slice(0, 40);
+  save(state);
+  unlockVisitor("callsign");
+}
+
+/**
+ * Record this visit and award time-of-day / return-streak achievements.
+ * Safe to call on every page load.
+ */
+export function registerVisit() {
+  const state = visitorState();
+  const today = new Date().toISOString().slice(0, 10);
+  const hour = new Date().getHours();
+  const visits = new Set(state.visits ?? []);
+  const returned = visits.size > 0 && !visits.has(today);
+  visits.add(today);
+  state.visits = [...visits].slice(-30);
+  save(state);
+  if (hour >= 0 && hour < 5) unlockVisitor("night-owl");
+  if (returned) unlockVisitor("return-traveler");
 }
 
 export function addJournalEntry(text: string, name?: string): JournalEntry {

@@ -61,11 +61,7 @@ export default function TransmissionLog() {
   return (
     <section
       id="log"
-      className="relative flex min-h-svh flex-col justify-center px-6 py-24 md:px-10"
-      style={{
-        background:
-          "radial-gradient(80% 60% at 50% 100%, rgba(159,206,143,0.06) 0%, transparent 70%)",
-      }}
+      className="biome-log relative flex min-h-svh flex-col justify-center px-6 py-24 md:px-10"
     >
       <div className="mx-auto w-full max-w-5xl">
       <Reveal>
@@ -91,8 +87,8 @@ export default function TransmissionLog() {
             </span>
           </div>
 
-          {/* the graph — scrolls inside its terminal */}
-          <div className="relative max-h-[58svh] overflow-y-auto px-5 py-2">
+          {/* the graph — scrolls inside its terminal (lenis hands the wheel over) */}
+          <div data-lenis-prevent className="relative max-h-[58svh] overflow-y-auto px-5 py-2">
             <span
               aria-hidden
               className="absolute bottom-4 left-6.75 top-4 w-px bg-hairline"

@@ -12,6 +12,14 @@ export interface LogEntry {
 
 export const changelog: LogEntry[] = [
   {
+    date: "2026-06-13",
+    type: "feat",
+    message:
+      "the playable pass — a real 3D forest you walk, the Dominion war-game, essays as a TCG deck, live Signals uplink",
+    additions: 2127,
+    deletions: 975,
+  },
+  {
     date: "2026-06-12",
     type: "feat",
     message:

@@ -7,6 +7,7 @@ import ForestScene from "@/components/sections/ForestScene";
 import FieldNotesSection from "@/components/sections/FieldNotesSection";
 import WorksArchive from "@/components/sections/WorksArchive";
 import TransmissionLog from "@/components/sections/TransmissionLog";
+import SignalsSection from "@/components/sections/SignalsSection";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -14,7 +15,7 @@ export default function Home() {
     <main>
       <SpatialHero />
       <SectionSnap
-        ids={["statement", "essays", "quote", "garden", "field-notes", "archive", "log"]}
+        ids={["statement", "essays", "quote", "garden", "field-notes", "archive", "log", "signals"]}
       />
       <div className="relative z-10">
         <Statement />
@@ -24,6 +25,7 @@ export default function Home() {
         <FieldNotesSection />
         <WorksArchive />
         <TransmissionLog />
+        <SignalsSection />
         <Footer />
       </div>
     </main>

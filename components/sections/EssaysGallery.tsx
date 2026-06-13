@@ -22,11 +22,7 @@ export default function EssaysGallery() {
   return (
     <section
       id="essays"
-      className="relative flex min-h-svh flex-col overflow-hidden md:flex-row"
-      style={{
-        background:
-          "radial-gradient(120% 90% at 0% 50%, rgba(184,141,92,0.1) 0%, rgba(184,141,92,0.03) 40%, transparent 70%)",
-      }}
+      className="biome-essays relative flex min-h-svh flex-col overflow-hidden md:flex-row"
     >
       {/* ——— the cover panel ——— */}
       <div className="relative h-[36svh] w-full overflow-hidden md:h-auto md:min-h-svh md:w-[48%]">

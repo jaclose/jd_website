@@ -5,11 +5,7 @@ export default function QuoteOfWeek() {
   return (
     <section
       id="quote"
-      className="relative flex min-h-svh scroll-mt-24 items-center justify-center overflow-hidden px-6 py-24 text-center md:px-10"
-      style={{
-        background:
-          "radial-gradient(70% 60% at 50% 42%, rgba(160,140,210,0.08) 0%, rgba(160,140,210,0.02) 45%, transparent 70%)",
-      }}
+      className="biome-quote relative flex min-h-svh scroll-mt-24 items-center justify-center overflow-hidden px-6 py-24 text-center md:px-10"
     >
       {/* pulsar sweep */}
       <span

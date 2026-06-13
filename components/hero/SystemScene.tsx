@@ -133,6 +133,11 @@ function Atmosphere({
       }),
     [color, intensity]
   );
+  // the glow stands down as the system docks — pill planets stay crisp
+  useFrame(() => {
+    material.uniforms.uIntensity.value =
+      intensity * (1 - smoothstep(hero.pS, 0.55, 1) * 0.75);
+  });
   return (
     <mesh material={material} scale={1.06}>
       <sphereGeometry args={[radius, 32, 32]} />
@@ -1119,9 +1124,10 @@ function StarBody({ body, index, count }: BodyProps) {
     update(group.current, dt);
     const t = state.clock.elapsedTime;
     const pulse = isPulsar && !reduced ? 1 + Math.sin(t * 2.6) * 0.35 : 1;
+    const dockDim = 1 - smoothstep(hero.pS, 0.6, 1) * 0.6;
     halo.current.scale.setScalar(body.size * 7 * pulse);
     (halo.current.material as THREE.SpriteMaterial).opacity =
-      (isPulsar ? 0.55 + Math.sin(t * 2.6) * 0.25 : 0.6) * hero.intro;
+      (isPulsar ? 0.55 + Math.sin(t * 2.6) * 0.25 : 0.6) * hero.intro * dockDim;
   });
 
   return (
@@ -1180,7 +1186,7 @@ function Sun({ count }: { count: number }) {
     surface.current.rotation.y += dt * 0.02;
     const breathe = reduced ? 1 : 1 + Math.sin(t * 0.8) * 0.04;
     halo.current.scale.setScalar(7.5 * breathe);
-    (halo.current.material as THREE.SpriteMaterial).opacity = (0.85 - e * 0.25) * hero.intro;
+    (halo.current.material as THREE.SpriteMaterial).opacity = (0.85 - e * 0.62) * hero.intro;
     corona.current.scale.setScalar(13.5 * (reduced ? 1 : 1 + Math.sin(t * 0.5 + 2) * 0.05));
     (corona.current.material as THREE.SpriteMaterial).opacity = 0.3 * (1 - e) * hero.intro;
     flare.current.scale.setScalar(21);
@@ -1247,9 +1253,9 @@ export default function SystemScene() {
       {!reduced && (
         <EffectComposer multisampling={0}>
           <Bloom
-            intensity={0.55}
-            luminanceThreshold={0.55}
-            luminanceSmoothing={0.3}
+            intensity={0.42}
+            luminanceThreshold={0.62}
+            luminanceSmoothing={0.32}
             mipmapBlur
           />
         </EffectComposer>

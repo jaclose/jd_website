@@ -1,13 +1,15 @@
 /**
- * The Dominion — a Hearts-of-Iron-style strategic map of a life.
- * Every province is a chapter; cities, factories, and victory points
- * mark what was built there.
+ * The Dominion — the About page as a Hearts-of-Iron campaign. The world
+ * map is a life: you begin in the homeland and spend political power to
+ * justify each campaign in the order it was lived. Industrial provinces
+ * raise the PP tick; taking a province declassifies its chapter. The Old
+ * World waits across the sea — those eras have not been lived yet, and
+ * cannot be invaded without a navy.
  *
- * ── HOW TO REVISE THE MAP ─────────────────────────────────────────────
- * Edit the entries below; the About page redraws itself. Provinces with
- * `classified: true` render as "intel pending" — fill in `era`/`detail`
- * (e.g. the real school names, NerveWave's story) and flip the flag.
- * Coordinates live in a 1000×560 viewBox.
+ * ── HOW TO REVISE ─────────────────────────────────────────────────────
+ * Edit the entries below; the map redraws itself. `classified: true`
+ * renders the panel as "intel pending" until you flip it. Conquest order
+ * is set by `cost` + `requires`. Coordinates live in a 1000×520 viewBox.
  * ─────────────────────────────────────────────────────────────────────
  */
 export interface ProvinceMark {
@@ -21,30 +23,48 @@ export interface Province {
   id: string;
   name: string;
   era: string;
-  role: string; // one-line, shown under the name in the panel
+  role: string;
   detail: string;
-  kind: "homeland" | "campaign" | "industry" | "capital" | "frontier";
+  /** what taking the province reveals — the unlocked chapter line */
+  reveal: string;
+  kind: "homeland" | "campaign" | "industry" | "capital" | "frontier" | "future";
   d: string; // SVG path of the province
   label: [number, number];
   marks?: ProvinceMark[];
   classified?: boolean;
+  /** political power to justify the campaign (homeland starts owned) */
+  cost: number;
+  /** provinces that must already be held to declare */
+  requires: string[];
+  /** held industrial provinces add to the PP tick */
+  industry?: boolean;
+  /** sea-locked — needs a navy (an era not yet lived) */
+  navy?: boolean;
+  /** political-map fill while unconquered */
+  hue: string;
 }
 
 export const provinces: Province[] = [
+  /* ——— THE NEW WORLD — the life lived so far ——— */
   {
     id: "heritage",
     name: "The Old Hearth",
     era: "the beginning —",
     role: "Homeland · faith, Arabic, family",
     detail:
-      "The oldest province, and the one every supply line runs back to. Faith without forecasts was learned here first; the Arabic of the texts he keeps returning to is its mother tongue. Borders unchanged since founding.",
+      "The capital you start holding — the province every supply line runs back to. Faith without forecasts was learned here first; the Arabic of the texts he keeps returning to is its mother tongue.",
+    reveal:
+      "Before ambition there was a hearth: a family, a faith, and a first language that still carries the heaviest words.",
     kind: "homeland",
-    d: "M60,150 C70,95 130,62 200,68 C262,74 300,108 296,165 C292,216 252,248 190,252 C120,256 52,210 60,150 Z",
-    label: [178, 162],
+    d: "M70,150 C80,96 150,70 226,78 C300,86 338,128 330,188 C322,244 274,278 196,278 C112,278 60,214 70,150 Z",
+    label: [196, 178],
     marks: [
-      { x: 140, y: 130, type: "city", label: "the hearth" },
-      { x: 228, y: 200, type: "vp" },
+      { x: 150, y: 138, type: "vp", label: "the hearth" },
+      { x: 250, y: 214, type: "city", label: "home" },
     ],
+    cost: 0,
+    requires: [],
+    hue: "#9c7a44",
   },
   {
     id: "high-school",
@@ -52,45 +72,62 @@ export const provinces: Province[] = [
     era: "records sealed",
     role: "Campaign · where the discipline was drafted",
     detail:
-      "Intel pending — the early campaigns that drafted the discipline everything else marches on. Records await declassification by the author.",
+      "The first campaign north of the hearth — where the discipline everything else marches on was first drafted. Records await declassification by the author.",
+    reveal:
+      "Intel pending. The author has not yet declassified the early forge — edit data/lifemap.ts to write it in.",
     kind: "campaign",
-    d: "M322,70 C380,46 462,52 492,92 C518,128 500,168 452,182 C396,198 330,184 314,140 C304,112 304,84 322,70 Z",
-    label: [408, 122],
+    d: "M120,42 C200,16 320,22 360,58 C392,88 378,128 320,140 C246,154 150,140 120,108 C104,88 104,58 120,42 Z",
+    label: [248, 86],
     classified: true,
-    marks: [{ x: 360, y: 100, type: "city" }],
+    cost: 25,
+    requires: ["heritage"],
+    hue: "#9c5a62",
+    marks: [{ x: 240, y: 78, type: "city" }],
   },
   {
     id: "undergrad",
     name: "The Compressed Years",
     era: "— 2024",
-    role: "Campaign · the five-year road walked in two",
+    role: "Campaign · five years of road walked in two",
     detail:
-      "A forced march through chemistry benches, geology halls, and psychology labs — five years of road covered in two. Its four factories shipped the Archive: the aldol synthesis, the bias study from Dr. Gaertner's lab, Tectonic Trials for Dr. Kerr, and Synthetic Salvation.",
+      "The largest landmass of the early life — a forced march through chemistry benches, geology halls, and psychology labs. Its four war factories shipped the Archive: the aldol synthesis, the bias study from Dr. Gaertner's lab, Tectonic Trials, and Synthetic Salvation.",
+    reveal:
+      "He took the long road at a sprint — compressing five years into two — and turned the wreckage of all-nighters into four published works.",
     kind: "campaign",
-    d: "M270,210 C330,196 420,198 470,226 C516,252 528,310 498,356 C462,410 372,424 308,398 C250,374 230,318 240,272 C246,242 254,218 270,210 Z",
-    label: [378, 308],
+    d: "M90,300 C150,282 270,284 330,312 C384,338 396,402 360,448 C320,498 210,510 132,484 C70,462 52,398 64,346 C70,322 74,306 90,300 Z",
+    label: [218, 392],
+    industry: true,
+    cost: 40,
+    requires: ["high-school"],
+    hue: "#5a7a5d",
     marks: [
-      { x: 300, y: 260, type: "factory", label: "o-chem 359" },
-      { x: 340, y: 360, type: "factory", label: "geology 331" },
-      { x: 444, y: 268, type: "factory", label: "gaertner lab" },
-      { x: 460, y: 330, type: "factory", label: "bioethics" },
-      { x: 390, y: 240, type: "city", label: "the library" },
+      { x: 130, y: 350, type: "factory", label: "o-chem 359" },
+      { x: 180, y: 440, type: "factory", label: "geology 331" },
+      { x: 300, y: 360, type: "factory", label: "gaertner lab" },
+      { x: 320, y: 430, type: "factory", label: "bioethics" },
+      { x: 240, y: 330, type: "city", label: "the library" },
     ],
   },
   {
     id: "nervewave",
     name: "NerveWave Works",
     era: "intel pending",
-    role: "Industry · the company he helped build",
+    role: "Industry · the venture he helped build",
     detail:
-      "An industrial zone glimpsed on reconnaissance — NerveWave, the venture he worked on. Production figures, founding dates, and the full story await declassification by the author.",
+      "An industrial annex glimpsed on reconnaissance — NerveWave, the company he worked on. Production figures and the founding story await declassification by the author.",
+    reveal:
+      "Intel pending. NerveWave's full story is still sealed — edit data/lifemap.ts to bring its factories online.",
     kind: "industry",
-    d: "M310,430 C360,414 440,416 482,442 C516,464 514,506 472,524 C420,544 340,540 304,510 C278,488 282,448 310,430 Z",
-    label: [396, 478],
+    d: "M360,360 C410,346 470,350 500,376 C526,398 522,436 484,452 C440,470 372,464 348,438 C328,416 332,378 360,360 Z",
+    label: [424, 408],
     classified: true,
+    industry: true,
+    cost: 35,
+    requires: ["undergrad"],
+    hue: "#5a6e8c",
     marks: [
-      { x: 350, y: 460, type: "factory" },
-      { x: 430, y: 500, type: "factory" },
+      { x: 396, y: 392, type: "factory" },
+      { x: 456, y: 418, type: "factory" },
     ],
   },
   {
@@ -99,28 +136,39 @@ export const provinces: Province[] = [
     era: "spring 2025",
     role: "Campaign · a crucible of paper and pixels",
     detail:
-      "The front where the testing-center corridor felt like an interrogation chamber, fought through a Ramadan of fasting and whispered prayers. Threads of Serendipity and Cinders Beneath a Fading Night were dispatched from these trenches. The line held.",
+      "The bloodiest front of the early war — a testing-center corridor that felt like an interrogation chamber, fought through a Ramadan of fasting and whispered prayers. Threads of Serendipity and Cinders Beneath a Fading Night were dispatched from these trenches.",
+    reveal:
+      "He walked into a single number that could decide everything, fasting and afraid, and came out the other side still standing.",
     kind: "campaign",
-    d: "M540,160 C600,136 678,142 712,180 C744,218 736,280 698,316 C654,358 576,356 540,318 C508,284 506,196 540,160 Z",
-    label: [626, 244],
+    d: "M440,150 C510,126 600,132 636,170 C668,206 660,266 620,300 C578,338 494,336 456,298 C422,264 420,186 440,150 Z",
+    label: [540, 222],
+    cost: 55,
+    requires: ["undergrad"],
+    hue: "#a0526a",
     marks: [
-      { x: 590, y: 200, type: "vp", label: "the reckoning" },
-      { x: 672, y: 290, type: "city", label: "night seven" },
+      { x: 500, y: 188, type: "vp", label: "the reckoning" },
+      { x: 588, y: 268, type: "city", label: "night seven" },
     ],
   },
   {
     id: "dabbaghmed",
     name: "DabbaghMed Capital",
     era: "feb 2025 —",
-    role: "Capital · where the writing is seated",
+    role: "Capital · seat of the writing",
     detail:
-      "Founded with a single transmission — the space between what was and what's next — and now seat of government for every essay, field note, and this very universe. The JD-1184 observatory was raised on its highest hill in June 2026.",
+      "The new capital, founded with a single transmission — the space between what was and what's next — and now seat of government for every essay, field note, and this universe. The JD-1184 observatory was raised on its highest hill.",
+    reveal:
+      "He started writing in the dark and built a whole country out of it: DabbaghMed, where the reflections are seated and this observatory was raised.",
     kind: "capital",
-    d: "M508,378 C552,360 614,362 648,388 C680,414 678,462 640,486 C596,512 532,506 502,474 C478,448 478,402 508,378 Z",
-    label: [578, 434],
+    d: "M450,330 C510,314 580,318 614,346 C644,372 640,420 600,442 C556,466 484,460 452,428 C426,402 424,354 450,330 Z",
+    label: [532, 388],
+    industry: true,
+    cost: 45,
+    requires: ["mcat-front"],
+    hue: "#9c8a5a",
     marks: [
-      { x: 548, y: 410, type: "vp", label: "capital" },
-      { x: 616, y: 460, type: "city", label: "observatory jd-1184" },
+      { x: 492, y: 364, type: "vp", label: "capital" },
+      { x: 572, y: 414, type: "city", label: "observatory" },
     ],
   },
   {
@@ -129,37 +177,66 @@ export const provinces: Province[] = [
     era: "fall 2025 —",
     role: "Forward port · medical school, the arrival",
     detail:
-      "The beachhead of the longest campaign: medical school. The first week felt like walking back into the storm — only this time the storm bore his name. He gave a khatirah at the mosque here; anatomy readings and histology slides hold the line daily.",
+      "The forward landing of the longest campaign: medical school across the water. The first week felt like walking back into the storm — only this time the storm bore his name. He gave a khatirah at the mosque here; anatomy readings hold the line daily.",
+    reveal:
+      "He crossed an ocean to wear the coat — and learned that arrival is not relief, it is responsibility.",
     kind: "campaign",
-    d: "M790,442 C824,424 880,428 904,454 C926,478 918,516 884,532 C846,548 796,540 778,510 C764,486 768,458 790,442 Z",
-    label: [846, 486],
+    d: "M634,392 C672,378 718,382 740,406 C760,428 754,460 724,474 C690,490 644,484 624,460 C608,440 612,408 634,392 Z",
+    label: [682, 432],
+    cost: 70,
+    requires: ["dabbaghmed"],
+    hue: "#5d8a8c",
     marks: [
-      { x: 818, y: 466, type: "port", label: "the landing" },
-      { x: 872, y: 506, type: "city", label: "the mosque" },
+      { x: 660, y: 414, type: "port", label: "the landing" },
+      { x: 712, y: 452, type: "city", label: "the mosque" },
     ],
   },
+
+  /* ——— THE OLD WORLD — eras not yet lived (sea-locked) ——— */
   {
     id: "garden-frontier",
     name: "The Garden Frontier",
     era: "unwritten",
-    role: "Frontier · surveyed, not yet settled",
+    role: "Frontier · surveyed, not settled",
     detail:
-      "The far territory every other province supplies. Surveyed plot by plot, prepared for planting — nothing grows here yet. The first seed rests at its border, and the planet above keeps the score.",
-    kind: "frontier",
-    d: "M760,96 C830,68 920,84 952,140 C982,192 968,280 928,330 C886,382 800,388 760,344 C724,304 720,232 732,180 C740,146 744,112 760,96 Z",
-    label: [852, 224],
-    marks: [{ x: 800, y: 160, type: "city", label: "plot 01" }],
+      "Across the strait — surveyed plot by plot, prepared for planting, but nothing grows here yet. A navy must be built before these shores can be taken: this part of the life has not been lived.",
+    reveal:
+      "The ground is cleared and the seed has landed. What grows here is still to be earned.",
+    kind: "future",
+    d: "M772,150 C840,120 930,134 962,188 C992,240 978,322 938,368 C896,418 812,420 776,378 C742,340 740,232 752,188 C758,168 760,158 772,150 Z",
+    label: [862, 262],
+    navy: true,
+    cost: 999,
+    requires: ["grenada"],
+    hue: "#4a6652",
+    marks: [{ x: 820, y: 210, type: "city", label: "plot 01" }],
+  },
+  {
+    id: "residency",
+    name: "The Residency Reach",
+    era: "not yet written",
+    role: "Future · the practice of medicine",
+    detail:
+      "A vast continent beyond the charts — the years of actually practicing, of patients instead of exams. No navy can reach it yet. The campaign has not begun.",
+    reveal: "Sea-locked. This era has not been lived — there is nothing to declassify yet.",
+    kind: "future",
+    d: "M788,398 C840,386 904,392 932,418 C958,442 952,486 916,500 C872,516 802,510 774,482 C752,458 760,414 788,398 Z",
+    label: [858, 448],
+    navy: true,
+    cost: 999,
+    requires: ["grenada"],
+    hue: "#41506a",
+    marks: [{ x: 850, y: 430, type: "vp" }],
   },
 ];
 
-/** chronological supply route through the provinces */
+/** chronological supply route through the held-able provinces */
 export const supplyRoute: [number, number][] = [
-  [178, 162], // heritage
-  [408, 122], // high school
-  [378, 308], // undergrad
-  [396, 478], // nervewave
-  [626, 244], // mcat front
-  [578, 434], // dabbaghmed
-  [846, 486], // grenada
-  [852, 224], // garden frontier
+  [196, 178], // heritage
+  [248, 86], // high school
+  [218, 392], // undergrad
+  [424, 408], // nervewave
+  [540, 222], // mcat front
+  [532, 388], // dabbaghmed
+  [682, 432], // grenada
 ];

@@ -10,11 +10,7 @@ export default function WorksArchive() {
   return (
     <section
       id="archive"
-      className="relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-24 md:px-12"
-      style={{
-        background:
-          "repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(232,230,225,0.02) 48px), repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(232,230,225,0.02) 48px)",
-      }}
+      className="biome-archive relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-24 md:px-12"
     >
       <div className="mx-auto w-full max-w-7xl">
         <Reveal>
@@ -40,7 +36,7 @@ export default function WorksArchive() {
                 rel="noopener noreferrer"
                 className="group block"
               >
-                <div className="relative aspect-[155/200] overflow-hidden border border-[rgba(232,230,225,0.1)] shadow-[0_18px_50px_rgba(0,0,0,0.5)] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-2">
+                <div className="relative aspect-155/200 overflow-hidden border border-[rgba(232,230,225,0.1)] shadow-[0_18px_50px_rgba(0,0,0,0.5)] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-2">
                   <Image
                     src={`/images/works/${w.pdf.split("/").pop()!.replace(".pdf", ".jpg")}`}
                     alt={`Title page of ${w.title}`}

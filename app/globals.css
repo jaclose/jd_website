@@ -185,6 +185,59 @@ body {
   color: var(--color-starlight);
 }
 
+/* ————— per-section biome washes (kept out of inline styles) ————— */
+.biome-essays {
+  background: radial-gradient(120% 90% at 0% 50%, rgba(184, 141, 92, 0.1) 0%, rgba(184, 141, 92, 0.03) 40%, transparent 70%);
+}
+.biome-quote {
+  background: radial-gradient(70% 60% at 50% 42%, rgba(160, 140, 210, 0.08) 0%, rgba(160, 140, 210, 0.02) 45%, transparent 70%);
+}
+.biome-comet {
+  background: radial-gradient(100% 60% at 50% 0%, rgba(159, 216, 232, 0.07) 0%, transparent 65%);
+}
+.biome-archive {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(232, 230, 225, 0.02) 48px),
+    repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(232, 230, 225, 0.02) 48px);
+}
+.biome-log {
+  background: radial-gradient(80% 60% at 50% 100%, rgba(159, 206, 143, 0.06) 0%, transparent 70%);
+}
+.biome-signals {
+  background: radial-gradient(80% 60% at 50% 30%, rgba(120, 150, 190, 0.06) 0%, transparent 65%);
+}
+.biome-forest {
+  background: linear-gradient(180deg, #06070b 0%, #07110d 26%, #0a1a12 60%, #08120c 100%);
+}
+.forest-vignette {
+  background: radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(4, 8, 5, 0.55) 100%);
+}
+
+/* ————— TCG holographic foil ————— */
+.tcg-foil {
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0,
+    rgba(212, 184, 134, 0.12) 6%,
+    rgba(159, 216, 232, 0.12) 12%,
+    rgba(159, 206, 143, 0.12) 18%,
+    transparent 24%
+  );
+  background-size: 220% 220%;
+  animation: foil-drift 7s linear infinite;
+  mix-blend-mode: soft-light;
+}
+@keyframes foil-drift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 220% 220%; }
+}
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ————— achievement unlock shine ————— */
 .achievement-shine {
   pointer-events: none;
