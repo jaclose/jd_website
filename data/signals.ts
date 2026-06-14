@@ -11,9 +11,18 @@ export interface Signal {
   accent: string;
   glyph: string;
   live: boolean;
+  status?: "LIVE" | "LINKED" | "STANDBY";
   /** shown until the uplink is live */
   pending: string;
   href?: string;
+  endpoint?: `/api/signals/${"strava" | "spotify" | "mymind"}`;
+  embeds?: {
+    title: string;
+    src: string;
+    height: number;
+    allow?: string;
+    note?: string;
+  }[];
 }
 
 export const GITHUB_USER = "jaclose";
@@ -27,6 +36,7 @@ export const signals: Signal[] = [
     accent: "#e8e6e1",
     glyph: "⌥",
     live: true,
+    status: "LIVE",
     pending: "",
     href: `https://github.com/${GITHUB_USER}`,
   },
@@ -37,8 +47,21 @@ export const signals: Signal[] = [
     accent: "#fc5200",
     glyph: "▲",
     live: false,
-    pending: "AWAITING UPLINK · runs & rides will surface here",
-    href: "https://www.strava.com",
+    status: "LINKED",
+    pending: "NATIVE API RELAY · iframe fallback available",
+    endpoint: "/api/signals/strava",
+    embeds: [
+      {
+        title: "Jafar's latest Strava rides",
+        src: "https://www.strava.com/athletes/86740264/latest-rides/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
+        height: 454,
+      },
+      {
+        title: "Jafar's Strava activity summary",
+        src: "https://www.strava.com/athletes/86740264/activity-summary/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
+        height: 160,
+      },
+    ],
   },
   {
     id: "spotify",
@@ -47,8 +70,18 @@ export const signals: Signal[] = [
     accent: "#1db954",
     glyph: "♪",
     live: false,
-    pending: "AWAITING UPLINK · recent listening will surface here",
-    href: "https://open.spotify.com",
+    status: "LINKED",
+    pending: "NATIVE API RELAY · player embed fallback available",
+    endpoint: "/api/signals/spotify",
+    embeds: [
+      {
+        title: "Spotify track player",
+        src: "https://open.spotify.com/embed/track/0Lc3coQTcMMJiiEFi7BG2z?utm_source=generator",
+        height: 152,
+        allow: "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",
+        note: "Spotify iframes can embed tracks/playlists, but currently-playing needs the API relay.",
+      },
+    ],
   },
   {
     id: "mymind",
@@ -57,7 +90,8 @@ export const signals: Signal[] = [
     accent: "#c9a0e8",
     glyph: "❖",
     live: false,
-    pending: "AWAITING UPLINK · saved cards will surface here",
-    href: "https://mymind.com",
+    status: "STANDBY",
+    pending: "PRIVATE API WATCH · ready when mymind exposes an endpoint",
+    endpoint: "/api/signals/mymind",
   },
 ];
