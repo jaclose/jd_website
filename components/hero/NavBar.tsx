@@ -84,7 +84,7 @@ export default function NavBar() {
         {/* the pill */}
         <div
           aria-hidden
-          className="absolute top-0 h-full rounded-full border border-[rgba(232,230,225,0.14)] bg-[rgba(6,7,12,0.72)] shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(232,230,225,0.06)] backdrop-blur-xl"
+          className="absolute top-0 h-full rounded-full border border-hairline bg-[rgba(7,8,13,0.84)] shadow-[0_10px_44px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(232,230,225,0.08),inset_0_-8px_20px_rgba(0,0,0,0.4)] backdrop-blur-2xl"
           style={{ left: geom.pill.left, width: geom.pill.width }}
         />
 

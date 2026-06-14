@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { motion } from "framer-motion";
 import SystemScene from "./SystemScene";
@@ -69,6 +70,12 @@ export default function SpatialHero() {
             camera={{ fov: 38, position: [0, 7.5, 26], near: 0.1, far: 300 }}
             dpr={[1, 2]}
             gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+            onCreated={({ gl }) => {
+              // cinematic HDR grade: filmic highlights, true sRGB out
+              gl.toneMapping = THREE.ACESFilmicToneMapping;
+              gl.toneMappingExposure = 1.05;
+              gl.outputColorSpace = THREE.SRGBColorSpace;
+            }}
             onPointerMissed={() => setHovered(null)}
             style={{ pointerEvents: "none", background: "transparent" }}
           >

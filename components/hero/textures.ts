@@ -40,6 +40,32 @@ export function glowTexture(): THREE.Texture {
   return toTexture(c);
 }
 
+/** pulsar beam: bright at the base (core), feathered to the tip and sides.
+ *  Mapped onto a cone whose UV.v runs base(0) → apex(1). */
+export function beamTexture(): THREE.Texture {
+  const w = 64,
+    h = 256;
+  const c = canvas(w, h);
+  const ctx = c.getContext("2d")!;
+  // along the length: hot at base, fading out
+  const v = ctx.createLinearGradient(0, h, 0, 0);
+  v.addColorStop(0, "rgba(255,255,255,0.95)");
+  v.addColorStop(0.25, "rgba(255,255,255,0.45)");
+  v.addColorStop(0.7, "rgba(255,255,255,0.1)");
+  v.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, w, h);
+  // feather the side edges
+  const side = ctx.createLinearGradient(0, 0, w, 0);
+  side.addColorStop(0, "rgba(0,0,0,1)");
+  side.addColorStop(0.5, "rgba(0,0,0,0)");
+  side.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = side;
+  ctx.fillRect(0, 0, w, h);
+  return toTexture(c);
+}
+
 /** sharp-cored star dot — keeps the points round instead of square */
 export function starTexture(): THREE.Texture {
   const c = canvas(64, 64);

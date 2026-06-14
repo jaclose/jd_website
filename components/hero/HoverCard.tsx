@@ -80,6 +80,8 @@ export default function HoverCard() {
     let last = performance.now();
     let placed = false;
     const cur = { x: 0, y: 0 };
+    // re-hide on teardown so a stale card never flashes top-left next time
+    const cardEl = card.current;
 
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
@@ -147,7 +149,10 @@ export default function HoverCard() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (cardEl) cardEl.style.visibility = "hidden";
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hovered]);
 
@@ -168,83 +173,86 @@ export default function HoverCard() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {panel && (
-          <motion.div
-            key={hovered}
-            ref={card}
-            className="pointer-events-auto absolute left-0 top-0 border border-[rgba(212,184,134,0.35)] bg-[rgba(5,6,10,0.92)] shadow-[0_0_40px_rgba(212,184,134,0.08)] backdrop-blur-md"
-            style={{ width: CARD_W, visibility: "hidden" }}
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-            }}
-            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
-            onMouseEnter={() => hovered && setHovered(hovered)}
-            onMouseLeave={() => hovered && requestUnhover(hovered)}
-          >
-            {/* corner ticks — targeting brackets */}
-            {["left-0 top-0 border-l border-t", "right-0 top-0 border-r border-t", "left-0 bottom-0 border-l border-b", "right-0 bottom-0 border-r border-b"].map(
-              (pos) => (
-                <span
-                  key={pos}
-                  aria-hidden
-                  className={`absolute h-2.5 w-2.5 border-starlight ${pos}`}
-                />
-              )
-            )}
-            <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] px-4 py-2.5">
-              <span className="label text-[9px]! text-starlight">
-                {panel.designation}
-              </span>
-              <span className="label text-[8px]! tracking-[0.2em]! text-dim">
-                {panel.kindLabel}
-              </span>
-            </div>
-            <div className="px-4 pb-3.5 pt-3">
-              <Link
-                href={panel.href}
-                className="font-display text-[1.35rem] leading-tight text-ink transition-colors hover:text-starlight"
-                onClick={() => setHovered(null)}
-              >
-                {panel.name}
-              </Link>
-              {panel.line && (
-                <p className="mt-2 font-serif text-[0.98rem] leading-snug text-[rgba(232,230,225,0.72)]">
-                  {panel.line}
+      {/* outer wrapper is positioned imperatively (translate3d) and is NOT
+          a motion element — so framer's scale transform on the inner card
+          can never clobber the position and shunt it to the top-left */}
+      <div ref={card} className="invisible absolute left-0 top-0 w-75">
+        <AnimatePresence>
+          {panel && (
+            <motion.div
+              key={hovered}
+              className="pointer-events-auto w-full origin-top border border-[rgba(212,184,134,0.35)] bg-[rgba(5,6,10,0.92)] shadow-[0_0_40px_rgba(212,184,134,0.08)] backdrop-blur-md"
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+              }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+              onMouseEnter={() => hovered && setHovered(hovered)}
+              onMouseLeave={() => hovered && requestUnhover(hovered)}
+            >
+              {/* corner ticks — targeting brackets */}
+              {["left-0 top-0 border-l border-t", "right-0 top-0 border-r border-t", "left-0 bottom-0 border-l border-b", "right-0 bottom-0 border-r border-b"].map(
+                (pos) => (
+                  <span
+                    key={pos}
+                    aria-hidden
+                    className={`absolute h-2.5 w-2.5 border-starlight ${pos}`}
+                  />
+                )
+              )}
+              <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.1)] px-4 py-2.5">
+                <span className="label text-[9px]! text-starlight">
+                  {panel.designation}
+                </span>
+                <span className="label text-[8px]! tracking-[0.2em]! text-dim">
+                  {panel.kindLabel}
+                </span>
+              </div>
+              <div className="px-4 pb-3.5 pt-3">
+                <Link
+                  href={panel.href}
+                  className="font-display text-[1.35rem] leading-tight text-ink transition-colors hover:text-starlight"
+                  onClick={() => setHovered(null)}
+                >
+                  {panel.name}
+                </Link>
+                {panel.line && (
+                  <p className="mt-2 font-serif text-[0.98rem] leading-snug text-[rgba(232,230,225,0.72)]">
+                    {panel.line}
+                  </p>
+                )}
+                {panel.links.length > 0 && (
+                  <ul className="mt-3 space-y-1.5 border-t border-[rgba(232,230,225,0.08)] pt-2.5">
+                    {panel.links.map((l) => (
+                      <li key={l.href + l.label}>
+                        <Link
+                          href={l.href}
+                          onClick={() => setHovered(null)}
+                          className="group flex items-baseline gap-2 font-mono text-[0.68rem] tracking-wide text-faint transition-colors hover:text-starlight"
+                        >
+                          <span className="text-starlight/60">↳</span>
+                          <span className="link-reveal leading-snug">{l.label}</span>
+                          {l.meta && (
+                            <span className="ml-auto shrink-0 text-[0.6rem] text-dim">
+                              {l.meta}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="label mt-3 flex items-center justify-between text-[8px]! tracking-[0.22em]! text-dim">
+                  <span>{panel.footnote ?? ""}</span>
+                  <span className="text-starlight/80">VISIT ⏎</span>
                 </p>
-              )}
-              {panel.links.length > 0 && (
-                <ul className="mt-3 space-y-1.5 border-t border-[rgba(232,230,225,0.08)] pt-2.5">
-                  {panel.links.map((l) => (
-                    <li key={l.href + l.label}>
-                      <Link
-                        href={l.href}
-                        onClick={() => setHovered(null)}
-                        className="group flex items-baseline gap-2 font-mono text-[0.68rem] tracking-wide text-faint transition-colors hover:text-starlight"
-                      >
-                        <span className="text-starlight/60">↳</span>
-                        <span className="link-reveal leading-snug">{l.label}</span>
-                        {l.meta && (
-                          <span className="ml-auto shrink-0 text-[0.6rem] text-dim">
-                            {l.meta}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="label mt-3 flex items-center justify-between text-[8px]! tracking-[0.22em]! text-dim">
-                <span>{panel.footnote ?? ""}</span>
-                <span className="text-starlight/80">VISIT ⏎</span>
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

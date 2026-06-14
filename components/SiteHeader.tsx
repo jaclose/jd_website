@@ -24,12 +24,7 @@ export default function SiteHeader({ current }: { current?: string }) {
             height={28}
             className="h-7 w-7 transition-transform duration-500 group-hover:rotate-[14deg]"
           />
-          <span className="hidden sm:inline">
-            Jafar Dabbagh
-            <span className="label ml-3 hidden text-[7px]! tracking-[0.3em]! text-dim lg:inline">
-              DABBAGHMED
-            </span>
-          </span>
+          <span className="hidden sm:inline">DabbaghMed</span>
         </Link>
         <div className="flex items-center gap-4 sm:gap-5 md:gap-8">
           {links.map((b) => (

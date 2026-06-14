@@ -23,6 +23,7 @@ import {
 } from "./store";
 import {
   glowTexture,
+  beamTexture,
   starTexture,
   streakTexture,
   milkyWayTexture,
@@ -691,9 +692,11 @@ function Moon({
         <sphereGeometry args={[radius, 20, 20]} />
         <meshStandardMaterial color={color} roughness={1} />
       </mesh>
-      {/* generous, invisible hit target — moons are small and precious */}
+      {/* generous, invisible hit target — moons are small and precious.
+          Sized so its inner edge stays clear of the giant's hit volume,
+          so a precise hover never clips back to the planet. */}
       <mesh
-        scale={radius * 5.5}
+        scale={radius * 6}
         onPointerOver={(ev) => {
           if (hero.pS > 0.5) return;
           ev.stopPropagation();
@@ -808,7 +811,9 @@ function GasGiant({ body, index, count }: BodyProps) {
           </group>
         ))}
       </group>
-      <HitSphere body={body} factor={1.5} />
+      {/* the giant's target hugs the planet only — moons (orbiting at
+          2.5+) keep their own precise, un-clipped hit volumes */}
+      <HitSphere body={body} factor={1.08} />
     </group>
   );
 }
@@ -1112,29 +1117,25 @@ function Comet({ body, index, count }: BodyProps) {
   );
 }
 
+/** a generic star (fallback) — bright core + soft halo */
 function StarBody({ body, index, count }: BodyProps) {
   const group = useRef<THREE.Group>(null!);
   const halo = useRef<THREE.Sprite>(null!);
   const update = useGenie(body, index, count);
   const glow = useMemo(() => glowTexture(), []);
-  const isPulsar = body.id === "quote";
-  const cluster = body.id === "achievements";
 
-  useFrame((state, dt) => {
+  useFrame((_, dt) => {
     update(group.current, dt);
-    const t = state.clock.elapsedTime;
-    const pulse = isPulsar && !reduced ? 1 + Math.sin(t * 2.6) * 0.35 : 1;
-    const dockDim = 1 - smoothstep(hero.pS, 0.6, 1) * 0.6;
-    halo.current.scale.setScalar(body.size * 7 * pulse);
-    (halo.current.material as THREE.SpriteMaterial).opacity =
-      (isPulsar ? 0.55 + Math.sin(t * 2.6) * 0.25 : 0.6) * hero.intro * dockDim;
+    const dockDim = 1 - smoothstep(hero.pS, 0.6, 1) * 0.7;
+    halo.current.scale.setScalar(body.size * 6);
+    (halo.current.material as THREE.SpriteMaterial).opacity = 0.55 * hero.intro * dockDim;
   });
 
   return (
     <group ref={group}>
       <mesh>
-        <sphereGeometry args={[body.size, 16, 16]} />
-        <meshBasicMaterial color={body.accent} />
+        <sphereGeometry args={[body.size, 24, 24]} />
+        <meshBasicMaterial color={body.accent} toneMapped={false} />
       </mesh>
       <sprite ref={halo}>
         <spriteMaterial
@@ -1145,25 +1146,186 @@ function StarBody({ body, index, count }: BodyProps) {
           blending={THREE.AdditiveBlending}
         />
       </sprite>
-      {cluster &&
-        [
-          [0.5, 0.3, 0.1],
-          [-0.4, 0.5, -0.2],
-          [0.2, -0.45, 0.3],
-          [-0.55, -0.2, 0.15],
-        ].map((p, i) => (
-          <sprite key={i} position={p as [number, number, number]} scale={0.55}>
-            <spriteMaterial
-              map={glow}
-              color={body.accent}
-              transparent
-              opacity={0.5}
-              depthWrite={false}
-              blending={THREE.AdditiveBlending}
-            />
-          </sprite>
-        ))}
       <HitSphere body={body} factor={6} />
+    </group>
+  );
+}
+
+/* ————— the pulsar (QUOTE) — a neutron star sweeping two beams ————— */
+
+function Pulsar({ body, index, count }: BodyProps) {
+  const group = useRef<THREE.Group>(null!);
+  const spin = useRef<THREE.Group>(null!); // rotates → lighthouse sweep
+  const core = useRef<THREE.Mesh>(null!);
+  const halo = useRef<THREE.Sprite>(null!);
+  const ring = useRef<THREE.Mesh>(null!);
+  const beamMats = useRef<THREE.MeshBasicMaterial[]>([]);
+  const update = useGenie(body, index, count);
+  const glow = useMemo(() => glowTexture(), []);
+  const beam = useMemo(() => {
+    // cone with base at the core (y=0), apex out at y=H
+    const H = 7;
+    const g = new THREE.ConeGeometry(1.5, H, 28, 1, true);
+    g.translate(0, H / 2, 0);
+    return g;
+  }, []);
+  const beamMap = useMemo(() => beamTexture(), []);
+
+  useFrame((state, dt) => {
+    update(group.current, dt);
+    const t = state.clock.elapsedTime;
+    // sharp lighthouse pulse — brief flash each rotation
+    const phase = (t * 2.4) % (Math.PI * 2);
+    const flash = Math.pow(Math.max(0, Math.sin(phase)), 6); // spike
+    const base = 0.18 + flash * 0.9;
+    const dockDim = 1 - smoothstep(hero.pS, 0.5, 1) * 0.95; // beams gone in pill
+    spin.current.rotation.y += dt * (reduced ? 0.4 : 2.4);
+    beamMats.current.forEach((m) => {
+      if (m) m.opacity = base * hero.intro * dockDim;
+    });
+    const coreLift = 1 + flash * 0.4;
+    core.current.scale.setScalar(coreLift);
+    halo.current.scale.setScalar(body.size * (5 + flash * 4));
+    (halo.current.material as THREE.SpriteMaterial).opacity =
+      (0.4 + flash * 0.5) * hero.intro;
+    if (ring.current) {
+      ring.current.rotation.z += dt * 0.4;
+      (ring.current.material as THREE.MeshBasicMaterial).opacity =
+        0.4 * hero.intro * dockDim;
+    }
+  });
+
+  return (
+    <group ref={group}>
+      {/* dense neutron core — hot blue-white, blooms */}
+      <mesh ref={core}>
+        <sphereGeometry args={[body.size * 1.5, 32, 32]} />
+        <meshBasicMaterial color="#eaf2ff" toneMapped={false} />
+      </mesh>
+      <sprite ref={halo}>
+        <spriteMaterial map={glow} color="#bcd4ff" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
+
+      {/* magnetic axis, tilted off the spin axis → the sweep */}
+      <group ref={spin}>
+        <group rotation={[0.5, 0, 0.32]}>
+          {[1, -1].map((dir, i) => (
+            <mesh key={i} geometry={beam} rotation={[dir > 0 ? 0 : Math.PI, 0, 0]}>
+              <meshBasicMaterial
+                ref={(m) => {
+                  if (m) beamMats.current[i] = m;
+                }}
+                map={beamMap}
+                color="#cfe0ff"
+                transparent
+                opacity={0}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          ))}
+        </group>
+      </group>
+
+      {/* equatorial field ring */}
+      <mesh ref={ring} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[body.size * 3, 0.03, 8, 64]} />
+        <meshBasicMaterial color="#9fd0ff" transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+
+      <HitSphere body={body} factor={9} />
+    </group>
+  );
+}
+
+/* ————— GLD-7 (ACHIEVEMENTS) — a tumbling ball-and-stick cluster ————— */
+
+/** oriented bond cylinder between two atoms */
+function Bond({ a, b, color }: { a: THREE.Vector3; b: THREE.Vector3; color: string }) {
+  const mid = useMemo(() => a.clone().add(b).multiplyScalar(0.5), [a, b]);
+  const len = useMemo(() => a.distanceTo(b), [a, b]);
+  const quat = useMemo(() => {
+    const dir = b.clone().sub(a).normalize();
+    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  }, [a, b]);
+  return (
+    <mesh position={mid} quaternion={quat}>
+      <cylinderGeometry args={[0.028, 0.028, len, 8]} />
+      <meshStandardMaterial color={color} roughness={0.35} metalness={0.7} />
+    </mesh>
+  );
+}
+
+function Molecule({ body, index, count }: BodyProps) {
+  const group = useRef<THREE.Group>(null!);
+  const tumble = useRef<THREE.Group>(null!);
+  const halo = useRef<THREE.Sprite>(null!);
+  const update = useGenie(body, index, count);
+  const glow = useMemo(() => glowTexture(), []);
+
+  // a small lit cluster — one bright nucleus, satellites in a ring + caps
+  const atoms = useMemo(() => {
+    const s = body.size * 1.9;
+    const ring = Array.from({ length: 5 }, (_, i) => {
+      const a = (i / 5) * Math.PI * 2;
+      return new THREE.Vector3(Math.cos(a) * s, Math.sin(a) * s * 0.5, Math.sin(a) * s * 0.7);
+    });
+    return [
+      { p: new THREE.Vector3(0, 0, 0), r: body.size * 1.15, lit: true },
+      ...ring.map((p) => ({ p, r: body.size * (0.62 + Math.random() * 0.18), lit: false })),
+      { p: new THREE.Vector3(0, s * 1.1, 0), r: body.size * 0.7, lit: false },
+      { p: new THREE.Vector3(0, -s * 1.05, 0.2), r: body.size * 0.66, lit: false },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const bonds = useMemo(() => {
+    const c = atoms[0].p;
+    const links = atoms.slice(1).map((at) => ({ a: c, b: at.p }));
+    // a couple of ring bonds for structure
+    for (let i = 1; i <= 5; i++) {
+      links.push({ a: atoms[i].p, b: atoms[(i % 5) + 1].p });
+    }
+    return links;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atoms]);
+
+  useFrame((_, dt) => {
+    update(group.current, dt);
+    tumble.current.rotation.y += dt * 0.5;
+    tumble.current.rotation.x += dt * 0.22;
+    const dockDim = 1 - smoothstep(hero.pS, 0.6, 1) * 0.7;
+    halo.current.scale.setScalar(body.size * 6);
+    (halo.current.material as THREE.SpriteMaterial).opacity = 0.35 * hero.intro * dockDim;
+  });
+
+  return (
+    <group ref={group}>
+      <sprite ref={halo}>
+        <spriteMaterial map={glow} color={body.color} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
+      <group ref={tumble}>
+        {atoms.map((at, i) => (
+          <mesh key={i} position={at.p}>
+            <icosahedronGeometry args={[at.r, 2]} />
+            {at.lit ? (
+              <meshStandardMaterial
+                color="#f4e0b8"
+                emissive="#d4b886"
+                emissiveIntensity={0.9}
+                roughness={0.3}
+                metalness={0.2}
+              />
+            ) : (
+              <meshStandardMaterial color="#c9b48a" roughness={0.32} metalness={0.55} />
+            )}
+          </mesh>
+        ))}
+        {bonds.map((bd, i) => (
+          <Bond key={i} a={bd.a} b={bd.b} color="#8a7a5c" />
+        ))}
+      </group>
+      <HitSphere body={body} factor={7} />
     </group>
   );
 }
@@ -1175,6 +1337,7 @@ function Sun({ count }: { count: number }) {
   const corona = useRef<THREE.Sprite>(null!);
   const flare = useRef<THREE.Sprite>(null!);
   const streak = useRef<THREE.Sprite>(null!);
+  const light = useRef<THREE.PointLight>(null!);
   const update = useGenie(null, 0, count);
   const glow = useMemo(() => glowTexture(), []);
   const surfMap = useMemo(() => sunTexture(), []);
@@ -1185,21 +1348,24 @@ function Sun({ count }: { count: number }) {
     const t = state.clock.elapsedTime;
     surface.current.rotation.y += dt * 0.02;
     const breathe = reduced ? 1 : 1 + Math.sin(t * 0.8) * 0.04;
-    halo.current.scale.setScalar(7.5 * breathe);
-    (halo.current.material as THREE.SpriteMaterial).opacity = (0.85 - e * 0.62) * hero.intro;
-    corona.current.scale.setScalar(13.5 * (reduced ? 1 : 1 + Math.sin(t * 0.5 + 2) * 0.05));
-    (corona.current.material as THREE.SpriteMaterial).opacity = 0.3 * (1 - e) * hero.intro;
-    flare.current.scale.setScalar(21);
-    (flare.current.material as THREE.SpriteMaterial).opacity = 0.12 * (1 - e) * hero.intro;
-    streak.current.scale.set(26 * (reduced ? 1 : 1 + Math.sin(t * 0.7) * 0.08), 1.4, 1);
-    (streak.current.material as THREE.SpriteMaterial).opacity = 0.2 * (1 - e) * hero.intro;
+    // halos collapse harder into the pill so the docked star reads crisp
+    halo.current.scale.setScalar(6.5 * breathe * (1 - e * 0.35));
+    (halo.current.material as THREE.SpriteMaterial).opacity = (0.8 - e * 0.74) * hero.intro;
+    corona.current.scale.setScalar(12 * (reduced ? 1 : 1 + Math.sin(t * 0.5 + 2) * 0.05));
+    (corona.current.material as THREE.SpriteMaterial).opacity = 0.26 * (1 - e) * hero.intro;
+    flare.current.scale.setScalar(19);
+    (flare.current.material as THREE.SpriteMaterial).opacity = 0.1 * (1 - e) * hero.intro;
+    streak.current.scale.set(24 * (reduced ? 1 : 1 + Math.sin(t * 0.7) * 0.08), 1.2, 1);
+    (streak.current.material as THREE.SpriteMaterial).opacity = 0.18 * (1 - e) * hero.intro;
+    // the point light eases off as it docks so it stops blowing out neighbours
+    light.current.intensity = 420 * (1 - e * 0.62);
   });
 
   return (
     <group ref={group}>
       <mesh ref={surface}>
         <sphereGeometry args={[1.55, 64, 64]} />
-        <meshBasicMaterial map={surfMap} />
+        <meshBasicMaterial map={surfMap} toneMapped={false} />
       </mesh>
       <sprite ref={halo}>
         <spriteMaterial
@@ -1237,9 +1403,19 @@ function Sun({ count }: { count: number }) {
           blending={THREE.AdditiveBlending}
         />
       </sprite>
-      <pointLight color="#ffe2b0" intensity={420} decay={1.7} />
+      <pointLight ref={light} color="#ffe2b0" intensity={420} decay={1.7} />
     </group>
   );
+}
+
+/* soft even fill that fades in as the system docks — so the tiny pill
+   planets read crisp and evenly lit instead of half-blown by the star */
+function DockFill() {
+  const light = useRef<THREE.AmbientLight>(null!);
+  useFrame(() => {
+    light.current.intensity = 0.9 * smoothstep(hero.pS, 0.55, 0.95);
+  });
+  return <ambientLight ref={light} intensity={0} color="#d8e0f0" />;
 }
 
 /* ————— scene root ————— */
@@ -1249,13 +1425,14 @@ export default function SystemScene() {
 
   return (
     <>
-      {/* gentle bloom — only the brightest pixels (sun, stars, comas) glow */}
+      {/* selective HDR bloom — high threshold so only emissive cores
+          (sun, pulsar, star halos) bleed, not the small docked planets */}
       {!reduced && (
         <EffectComposer multisampling={0}>
           <Bloom
-            intensity={0.42}
-            luminanceThreshold={0.62}
-            luminanceSmoothing={0.32}
+            intensity={0.5}
+            luminanceThreshold={0.78}
+            luminanceSmoothing={0.28}
             mipmapBlur
           />
         </EffectComposer>
@@ -1263,6 +1440,7 @@ export default function SystemScene() {
       <Choreographer />
       <ambientLight intensity={0.4} color="#aab4cc" />
       <hemisphereLight intensity={0.22} color="#bcc8e0" groundColor="#1a1410" />
+      <DockFill />
       <DeepSky />
       <Starfield />
       <Meteors />
@@ -1291,6 +1469,8 @@ export default function SystemScene() {
           case "comet":
             return <Comet key={b.id} {...props} />;
           default:
+            if (b.id === "quote") return <Pulsar key={b.id} {...props} />;
+            if (b.id === "achievements") return <Molecule key={b.id} {...props} />;
             return <StarBody key={b.id} {...props} />;
         }
       })}

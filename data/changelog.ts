@@ -15,6 +15,14 @@ export const changelog: LogEntry[] = [
     date: "2026-06-13",
     type: "feat",
     message:
+      "the hero polish — ACES HDR grade, a sweeping pulsar, a tumbling GLD-7 molecule, precise moon hover, a hover panel that finally stays put",
+    additions: 346,
+    deletions: 130,
+  },
+  {
+    date: "2026-06-13",
+    type: "feat",
+    message:
       "the playable pass — a real 3D forest you walk, the Dominion war-game, essays as a TCG deck, live Signals uplink",
     additions: 2127,
     deletions: 975,
