@@ -28,12 +28,12 @@ import {
   streakTexture,
   milkyWayTexture,
   nebulaTexture,
-  sunTexture,
   gasGiantTexture,
   ringTexture,
   gardenTexture,
   rockyTexture,
 } from "./textures";
+import { makeSunMaterial } from "./sunMaterial";
 
 const DOCK_DIST = 13; // how far in front of the camera the pill plane sits
 
@@ -98,14 +98,22 @@ const atmoVert = /* glsl */ `
     gl_Position = projectionMatrix * mv;
   }
 `;
+// view-dependent scattering: a soft halo that thickens at the limb, a
+// thin bright line right at the edge, and a warmer tint where the
+// atmosphere is densest — reads as Rayleigh scatter without a sun plumb.
 const atmoFrag = /* glsl */ `
   uniform vec3 uColor;
+  uniform vec3 uLimb;
   uniform float uIntensity;
   varying vec3 vNormal;
   varying vec3 vView;
   void main() {
-    float rim = pow(1.0 - abs(dot(vNormal, vView)), 2.6);
-    gl_FragColor = vec4(uColor, rim * uIntensity);
+    float ndv = max(dot(vNormal, vView), 0.0);
+    float halo = pow(1.0 - ndv, 2.4);          // broad scatter shell
+    float edge = pow(1.0 - ndv, 6.0);           // bright limb line
+    vec3 col = mix(uColor, uLimb, edge);
+    float a = (halo * 0.85 + edge * 0.6) * uIntensity;
+    gl_FragColor = vec4(col, a);
   }
 `;
 
@@ -118,22 +126,23 @@ function Atmosphere({
   color: string;
   intensity?: number;
 }) {
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: atmoVert,
-        fragmentShader: atmoFrag,
-        uniforms: {
-          uColor: { value: new THREE.Color(color) },
-          uIntensity: { value: intensity },
-        },
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.BackSide,
-      }),
-    [color, intensity]
-  );
+  const material = useMemo(() => {
+    const base = new THREE.Color(color);
+    const limb = base.clone().lerp(new THREE.Color("#ffffff"), 0.55);
+    return new THREE.ShaderMaterial({
+      vertexShader: atmoVert,
+      fragmentShader: atmoFrag,
+      uniforms: {
+        uColor: { value: base },
+        uLimb: { value: limb },
+        uIntensity: { value: intensity },
+      },
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.BackSide,
+    });
+  }, [color, intensity]);
   // the glow stands down as the system docks — pill planets stay crisp
   useFrame(() => {
     material.uniforms.uIntensity.value =
@@ -1340,12 +1349,13 @@ function Sun({ count }: { count: number }) {
   const light = useRef<THREE.PointLight>(null!);
   const update = useGenie(null, 0, count);
   const glow = useMemo(() => glowTexture(), []);
-  const surfMap = useMemo(() => sunTexture(), []);
+  const sunMat = useMemo(() => makeSunMaterial(), []);
   const streakMap = useMemo(() => streakTexture(), []);
 
   useFrame((state, dt) => {
     const { e } = update(group.current, dt);
     const t = state.clock.elapsedTime;
+    sunMat.uniforms.uTime.value = t;
     surface.current.rotation.y += dt * 0.02;
     const breathe = reduced ? 1 : 1 + Math.sin(t * 0.8) * 0.04;
     // halos collapse harder into the pill so the docked star reads crisp
@@ -1363,9 +1373,8 @@ function Sun({ count }: { count: number }) {
 
   return (
     <group ref={group}>
-      <mesh ref={surface}>
-        <sphereGeometry args={[1.55, 64, 64]} />
-        <meshBasicMaterial map={surfMap} toneMapped={false} />
+      <mesh ref={surface} material={sunMat}>
+        <icosahedronGeometry args={[1.55, 24]} />
       </mesh>
       <sprite ref={halo}>
         <spriteMaterial

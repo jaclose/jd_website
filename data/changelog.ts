@@ -12,6 +12,14 @@ export interface LogEntry {
 
 export const changelog: LogEntry[] = [
   {
+    date: "2026-06-14",
+    type: "feat",
+    message:
+      "real shaders — a living fbm-plasma sun, scattering atmospheres, a toon forest with BOTW wind-grass, and Xbox-style achievement toasts",
+    additions: 386,
+    deletions: 38,
+  },
+  {
     date: "2026-06-13",
     type: "feat",
     message:

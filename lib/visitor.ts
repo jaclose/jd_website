@@ -59,19 +59,33 @@ export function hasVisitor(id: string): boolean {
   return id in visitorState().achievements;
 }
 
+/** fire the Xbox/Steam-style toast for a freshly unlocked achievement.
+ *  Deferred a tick so an unlock that fires during a page's mount still
+ *  lands after the toast listener has attached (effects run children-first). */
+function announce(id: string) {
+  if (typeof window === "undefined") return;
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent("jd1184-achievement", { detail: { id } }));
+  }, 80);
+}
+
 /** unlock a visitor achievement; returns true the first time */
 export function unlockVisitor(id: string): boolean {
   const state = visitorState();
   if (state.achievements[id]) return false;
   state.achievements[id] = new Date().toISOString().slice(0, 10);
   // The Completionist crowns a full run
+  let crowned = false;
   if (id !== "completionist" && !state.achievements.completionist) {
     const have = new Set(Object.keys(state.achievements));
     if (completionistTargets.every((t) => have.has(t))) {
       state.achievements.completionist = new Date().toISOString().slice(0, 10);
+      crowned = true;
     }
   }
   save(state);
+  announce(id);
+  if (crowned) setTimeout(() => announce("completionist"), 900);
   return true;
 }
 

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 
@@ -193,6 +193,114 @@ function fernTexture(): THREE.Texture {
   return t;
 }
 
+/** 3-step toon ramp — quantises lighting into stylised bands */
+function toonGradient(): THREE.DataTexture {
+  const steps = new Uint8Array([70, 70, 70, 255, 150, 150, 150, 255, 235, 235, 235, 255]);
+  const t = new THREE.DataTexture(steps, 3, 1, THREE.RGBAFormat);
+  t.minFilter = THREE.NearestFilter;
+  t.magFilter = THREE.NearestFilter;
+  t.needsUpdate = true;
+  return t;
+}
+
+/* ————— wind: shared clock for all swaying foliage ————— */
+const windUniforms = { uTime: { value: 0 } };
+
+/** inject a height-weighted wind sway into any toon material */
+function applyWind(mat: THREE.Material, height: number) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = windUniforms.uTime;
+    shader.uniforms.uHeight = { value: height };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+         uniform float uTime;
+         uniform float uHeight;`
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+         {
+           float bladeH = clamp(transformed.y / uHeight, 0.0, 1.0);
+           vec3 instPos = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
+           float phase = instPos.x * 0.6 + instPos.z * 0.7;
+           float sway = sin(uTime * 1.5 + phase) * 0.16 + sin(uTime * 3.0 + phase * 1.7) * 0.06;
+           float bend = sway * pow(bladeH, 1.6);
+           transformed.x += bend;
+           transformed.z += bend * 0.45;
+         }`
+      );
+  };
+}
+
+/* ————— BOTW-style instanced wind grass along the trail ————— */
+function Grass({ ramp }: { ramp: THREE.Texture }) {
+  const ref = useRef<THREE.InstancedMesh>(null!);
+  const COUNT = 2600;
+  const HEIGHT = 0.42;
+
+  const geom = useMemo(() => {
+    // a tapered blade standing in +y, base at 0
+    const g = new THREE.PlaneGeometry(0.06, HEIGHT, 1, 4);
+    g.translate(0, HEIGHT / 2, 0);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const col = new Float32Array(pos.count * 3);
+    const base = new THREE.Color("#39532f");
+    const tip = new THREE.Color("#9fce7a");
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i);
+      const k = y / HEIGHT;
+      // taper toward the tip
+      pos.setX(i, pos.getX(i) * (1 - k * 0.8));
+      c.copy(base).lerp(tip, k * k);
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    pos.needsUpdate = true;
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return g;
+  }, []);
+
+  const mat = useMemo(() => {
+    const m = new THREE.MeshToonMaterial({
+      vertexColors: true,
+      gradientMap: ramp,
+      side: THREE.DoubleSide,
+    });
+    applyWind(m, HEIGHT);
+    return m;
+  }, [ramp]);
+
+  useEffect(() => {
+    const rnd = mulberry32(909);
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    let placed = 0;
+    for (let i = 0; i < COUNT; i++) {
+      const t = rnd();
+      const p = TRAIL.getPoint(t);
+      const side = rnd() > 0.5 ? 1 : -1;
+      const dist = 0.9 + rnd() * 6.5; // off the packed path, into the verge
+      const x = p.x + side * dist + (rnd() - 0.5);
+      const z = p.z + (rnd() - 0.5) * 3.4;
+      const s = 0.7 + rnd() * 0.8;
+      q.setFromAxisAngle(up, rnd() * Math.PI);
+      m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(s, s + rnd() * 0.5, s));
+      ref.current.setMatrixAt(placed++, m4);
+    }
+    ref.current.count = placed;
+    ref.current.instanceMatrix.needsUpdate = true;
+  }, []);
+
+  useFrame((state) => {
+    windUniforms.uTime.value = state.clock.elapsedTime;
+  });
+
+  return <instancedMesh ref={ref} args={[geom, mat, COUNT]} frustumCulled={false} />;
+}
+
 /* ————— a tree: trunk, roots, branches, canopy ————— */
 
 interface TreeSpec {
@@ -205,7 +313,7 @@ interface TreeSpec {
   stand?: boolean;
 }
 
-function Tree({ spec, bark }: { spec: TreeSpec; bark: THREE.Texture }) {
+function Tree({ spec, bark, ramp }: { spec: TreeSpec; bark: THREE.Texture; ramp: THREE.Texture }) {
   const rnd = mulberry32(spec.seed);
   const lean = (rnd() - 0.5) * 0.1;
   const h = (spec.kind === "conifer" ? 7.5 : 5.5) * spec.scale;
@@ -265,18 +373,14 @@ function Tree({ spec, bark }: { spec: TreeSpec; bark: THREE.Texture }) {
       </mesh>
 
       {spec.kind === "conifer" ? (
-        // stacked boughs
+        // stacked boughs — toon-banded for the stylised look
         <>
           {[0.42, 0.58, 0.73, 0.87, 0.985].map((k, i) => (
             <mesh key={i} position={[0, h * k, 0]} castShadow>
               <coneGeometry
                 args={[(1.9 - i * 0.34) * spec.scale, h * 0.3, 9]}
               />
-              <meshStandardMaterial
-                color={green(0.25 + i * 0.12)}
-                roughness={0.92}
-                flatShading
-              />
+              <meshToonMaterial color={green(0.25 + i * 0.12)} gradientMap={ramp} />
             </mesh>
           ))}
         </>
@@ -286,11 +390,7 @@ function Tree({ spec, bark }: { spec: TreeSpec; bark: THREE.Texture }) {
           {blobs.map((b, i) => (
             <mesh key={i} position={[b.x, b.y, b.z]} castShadow>
               <icosahedronGeometry args={[b.r, 1]} />
-              <meshStandardMaterial
-                color={green(b.tone)}
-                roughness={0.92}
-                flatShading
-              />
+              <meshToonMaterial color={green(b.tone)} gradientMap={ramp} />
             </mesh>
           ))}
           {/* a visible bough reaching into the canopy */}
@@ -452,6 +552,7 @@ export default function ForestCanvas({
   const ground = useMemo(() => (typeof document !== "undefined" ? groundTexture() : null), []);
   const shaft = useMemo(() => (typeof document !== "undefined" ? shaftTexture() : null), []);
   const fern = useMemo(() => (typeof document !== "undefined" ? fernTexture() : null), []);
+  const ramp = useMemo(() => (typeof document !== "undefined" ? toonGradient() : null), []);
 
   const trees = useMemo<TreeSpec[]>(() => {
     const rnd = mulberry32(2026);
@@ -485,7 +586,7 @@ export default function ForestCanvas({
     return list;
   }, []);
 
-  if (!bark || !ground || !shaft || !fern) return null;
+  if (!bark || !ground || !shaft || !fern || !ramp) return null;
 
   return (
     <Canvas
@@ -509,8 +610,9 @@ export default function ForestCanvas({
       </mesh>
 
       {trees.map((t, i) => (
-        <Tree key={i} spec={t} bark={bark} />
+        <Tree key={i} spec={t} bark={bark} ramp={ramp} />
       ))}
+      <Grass ramp={ramp} />
       <Ferns map={fern} />
       <LightShafts map={shaft} />
       <Spores />

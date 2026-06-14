@@ -3,6 +3,7 @@ import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono, Amiri } from "next/font/go
 import SmoothScroll from "@/components/SmoothScroll";
 import Cursor from "@/components/Cursor";
 import VisitTracker from "@/components/VisitTracker";
+import AchievementToast from "@/components/AchievementToast";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -49,6 +50,7 @@ export default function RootLayout({
         <VisitTracker />
         {children}
         <Cursor />
+        <AchievementToast />
       </body>
     </html>
   );
