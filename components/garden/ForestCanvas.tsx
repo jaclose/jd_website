@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
+import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
 import { skills, type Skill, type FeatureType } from "@/data/garden";
 import Structure, { hasStructure } from "./Structures";
 
@@ -37,7 +38,7 @@ const TRAILHEAD = new THREE.Vector3(0, 0, 11);
 const FORK = new THREE.Vector3(0, 0, 4.5);
 /** where the camera looks from the clearing: out over the fork, dead centre,
  *  low enough that all four ground trails fan symmetrically into frame */
-const CLEARING_LOOK = new THREE.Vector3(0, 0.5, -3);
+const CLEARING_LOOK = new THREE.Vector3(0, 1.4, -4);
 
 function forward(angle: number) {
   return new THREE.Vector3(Math.sin(angle), 0, -Math.cos(angle));
@@ -114,6 +115,92 @@ function barkTexture(): THREE.Texture {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/** redwood bark — deep vertical fibres in warm rust, for the giant trunks */
+function redwoodBark(): THREE.Texture {
+  const c = makeCanvas(256, 1024);
+  const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(411);
+  const g = ctx.createLinearGradient(0, 0, 256, 0);
+  g.addColorStop(0, "#4a261c");
+  g.addColorStop(0.5, "#7d4231");
+  g.addColorStop(1, "#48241b");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 1024);
+  for (let i = 0; i < 520; i++) {
+    const x = rnd() * 256;
+    const w = 1 + rnd() * 5;
+    const k = rnd();
+    ctx.fillStyle =
+      k > 0.62
+        ? `rgba(158,92,64,${0.22 + rnd() * 0.3})`
+        : k > 0.3
+          ? `rgba(34,17,12,${0.3 + rnd() * 0.38})`
+          : `rgba(102,56,40,${0.2 + rnd() * 0.3})`;
+    ctx.fillRect(x, rnd() * 1024, w, 160 + rnd() * 560);
+  }
+  // deep grooves
+  ctx.fillStyle = "rgba(18,9,7,0.5)";
+  for (let i = 0; i < 46; i++) ctx.fillRect(rnd() * 256, 0, 1 + rnd() * 2, 1024);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+/** a soft round alpha blob, for drifting ground mist + sun shafts */
+function softTexture(seed = 5): THREE.Texture {
+  const s = 256;
+  const c = makeCanvas(s, s);
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, "rgba(225,233,224,0.6)");
+  g.addColorStop(0.5, "rgba(214,227,217,0.16)");
+  g.addColorStop(1, "rgba(214,227,217,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  const rnd = mulberry32(seed);
+  ctx.globalAlpha = 0.05;
+  for (let i = 0; i < 46; i++) {
+    ctx.beginPath();
+    ctx.arc(rnd() * s, rnd() * s, 18 + rnd() * 64, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(232,238,232,1)";
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** a tall fluted trunk — a redwood's buttressed, grooved silhouette */
+function flutedTrunk(rTop: number, rBot: number, height: number): THREE.BufferGeometry {
+  const flutes = 13;
+  const geo = new THREE.CylinderGeometry(rTop, rBot, height, flutes * 2, 7, true);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const r = Math.hypot(v.x, v.z);
+    if (r > 1e-4) {
+      const ang = Math.atan2(v.z, v.x);
+      const yk = (v.y + height / 2) / height; // 0 base → 1 top
+      const flute = 1 + Math.sin(ang * flutes) * 0.1 + Math.sin(ang * flutes * 2.3 + 1) * 0.04;
+      const lean = 1 + Math.sin(yk * 7 + ang * 2) * 0.02;
+      const nr = r * flute * lean;
+      v.x = Math.cos(ang) * nr;
+      v.z = Math.sin(ang) * nr;
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+  }
+  geo.computeVertexNormals();
+  geo.translate(0, height / 2, 0);
+  // tile the bark vertically so it doesn't smear up a 20-unit trunk
+  const uv = geo.attributes.uv as THREE.BufferAttribute;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * 6);
+  return geo;
 }
 
 const GROUND_SPAN = 60; // world units the ground plane covers
@@ -279,7 +366,7 @@ function fernTexture(): THREE.Texture {
 
 /** 3-step toon ramp — quantises lighting into stylised bands */
 function toonGradient(): THREE.DataTexture {
-  const steps = new Uint8Array([70, 70, 70, 255, 150, 150, 150, 255, 235, 235, 235, 255]);
+  const steps = new Uint8Array([90, 90, 90, 255, 156, 156, 156, 255, 202, 202, 202, 255]);
   const t = new THREE.DataTexture(steps, 3, 1, THREE.RGBAFormat);
   t.minFilter = THREE.NearestFilter;
   t.magFilter = THREE.NearestFilter;
@@ -332,16 +419,16 @@ function scatterPoint(rnd: () => number, spread: number) {
 /* ————— BOTW-style instanced wind grass over the whole forest floor ————— */
 function Grass({ ramp }: { ramp: THREE.Texture }) {
   const ref = useRef<THREE.InstancedMesh>(null!);
-  const COUNT = 4200;
-  const HEIGHT = 0.42;
+  const COUNT = 5200;
+  const HEIGHT = 0.46;
 
   const geom = useMemo(() => {
     const g = new THREE.PlaneGeometry(0.06, HEIGHT, 1, 4);
     g.translate(0, HEIGHT / 2, 0);
     const pos = g.attributes.position as THREE.BufferAttribute;
     const col = new Float32Array(pos.count * 3);
-    const base = new THREE.Color("#39532f");
-    const tip = new THREE.Color("#9fce7a");
+    const base = new THREE.Color("#3c5e33");
+    const tip = new THREE.Color("#a8d97e");
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
@@ -434,7 +521,7 @@ function Tree({ spec, bark, ramp }: { spec: TreeSpec; bark: THREE.Texture; ramp:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const green = (t: number) => new THREE.Color().setHSL(0.29 + t * 0.05, 0.48, 0.26 + t * 0.12);
+  const green = (t: number) => new THREE.Color().setHSL(0.3 + t * 0.04, 0.42, 0.22 + t * 0.1);
 
   return (
     <group position={[spec.x, 0, spec.z]} rotation={[0, rnd() * Math.PI * 2, lean]}>
@@ -465,7 +552,7 @@ function Tree({ spec, bark, ramp }: { spec: TreeSpec; bark: THREE.Texture; ramp:
         <>
           {[0.42, 0.58, 0.73, 0.87, 0.985].map((k, i) => (
             <mesh key={i} position={[0, h * k, 0]} castShadow>
-              <coneGeometry args={[(1.9 - i * 0.34) * spec.scale, h * 0.3, 9]} />
+              <coneGeometry args={[(1.45 - i * 0.26) * spec.scale, h * 0.32, 9]} />
               <meshToonMaterial color={green(0.25 + i * 0.12)} gradientMap={ramp} transparent={!!spec.faint} opacity={op} />
             </mesh>
           ))}
@@ -680,9 +767,9 @@ function Grove({
 function Ferns({ map }: { map: THREE.Texture }) {
   const items = useMemo(() => {
     const rnd = mulberry32(55);
-    return Array.from({ length: 60 }, () => {
-      const p = scatterPoint(rnd, 5);
-      return { x: p.x, z: p.z, s: 0.5 + rnd() * 0.9, rot: rnd() * Math.PI };
+    return Array.from({ length: 104 }, () => {
+      const p = scatterPoint(rnd, 5.5);
+      return { x: p.x, z: p.z, s: 0.5 + rnd() * 1.0, rot: rnd() * Math.PI };
     });
   }, []);
   return (
@@ -704,16 +791,23 @@ function Ferns({ map }: { map: THREE.Texture }) {
 function LightShafts({ map }: { map: THREE.Texture }) {
   const shafts = useMemo(() => {
     const rnd = mulberry32(21);
-    return Array.from({ length: 7 }, () => {
-      const p = scatterPoint(rnd, 5);
-      return { x: p.x, z: p.z - 2, w: 1 + rnd() * 1.6, tilt: 0.16 + rnd() * 0.12, o: 0.05 + rnd() * 0.06 };
-    });
+    // all raked from one sun, upper-back-left, so they read as one light
+    return Array.from({ length: 15 }, () => ({
+      x: (rnd() - 0.5) * 34,
+      y: 9 + rnd() * 4,
+      z: -6 - rnd() * 24,
+      w: 1.4 + rnd() * 2.8,
+      h: 18 + rnd() * 10,
+      tilt: 0.2 + rnd() * 0.12,
+      yaw: -0.3 + rnd() * 0.2,
+      o: 0.06 + rnd() * 0.1,
+    }));
   }, []);
   return (
     <>
       {shafts.map((s, i) => (
-        <mesh key={i} position={[s.x, 5.4, s.z]} rotation={[0, 0, s.tilt]}>
-          <planeGeometry args={[s.w, 12]} />
+        <mesh key={i} position={[s.x, s.y, s.z]} rotation={[0, s.yaw, s.tilt]}>
+          <planeGeometry args={[s.w, s.h]} />
           <meshBasicMaterial
             map={map}
             transparent
@@ -721,6 +815,7 @@ function LightShafts({ map }: { map: THREE.Texture }) {
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
+            toneMapped={false}
           />
         </mesh>
       ))}
@@ -761,6 +856,195 @@ function Spores() {
   );
 }
 
+/* ————— the giants: towering redwoods that wall the trails ————— */
+function GiantRedwoods({ bark }: { bark: THREE.Texture }) {
+  const ref = useRef<THREE.InstancedMesh>(null!);
+  const geom = useMemo(() => flutedTrunk(0.55, 1.6, 26), []);
+  const mat = useMemo(
+    () => new THREE.MeshStandardMaterial({ map: bark, roughness: 0.9, color: "#ffffff" }),
+    [bark]
+  );
+  const placements = useMemo(() => {
+    const rnd = mulberry32(314);
+    const onTrail = (p: THREE.Vector3, clr = 2.7) =>
+      ROUTES.some((route) => {
+        for (let i = 0; i <= 12; i++) if (route.getPoint(i / 12).distanceTo(p) < clr) return true;
+        return false;
+      });
+    const warm = (lo: number, hi: number) =>
+      new THREE.Color().setHSL(0.045 + rnd() * 0.03, 0.52, lo + rnd() * (hi - lo));
+    const out: { p: THREE.Vector3; rs: number; hs: number; rot: number; tint: THREE.Color }[] = [];
+    // framing giants — close to the camera at the clearing & trail mouths, so a
+    // warm red trunk towers at the edge of frame the way the references do
+    const FRAME: [number, number][] = [
+      [-5.5, 10.5], [6, 9.5], [-7, 6], [7.5, 5], [-6.5, 12.5], [6.8, 13],
+      [-4.5, 2], [5, 1.5],
+    ];
+    for (const [x, z] of FRAME) {
+      const p = new THREE.Vector3(x + (rnd() - 0.5), 0, z + (rnd() - 0.5));
+      if (onTrail(p, 2.2)) continue;
+      out.push({ p, rs: 1.05 + rnd() * 0.5, hs: 1.9 + rnd() * 0.9, rot: rnd() * Math.PI * 2, tint: warm(0.5, 0.66) });
+    }
+    // a ring of ancients framing the clearing
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + (rnd() - 0.5) * 0.34;
+      const r = 9 + rnd() * 4.5;
+      const p = new THREE.Vector3(Math.cos(a) * r, 0, FORK.z + Math.sin(a) * r);
+      if (onTrail(p)) continue;
+      out.push({ p, rs: 0.8 + rnd() * 0.9, hs: 1.1 + rnd() * 1.5, rot: rnd() * Math.PI * 2, tint: warm(0.46, 0.6) });
+    }
+    // the deep forest behind
+    let guard = 0;
+    while (out.length < 70 && guard++ < 1600) {
+      const p = new THREE.Vector3((rnd() - 0.5) * 60, 0, (rnd() - 0.5) * 60 - 4);
+      if (p.length() < 9 || onTrail(p)) continue;
+      out.push({ p, rs: 0.72 + rnd() * 0.95, hs: 0.9 + rnd() * 1.55, rot: rnd() * Math.PI * 2, tint: warm(0.42, 0.58) });
+    }
+    return out;
+  }, []);
+
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    placements.forEach((it, i) => {
+      q.setFromAxisAngle(up, it.rot);
+      m.compose(it.p, q, new THREE.Vector3(it.rs, it.hs, it.rs));
+      ref.current.setMatrixAt(i, m);
+      ref.current.setColorAt(i, it.tint);
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
+  }, [placements]);
+
+  return <instancedMesh ref={ref} args={[geom, mat, placements.length]} frustumCulled={false} />;
+}
+
+/* ————— split-rail fence lining every trail ————— */
+function TrailFence() {
+  const postGeo = useMemo(() => new THREE.BoxGeometry(0.14, 1, 0.14), []);
+  const postMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#6b4530", roughness: 1 }), []);
+  const railGeo = useMemo(() => new THREE.BoxGeometry(0.08, 0.08, 1), []);
+  const railMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#7c5138", roughness: 1 }), []);
+
+  const data = useMemo(() => {
+    const posts: THREE.Matrix4[] = [];
+    const rails: THREE.Matrix4[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const q = new THREE.Quaternion();
+    ROUTES.forEach((route) => {
+      for (const side of [-1, 1]) {
+        const pts: THREE.Vector3[] = [];
+        const N = 7;
+        for (let i = 0; i <= N; i++) {
+          const t = 0.18 + (i / N) * 0.74;
+          const c = route.getPoint(t);
+          const ahead = route.getPoint(Math.min(1, t + 0.02));
+          const dir = ahead.clone().sub(c).setY(0).normalize();
+          const rightV = new THREE.Vector3(dir.z, 0, -dir.x);
+          pts.push(c.clone().addScaledVector(rightV, side * 1.95));
+        }
+        pts.forEach((p) =>
+          posts.push(new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0.5, p.z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1)))
+        );
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i];
+          const b = pts[i + 1];
+          const mid = a.clone().add(b).multiplyScalar(0.5);
+          const len = a.distanceTo(b);
+          const dir = b.clone().sub(a).normalize();
+          q.setFromAxisAngle(up, Math.atan2(dir.x, dir.z));
+          for (const ry of [0.34, 0.66]) {
+            rails.push(new THREE.Matrix4().compose(new THREE.Vector3(mid.x, ry, mid.z), q, new THREE.Vector3(1, 1, len)));
+          }
+        }
+      }
+    });
+    return { posts, rails };
+  }, []);
+
+  const postRef = useRef<THREE.InstancedMesh>(null!);
+  const railRef = useRef<THREE.InstancedMesh>(null!);
+  useEffect(() => {
+    data.posts.forEach((mm, i) => postRef.current.setMatrixAt(i, mm));
+    data.rails.forEach((mm, i) => railRef.current.setMatrixAt(i, mm));
+    postRef.current.instanceMatrix.needsUpdate = true;
+    railRef.current.instanceMatrix.needsUpdate = true;
+  }, [data]);
+
+  return (
+    <group>
+      <instancedMesh ref={postRef} args={[postGeo, postMat, data.posts.length]} castShadow receiveShadow />
+      <instancedMesh ref={railRef} args={[railGeo, railMat, data.rails.length]} castShadow />
+    </group>
+  );
+}
+
+/* ————— drifting ground mist ————— */
+function MistBands({ map }: { map: THREE.Texture }) {
+  const refs = useRef<THREE.Mesh[]>([]);
+  const bands = useMemo(() => {
+    const rnd = mulberry32(88);
+    return Array.from({ length: 9 }, () => ({
+      x: (rnd() - 0.5) * 46,
+      y: 0.5 + rnd() * 2.6,
+      z: (rnd() - 0.5) * 42 - 6,
+      s: 13 + rnd() * 18,
+      spd: (0.6 + rnd() * 1.1) * (rnd() > 0.5 ? 1 : -1),
+      ph: rnd() * 6.28,
+      o: 0.13 + rnd() * 0.16,
+    }));
+  }, []);
+  useFrame((state) => {
+    const tt = state.clock.elapsedTime;
+    refs.current.forEach((mesh, i) => {
+      if (!mesh) return;
+      mesh.position.x = bands[i].x + Math.sin(tt * 0.06 * bands[i].spd + bands[i].ph) * 6;
+    });
+  });
+  return (
+    <>
+      {bands.map((b, i) => (
+        <mesh
+          key={i}
+          ref={(el) => {
+            if (el) refs.current[i] = el;
+          }}
+          position={[b.x, b.y, b.z]}
+          rotation={[-Math.PI / 2 + 0.2, 0, b.ph]}
+        >
+          <planeGeometry args={[b.s, b.s * 0.7]} />
+          <meshBasicMaterial map={map} transparent opacity={b.o} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/* ————— a misty gradient sky enclosing the grove ————— */
+function Backdrop() {
+  const geom = useMemo(() => {
+    const g = new THREE.SphereGeometry(58, 24, 16);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const col = new Float32Array(pos.count * 3);
+    const top = new THREE.Color("#c6d4c0");
+    const bot = new THREE.Color("#0c1c12");
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const k = THREE.MathUtils.clamp((pos.getY(i) / 58 + 0.18) / 1.1, 0, 1);
+      c.copy(bot).lerp(top, k * k);
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return g;
+  }, []);
+  return (
+    <mesh geometry={geom} renderOrder={-1}>
+      <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
 /* ————— the dolly: camera eases along the committed branch ————— */
 
 function Dolly({ walk }: { walk: WalkState }) {
@@ -790,8 +1074,8 @@ function DollyInner({
     const sway = Math.sin(state.clock.elapsedTime * 0.7) * 0.035;
     // 0 at the clearing → 1 once committed to a trail
     const committed = THREE.MathUtils.smoothstep(t, 0.0, 0.34);
-    // raised overview at the clearing → eye-level on the walk in
-    const lift = THREE.MathUtils.lerp(3.4, 1.62, committed);
+    // a gentle raised clearing view → eye-level on the walk in
+    const lift = THREE.MathUtils.lerp(2.8, 1.62, committed);
     state.camera.position.set(p.x + sway, lift + Math.sin(state.clock.elapsedTime * 1.4) * 0.02, p.z);
     // clearing: look dead-centre over the fork so the four trails fan into view.
     // walking in: look toward the grove's crowns so the stand — not just its
@@ -821,9 +1105,11 @@ export default function ForestCanvas({
   onReturn?: () => void;
 }) {
   const bark = useMemo(() => (typeof document !== "undefined" ? barkTexture() : null), []);
+  const redbark = useMemo(() => (typeof document !== "undefined" ? redwoodBark() : null), []);
   const ground = useMemo(() => (typeof document !== "undefined" ? groundTexture() : null), []);
   const shaft = useMemo(() => (typeof document !== "undefined" ? shaftTexture() : null), []);
   const fern = useMemo(() => (typeof document !== "undefined" ? fernTexture() : null), []);
+  const mist = useMemo(() => (typeof document !== "undefined" ? softTexture(5) : null), []);
   const ramp = useMemo(() => (typeof document !== "undefined" ? toonGradient() : null), []);
 
   // flanking forest for density — kept clear of the central clearing so the
@@ -832,31 +1118,36 @@ export default function ForestCanvas({
     const rnd = mulberry32(2026);
     const out: TreeSpec[] = [];
     let guard = 0;
-    while (out.length < 26 && guard++ < 400) {
-      const p = scatterPoint(rnd, 8);
-      // skip anything that would crowd the trailhead/fork clearing
-      if (p.distanceTo(FORK) < 7.5 || p.z > 8.5) continue;
+    while (out.length < 14 && guard++ < 400) {
+      const p = scatterPoint(rnd, 10);
+      // keep them well out of the clearing so the redwoods lead the mid-ground
+      if (p.distanceTo(FORK) < 10 || p.z > 7) continue;
       const kinds: TreeSpec["kind"][] = ["conifer", "broadleaf", "conifer", "elder"];
       out.push({ x: p.x, z: p.z, kind: kinds[Math.floor(rnd() * kinds.length)], scale: 0.7 + rnd() * 0.8, seed: out.length * 13 + 7 });
     }
     return out;
   }, []);
 
-  if (!bark || !ground || !shaft || !fern || !ramp) return null;
+  if (!bark || !redbark || !ground || !shaft || !fern || !mist || !ramp) return null;
 
   return (
     <Canvas
-      camera={{ fov: 58, position: [0, 1.62, 11], near: 0.1, far: 70 }}
+      camera={{ fov: 60, position: [0, 1.62, 11], near: 0.1, far: 80 }}
       dpr={[1, 1.75]}
       frameloop={active ? "always" : "never"}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
+      shadows
+      gl={{ antialias: true, powerPreference: "high-performance", toneMappingExposure: 1.05 }}
       style={{ background: "transparent" }}
     >
-      <fog attach="fog" args={["#16241a", 7, 34]} />
-      <hemisphereLight intensity={1.0} color="#cfe6b0" groundColor="#2a2410" />
-      <directionalLight position={[7, 12, -2]} intensity={2.4} color="#fff0cc" castShadow />
-      <ambientLight intensity={0.4} color="#5a7048" />
+      <fog attach="fog" args={["#9aa896", 11, 56]} />
+      <hemisphereLight intensity={1.15} color="#dcd6c0" groundColor="#2c2410" />
+      {/* warm key from front-left so the camera-facing bark reads red, not black */}
+      <directionalLight position={[-11, 16, 13]} intensity={2.6} color="#ffdca8" castShadow shadow-mapSize={[1024, 1024]} />
+      {/* cool back rim for the misty shafts */}
+      <directionalLight position={[6, 14, -20]} intensity={0.9} color="#cfe0d8" />
+      <ambientLight intensity={0.4} color="#5a6e54" />
 
+      <Backdrop />
       <Dolly walk={walk} />
 
       {/* ground — click open ground to return to the clearing */}
@@ -903,19 +1194,29 @@ export default function ForestCanvas({
         );
       })}
 
+      <GiantRedwoods bark={redbark} />
+      <TrailFence />
+
       {flank.map((t, i) => (
         <Tree key={i} spec={t} bark={bark} ramp={ramp} />
       ))}
       <Grass ramp={ramp} />
       <Ferns map={fern} />
       <LightShafts map={shaft} />
+      <MistBands map={mist} />
       <Spores />
 
-      {/* canopy overhead — lifted and lighter so the clearing reads open */}
-      <mesh position={[0, 16, -14]} rotation={[Math.PI / 2.2, 0, 0]}>
-        <planeGeometry args={[90, 56]} />
-        <meshBasicMaterial color="#0e2414" transparent opacity={0.72} side={THREE.DoubleSide} />
+      {/* high canopy shadow, framing the grove from far above */}
+      <mesh position={[0, 26, -16]} rotation={[Math.PI / 2.3, 0, 0]}>
+        <planeGeometry args={[120, 72]} />
+        <meshBasicMaterial color="#0c1c12" transparent opacity={0.38} side={THREE.DoubleSide} fog={false} />
       </mesh>
+
+      <EffectComposer multisampling={0}>
+        <Bloom intensity={0.42} luminanceThreshold={0.74} luminanceSmoothing={0.4} mipmapBlur />
+        <SMAA />
+        <Vignette eskil={false} offset={0.32} darkness={0.5} />
+      </EffectComposer>
     </Canvas>
   );
 }
