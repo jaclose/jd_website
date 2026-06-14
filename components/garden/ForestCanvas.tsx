@@ -544,9 +544,11 @@ function Dolly({ walk }: { walk: WalkState }) {
 export default function ForestCanvas({
   walk,
   active,
+  onAdvance,
 }: {
   walk: WalkState;
   active: boolean;
+  onAdvance?: () => void;
 }) {
   const bark = useMemo(() => (typeof document !== "undefined" ? barkTexture() : null), []);
   const ground = useMemo(() => (typeof document !== "undefined" ? groundTexture() : null), []);
@@ -603,8 +605,21 @@ export default function ForestCanvas({
 
       <Dolly walk={walk} />
 
-      {/* ground + trail */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      {/* ground + trail — click it to walk on down the trail */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0, 0]}
+        onClick={(ev) => {
+          ev.stopPropagation();
+          onAdvance?.();
+        }}
+        onPointerOver={() => {
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = "";
+        }}
+      >
         <planeGeometry args={[44, 44]} />
         <meshStandardMaterial map={ground} roughness={1} />
       </mesh>

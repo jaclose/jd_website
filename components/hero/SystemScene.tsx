@@ -98,22 +98,18 @@ const atmoVert = /* glsl */ `
     gl_Position = projectionMatrix * mv;
   }
 `;
-// view-dependent scattering: a soft halo that thickens at the limb, a
-// thin bright line right at the edge, and a warmer tint where the
-// atmosphere is densest — reads as Rayleigh scatter without a sun plumb.
+// soft scatter shell — a single feathered Fresnel halo in the body's own
+// colour that fades smoothly to nothing. No white limb line (that read as
+// a hard border); the glow is densest at the limb and gone by the disc.
 const atmoFrag = /* glsl */ `
   uniform vec3 uColor;
-  uniform vec3 uLimb;
   uniform float uIntensity;
   varying vec3 vNormal;
   varying vec3 vView;
   void main() {
     float ndv = max(dot(vNormal, vView), 0.0);
-    float halo = pow(1.0 - ndv, 2.4);          // broad scatter shell
-    float edge = pow(1.0 - ndv, 6.0);           // bright limb line
-    vec3 col = mix(uColor, uLimb, edge);
-    float a = (halo * 0.85 + edge * 0.6) * uIntensity;
-    gl_FragColor = vec4(col, a);
+    float halo = pow(1.0 - ndv, 3.2);   // feathered, no sharp edge
+    gl_FragColor = vec4(uColor, halo * uIntensity);
   }
 `;
 
@@ -127,14 +123,11 @@ function Atmosphere({
   intensity?: number;
 }) {
   const material = useMemo(() => {
-    const base = new THREE.Color(color);
-    const limb = base.clone().lerp(new THREE.Color("#ffffff"), 0.55);
     return new THREE.ShaderMaterial({
       vertexShader: atmoVert,
       fragmentShader: atmoFrag,
       uniforms: {
-        uColor: { value: base },
-        uLimb: { value: limb },
+        uColor: { value: new THREE.Color(color) },
         uIntensity: { value: intensity },
       },
       transparent: true,
@@ -149,7 +142,7 @@ function Atmosphere({
       intensity * (1 - smoothstep(hero.pS, 0.55, 1) * 0.75);
   });
   return (
-    <mesh material={material} scale={1.06}>
+    <mesh material={material} scale={1.05}>
       <sphereGeometry args={[radius, 32, 32]} />
     </mesh>
   );
@@ -958,12 +951,9 @@ function Station({ body, index, count }: BodyProps) {
   );
 }
 
-const TAIL_COUNT = 220;
-const DUST_COUNT = 130;
-
 /** craggy nucleus: icosahedron with seeded radial displacement */
 function nucleusGeometry(size: number): THREE.BufferGeometry {
-  const g = new THREE.IcosahedronGeometry(size, 2);
+  const g = new THREE.IcosahedronGeometry(size, 3);
   const pos = g.attributes.position as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   let seed = 1184;
@@ -989,140 +979,105 @@ function nucleusGeometry(size: number): THREE.BufferGeometry {
   return g;
 }
 
+/** a smooth tapered tail cone — wide glowing base at the nucleus, feathered
+ *  to a point downstream. Oriented each frame to a world-space direction. */
+function makeTailGeometry(): THREE.BufferGeometry {
+  const g = new THREE.ConeGeometry(1, 1, 20, 1, true);
+  // ConeGeometry: apex at +y/2, base ring at -y/2. Re-base so the wide
+  // mouth sits at the origin (the nucleus) and the point runs to +y.
+  g.rotateX(Math.PI); // flip: wide end now toward +y
+  g.translate(0, 0.5, 0); // base at y=0, apex at y=1
+  return g;
+}
+
 function Comet({ body, index, count }: BodyProps) {
   const group = useRef<THREE.Group>(null!);
   const nucleus = useRef<THREE.Mesh>(null!);
+  const ice = useRef<THREE.Sprite>(null!);
   const coma = useRef<THREE.Sprite>(null!);
-  const comaWide = useRef<THREE.Sprite>(null!);
-  const tailMat = useRef<THREE.PointsMaterial>(null!);
-  const dustMat = useRef<THREE.PointsMaterial>(null!);
+  const ion = useRef<THREE.Mesh>(null!);
+  const dust = useRef<THREE.Mesh>(null!);
   const update = useGenie(body, index, count);
   const glow = useMemo(() => glowTexture(), []);
+  const beam = useMemo(() => beamTexture(), []);
   const rockGeom = useMemo(() => nucleusGeometry(body.size), [body.size]);
-  const jitter = useMemo(() => {
-    const arr = new Float32Array(TAIL_COUNT * 3);
-    for (let i = 0; i < arr.length; i++) arr[i] = (Math.random() - 0.5) * 2;
-    return arr;
-  }, []);
-  const makeGeom = (n: number) => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
-    return g;
-  };
-  const tailGeom = useMemo(() => makeGeom(TAIL_COUNT), []);
-  const dustGeom = useMemo(() => makeGeom(DUST_COUNT), []);
-  const dir = useMemo(() => new THREE.Vector3(), []);
+  const tailGeom = useMemo(() => makeTailGeometry(), []);
+
+  const wDir = useMemo(() => new THREE.Vector3(), []);
+  const lDir = useMemo(() => new THREE.Vector3(), []);
   const tangent = useMemo(() => new THREE.Vector3(), []);
   const dustDir = useMemo(() => new THREE.Vector3(), []);
   const vT = useMemo(() => new THREE.Vector3(), []);
+  const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const q = useMemo(() => new THREE.Quaternion(), []);
+
+  // orient + scale a tail to point along a world direction, given length/width
+  const aim = (
+    mesh: THREE.Mesh,
+    worldDir: THREE.Vector3,
+    len: number,
+    width: number,
+    op: number
+  ) => {
+    // the group only translates/scales (no rotation), so world dir == local dir
+    lDir.copy(worldDir);
+    q.setFromUnitVectors(up, lDir);
+    mesh.quaternion.copy(q);
+    mesh.scale.set(width, len, width);
+    (mesh.material as THREE.MeshBasicMaterial).opacity = op;
+  };
 
   useFrame((_, dt) => {
     const { e, scale } = update(group.current, dt);
-    // ion tail streams anti-sunward; dust tail lags along the orbit
-    dir.copy(group.current.position).normalize();
+    // ion tail streams straight anti-sunward; dust tail lags along the orbit
+    wDir.copy(group.current.position).normalize();
     const theta = hero.theta.get(body.id) ?? body.phase;
     orbitPoint(body, theta - 0.05, vT);
     tangent.copy(group.current.position).sub(vT).normalize();
-    dustDir.copy(dir).addScaledVector(tangent, -0.85).normalize();
+    dustDir.copy(wDir).addScaledVector(tangent, -0.9).normalize();
 
-    const fill = (
-      geom: THREE.BufferGeometry,
-      n: number,
-      d: THREE.Vector3,
-      len: number,
-      spreadF: number
-    ) => {
-      const pos = geom.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < n; i++) {
-        const t = i / n;
-        const spread = t * spreadF * (1 - e);
-        pos.setXYZ(
-          i,
-          group.current.position.x + d.x * t * len + jitter[(i * 3) % jitter.length] * spread,
-          group.current.position.y + d.y * t * len + jitter[(i * 3 + 1) % jitter.length] * spread,
-          group.current.position.z + d.z * t * len + jitter[(i * 3 + 2) % jitter.length] * spread
-        );
-      }
-      pos.needsUpdate = true;
-    };
-    // tails and comas die out completely as the comet docks in the pill
-    const len = 5.6 * (1 - e) * scale + 0.4;
-    fill(tailGeom, TAIL_COUNT, dir, len, 0.8);
-    fill(dustGeom, DUST_COUNT, dustDir, len * 0.55, 1.5);
-    tailMat.current.opacity = 0.45 * (1 - e) * hero.intro;
-    dustMat.current.opacity = 0.26 * (1 - e) * hero.intro;
+    const live = (1 - e) * hero.intro;
+    const len = (5.4 * (1 - e) + 0.5) / Math.max(scale, 0.0001);
+    aim(ion.current, wDir, len, body.size * 1.7, 0.5 * live);
+    aim(dust.current, dustDir, len * 0.62, body.size * 3.0, 0.22 * live);
+
     nucleus.current.rotation.x += dt * 0.4;
     nucleus.current.rotation.y += dt * 0.23;
-    if (coma.current) {
-      (coma.current.material as THREE.SpriteMaterial).opacity =
-        0.6 * (1 - e * 0.92) * hero.intro;
-      coma.current.scale.setScalar(body.size * 5 * (1 - e * 0.5));
-    }
-    if (comaWide.current) {
-      (comaWide.current.material as THREE.SpriteMaterial).opacity =
-        0.13 * (1 - e) * hero.intro;
-      comaWide.current.scale.setScalar(body.size * 9 * (1 - e * 0.5));
-    }
+    const comaP = 0.65 * (1 - e * 0.9) * hero.intro;
+    (ice.current.material as THREE.SpriteMaterial).opacity = comaP;
+    ice.current.scale.setScalar(body.size * 3.4 * (1 - e * 0.5));
+    (coma.current.material as THREE.SpriteMaterial).opacity = 0.22 * (1 - e) * hero.intro;
+    coma.current.scale.setScalar(body.size * 8 * (1 - e * 0.5));
   });
 
   return (
-    <>
-      <group ref={group}>
-        <mesh ref={nucleus} geometry={rockGeom}>
-          <meshStandardMaterial
-            color="#7e8b95"
-            emissive={body.accent}
-            emissiveIntensity={0.32}
-            roughness={0.9}
-          />
-        </mesh>
-        <sprite ref={coma}>
-          <spriteMaterial
-            map={glow}
-            color="#e9f6fb"
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </sprite>
-        <sprite ref={comaWide}>
-          <spriteMaterial
-            map={glow}
-            color={body.accent}
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </sprite>
-        <HitSphere body={body} factor={4} />
-      </group>
-      <points geometry={tailGeom} frustumCulled={false}>
-        <pointsMaterial
-          ref={tailMat}
-          map={glow}
-          size={0.5}
-          sizeAttenuation
-          color={body.accent}
-          transparent
-          opacity={0.5}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
+    <group ref={group}>
+      {/* icy nucleus */}
+      <mesh ref={nucleus} geometry={rockGeom}>
+        <meshStandardMaterial
+          color="#aebfcb"
+          emissive={body.accent}
+          emissiveIntensity={0.35}
+          roughness={0.78}
+          metalness={0.05}
         />
-      </points>
-      <points geometry={dustGeom} frustumCulled={false}>
-        <pointsMaterial
-          ref={dustMat}
-          map={glow}
-          size={0.62}
-          sizeAttenuation
-          color="#e8d9b8"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </points>
-    </>
+      </mesh>
+      {/* bright inner coma + soft outer coma */}
+      <sprite ref={ice}>
+        <spriteMaterial map={glow} color="#eaf6fb" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
+      <sprite ref={coma}>
+        <spriteMaterial map={glow} color={body.accent} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
+      {/* smooth tapered tails — ion (blue-white) + dust (warm, wider) */}
+      <mesh ref={dust} geometry={tailGeom}>
+        <meshBasicMaterial map={beam} color="#e8d3a6" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <mesh ref={ion} geometry={tailGeom}>
+        <meshBasicMaterial map={beam} color="#bfe0ff" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <HitSphere body={body} factor={4} />
+    </group>
   );
 }
 
@@ -1167,40 +1122,47 @@ function Pulsar({ body, index, count }: BodyProps) {
   const spin = useRef<THREE.Group>(null!); // rotates → lighthouse sweep
   const core = useRef<THREE.Mesh>(null!);
   const halo = useRef<THREE.Sprite>(null!);
-  const ring = useRef<THREE.Mesh>(null!);
-  const beamMats = useRef<THREE.MeshBasicMaterial[]>([]);
+  const disk = useRef<THREE.Mesh>(null!);
+  const jetMats = useRef<THREE.MeshBasicMaterial[]>([]);
+  const coneMats = useRef<THREE.MeshBasicMaterial[]>([]);
   const update = useGenie(body, index, count);
   const glow = useMemo(() => glowTexture(), []);
-  const beam = useMemo(() => {
-    // cone with base at the core (y=0), apex out at y=H
-    const H = 7;
-    const g = new THREE.ConeGeometry(1.5, H, 28, 1, true);
+  const beamMap = useMemo(() => beamTexture(), []);
+  const diskMap = useMemo(() => ringTexture("#9fd0ff"), []);
+
+  // a thin tapered jet and a wider, fainter search cone around it
+  const jet = useMemo(() => {
+    const H = 8;
+    const g = new THREE.ConeGeometry(0.13, H, 16, 1, true);
     g.translate(0, H / 2, 0);
     return g;
   }, []);
-  const beamMap = useMemo(() => beamTexture(), []);
+  const cone = useMemo(() => {
+    const H = 8;
+    const g = new THREE.ConeGeometry(1.4, H, 20, 1, true);
+    g.translate(0, H / 2, 0);
+    return g;
+  }, []);
 
   useFrame((state, dt) => {
     update(group.current, dt);
     const t = state.clock.elapsedTime;
-    // sharp lighthouse pulse — brief flash each rotation
-    const phase = (t * 2.4) % (Math.PI * 2);
-    const flash = Math.pow(Math.max(0, Math.sin(phase)), 6); // spike
-    const base = 0.18 + flash * 0.9;
-    const dockDim = 1 - smoothstep(hero.pS, 0.5, 1) * 0.95; // beams gone in pill
-    spin.current.rotation.y += dt * (reduced ? 0.4 : 2.4);
-    beamMats.current.forEach((m) => {
-      if (m) m.opacity = base * hero.intro * dockDim;
+    // sharp lighthouse pulse — a brief flash twice per rotation
+    const flash = Math.pow(Math.max(0, Math.sin(t * 2.4)), 8);
+    const dockDim = 1 - smoothstep(hero.pS, 0.5, 1) * 0.96; // jets gone in pill
+    spin.current.rotation.y += dt * (reduced ? 0.5 : 2.6);
+    jetMats.current.forEach((m) => {
+      if (m) m.opacity = (0.32 + flash * 0.6) * hero.intro * dockDim;
     });
-    const coreLift = 1 + flash * 0.4;
-    core.current.scale.setScalar(coreLift);
-    halo.current.scale.setScalar(body.size * (5 + flash * 4));
-    (halo.current.material as THREE.SpriteMaterial).opacity =
-      (0.4 + flash * 0.5) * hero.intro;
-    if (ring.current) {
-      ring.current.rotation.z += dt * 0.4;
-      (ring.current.material as THREE.MeshBasicMaterial).opacity =
-        0.4 * hero.intro * dockDim;
+    coneMats.current.forEach((m) => {
+      if (m) m.opacity = (0.04 + flash * 0.16) * hero.intro * dockDim;
+    });
+    core.current.scale.setScalar(1 + flash * 0.5);
+    halo.current.scale.setScalar(body.size * (4 + flash * 5));
+    (halo.current.material as THREE.SpriteMaterial).opacity = (0.45 + flash * 0.5) * hero.intro;
+    if (disk.current) {
+      disk.current.rotation.z += dt * 0.5;
+      (disk.current.material as THREE.MeshBasicMaterial).opacity = 0.5 * hero.intro * dockDim;
     }
   });
 
@@ -1208,40 +1170,54 @@ function Pulsar({ body, index, count }: BodyProps) {
     <group ref={group}>
       {/* dense neutron core — hot blue-white, blooms */}
       <mesh ref={core}>
-        <sphereGeometry args={[body.size * 1.5, 32, 32]} />
-        <meshBasicMaterial color="#eaf2ff" toneMapped={false} />
+        <sphereGeometry args={[body.size * 1.4, 32, 32]} />
+        <meshBasicMaterial color="#eaf4ff" toneMapped={false} />
       </mesh>
       <sprite ref={halo}>
-        <spriteMaterial map={glow} color="#bcd4ff" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <spriteMaterial map={glow} color="#aaccff" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
 
-      {/* magnetic axis, tilted off the spin axis → the sweep */}
+      {/* accretion disk — a tilted glowing ring in the equatorial plane */}
+      <mesh ref={disk} rotation={[Math.PI / 2 - 0.35, 0, 0]} scale={body.size * 3.2}>
+        <ringGeometry args={[0.5, 1.5, 64]} />
+        <meshBasicMaterial map={diskMap} color="#9fd0ff" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+
+      {/* magnetic axis tilted off the spin axis → the lighthouse sweep */}
       <group ref={spin}>
-        <group rotation={[0.5, 0, 0.32]}>
-          {[1, -1].map((dir, i) => (
-            <mesh key={i} geometry={beam} rotation={[dir > 0 ? 0 : Math.PI, 0, 0]}>
-              <meshBasicMaterial
-                ref={(m) => {
-                  if (m) beamMats.current[i] = m;
-                }}
-                map={beamMap}
-                color="#cfe0ff"
-                transparent
-                opacity={0}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
+        <group rotation={[0.6, 0, 0.42]}>
+          {[1, -1].map((d, i) => (
+            <group key={i} rotation={[d > 0 ? 0 : Math.PI, 0, 0]}>
+              {/* the bright thin jet */}
+              <mesh geometry={jet}>
+                <meshBasicMaterial
+                  ref={(m) => { if (m) jetMats.current[i] = m; }}
+                  map={beamMap}
+                  color="#dcebff"
+                  transparent
+                  opacity={0}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                  blending={THREE.AdditiveBlending}
+                />
+              </mesh>
+              {/* the faint search cone of light around it */}
+              <mesh geometry={cone}>
+                <meshBasicMaterial
+                  ref={(m) => { if (m) coneMats.current[i] = m; }}
+                  map={beamMap}
+                  color="#9fc4ff"
+                  transparent
+                  opacity={0}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                  blending={THREE.AdditiveBlending}
+                />
+              </mesh>
+            </group>
           ))}
         </group>
       </group>
-
-      {/* equatorial field ring */}
-      <mesh ref={ring} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[body.size * 3, 0.03, 8, 64]} />
-        <meshBasicMaterial color="#9fd0ff" transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
 
       <HitSphere body={body} factor={9} />
     </group>
@@ -1439,9 +1415,9 @@ export default function SystemScene() {
       {!reduced && (
         <EffectComposer multisampling={0}>
           <Bloom
-            intensity={0.5}
-            luminanceThreshold={0.78}
-            luminanceSmoothing={0.28}
+            intensity={0.46}
+            luminanceThreshold={0.8}
+            luminanceSmoothing={0.5}
             mipmapBlur
           />
         </EffectComposer>

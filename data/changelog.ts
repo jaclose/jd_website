@@ -13,6 +13,14 @@ export interface LogEntry {
 export const changelog: LogEntry[] = [
   {
     date: "2026-06-14",
+    type: "fix",
+    message:
+      "polish pass — toast moves to the bottom and actually leaves, white planet borders gone, a smooth-tailed comet, a real pulsar, a forest you click to walk",
+    additions: 230,
+    deletions: 209,
+  },
+  {
+    date: "2026-06-14",
     type: "feat",
     message:
       "real shaders — a living fbm-plasma sun, scattering atmospheres, a toon forest with BOTW wind-grass, and Xbox-style achievement toasts",

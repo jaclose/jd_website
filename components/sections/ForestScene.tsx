@@ -98,12 +98,14 @@ export default function ForestScene() {
     walk.target = WAYPOINTS[idx];
     if (idx === specimens.length - 1) unlockVisitor("wanderer");
   };
+  // clicking the forest itself walks you onward down the trail
+  const advance = () => goTo((stop + 1) % specimens.length);
 
   return (
     <section ref={section} id="garden" className="biome-forest relative min-h-svh overflow-hidden">
-      {/* the forest itself */}
+      {/* the forest itself — click it to walk on */}
       <div className="absolute inset-0">
-        {begun && <ForestCanvas walk={walk} active={near} />}
+        {begun && <ForestCanvas walk={walk} active={near} onAdvance={advance} />}
       </div>
 
       {/* survey vignette */}
@@ -117,6 +119,9 @@ export default function ForestScene() {
         <h2 className="font-display text-[clamp(2rem,4.5vw,3.6rem)] font-light leading-none text-ink [text-shadow:0_2px_22px_rgba(3,8,5,0.95)]">
           The Garden
         </h2>
+        <p className="label mt-3 text-[8px]! tracking-[0.26em]! text-leaf/60 [text-shadow:0_1px_8px_rgba(3,8,5,0.9)]">
+          CLICK THE TRAIL TO WALK ON ↡
+        </p>
       </div>
 
       {/* survey corner brackets */}

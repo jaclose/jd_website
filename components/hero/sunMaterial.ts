@@ -95,11 +95,16 @@ void main(){
   vec3 col = mix(uCool, uMid, smoothstep(0.2, 0.7, plasma));
   col = mix(col, uHot, smoothstep(0.7, 1.05, plasma));
   col *= (1.0 - 0.55 * spots);
-  // limb brightening — the rim runs hotter (Fresnel on view)
-  float fres = pow(1.0 - max(dot(vNormal, vView), 0.0), 2.2);
-  col += uHot * fres * 0.9;
+  // limb brightening — the rim runs hotter, but in a WARM tone and rolled
+  // off before the very edge so it doesn't bloom into a hard white ring
+  float ndv = max(dot(vNormal, vView), 0.0);
+  float fres = pow(1.0 - ndv, 2.8);
+  fres *= smoothstep(0.0, 0.18, ndv);   // fade the limb add right at the edge
+  col += mix(uMid, uHot, 0.4) * fres * 0.6;
+  // soft darkening at the extreme silhouette so the disc ends cleanly
+  col *= mix(0.82, 1.0, smoothstep(0.02, 0.16, ndv));
   // HDR lift so only the star trips the bloom threshold
-  col *= 1.7;
+  col *= 1.6;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
