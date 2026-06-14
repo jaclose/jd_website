@@ -15,6 +15,14 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
+      "the garden builds — every planted pursuit raises its own architecture: a signal tower for this site, a glass greenhouse for the med app, an observatory and field station up the mind trail, training posts and a tide pool on the coast, a stone shrine and a small library in the sacred grove. No more cards wearing leaves — places you walk up to",
+    additions: 360,
+    deletions: 28,
+  },
+  {
+    date: "2026-06-14",
+    type: "garden",
+    message:
       "the garden takes root — real projects planted from the repos: this site as a signal tower, Noctyrium under glass, a memory grove for spaced repetition, the acacia stand of faith. A richer world model (trails, biomes, feature-types, growth stages, statuses, repo links), groves that walk you past your planted stops, and the planet greening from orbit to 100% vegetation, 34% seas",
     additions: 470,
     deletions: 96,

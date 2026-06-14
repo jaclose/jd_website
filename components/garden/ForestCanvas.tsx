@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { skills, type Skill } from "@/data/garden";
+import { skills, type Skill, type FeatureType } from "@/data/garden";
+import Structure, { hasStructure } from "./Structures";
 
 /**
  * A true 3D forest — the garden as a place you walk through. From a central
@@ -577,9 +578,13 @@ function Grove({
   const fwd = forward(domain.angle);
   const right = rightOf(domain.angle);
 
-  const { trees, stops } = useMemo(() => {
+  // structures face back down the trail toward the approaching camera
+  const featYaw = Math.atan2(-fwd.x, -fwd.z);
+
+  const { trees, treeStops, features } = useMemo(() => {
     const out: TreeSpec[] = [];
     const stopPts: { x: number; z: number }[] = [];
+    const feats: { x: number; z: number; type: FeatureType; stage: number }[] = [];
     // a place in trail-local coords: f forward of the grove centre, s sideways.
     const at = (f: number, s: number) => ({
       x: center.x + fwd.x * f + right.x * s,
@@ -598,21 +603,38 @@ function Grove({
 
     // the planted skills as a procession of stops the camera walks up to —
     // each set a little deeper and on the alternating side of the trail, so you
-    // pass them on the way in. watering a skill (raising its stage) grows its
-    // tree; an archived one stands faint, a thing the path has grown past.
+    // pass them on the way in. a built pursuit raises its structure (tower,
+    // greenhouse, shrine…); a natural one its tree; an archived one stands
+    // faint, a thing the path has grown past.
     const place = (n: number, i: number) => {
       const f = n <= 1 ? 0.4 : -1.0 + (i / (n - 1)) * 5.2;
       const side = i % 2 === 0 ? -1 : 1;
-      const s = side * (1.7 + (i % 3) * 0.55) + (rnd() - 0.5) * 0.7;
+      const s = side * (1.9 + (i % 3) * 0.55) + (rnd() - 0.5) * 0.6;
       return at(f, s);
     };
 
     if (planted.length) {
       planted.forEach((sk, i) => {
         const p = place(planted.length, i);
-        const ghost = sk.status === "archived";
-        out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 0.6 + sk.stage * 0.18, seed: 900 + index * 50 + i, faint: ghost });
-        if (!ghost) stopPts.push(p);
+        if (sk.status === "archived") {
+          out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 0.6 + sk.stage * 0.18, seed: 900 + index * 50 + i, faint: true });
+          return;
+        }
+        if (hasStructure(sk.type)) {
+          feats.push({ x: p.x, z: p.z, type: sk.type, stage: sk.stage });
+          // a companion tree beside the structure, so it sits among greenery
+          out.push({
+            x: p.x + right.x * 1.5,
+            z: p.z + right.z * 1.5,
+            kind: domain.kind,
+            scale: 0.5 + rnd() * 0.25,
+            seed: 950 + index * 30 + i,
+          });
+        } else {
+          // a natural pursuit — its species tree, grown by its stage, + a marker
+          out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 0.6 + sk.stage * 0.18, seed: 900 + index * 50 + i });
+          stopPts.push(p);
+        }
       });
     } else {
       // nothing planted yet — translucent projections of what could grow
@@ -621,7 +643,7 @@ function Grove({
         out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 1.0 + (i % 2) * 0.3, seed: 970 + index * 9 + i, faint: true });
       });
     }
-    return { trees: out, stops: stopPts };
+    return { trees: out, treeStops: stopPts, features: feats };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -630,9 +652,8 @@ function Grove({
       {trees.map((t, i) => (
         <Tree key={i} spec={t} bark={bark} ramp={ramp} />
       ))}
-      {/* a tended stone + a marker-light at each living stop, so a planted
-          skill reads as a place someone keeps, not just another tree */}
-      {stops.map((p, i) => (
+      {/* a tended stone + a marker-light at each natural stop */}
+      {treeStops.map((p, i) => (
         <group key={`stop-${i}`} position={[p.x, 0, p.z]}>
           <mesh position={[0, 0.12, 0]} scale={[0.55, 0.32, 0.55]}>
             <dodecahedronGeometry args={[0.5, 0]} />
@@ -642,6 +663,12 @@ function Grove({
             <sphereGeometry args={[0.08, 10, 10]} />
             <meshBasicMaterial color={domain.sign} />
           </mesh>
+        </group>
+      ))}
+      {/* built pursuits raise an actual structure */}
+      {features.map((f, i) => (
+        <group key={`feat-${i}`} position={[f.x, 0, f.z]} rotation={[0, featYaw, 0]}>
+          <Structure type={f.type} stage={f.stage} accent={domain.sign} />
         </group>
       ))}
     </>
@@ -771,7 +798,7 @@ function DollyInner({
     // trunks — fills the frame (aim at the tree cluster, not the path's end).
     tmp.set(
       THREE.MathUtils.lerp(CLEARING_LOOK.x, grove.x, committed),
-      THREE.MathUtils.lerp(CLEARING_LOOK.y, 3.2, committed),
+      THREE.MathUtils.lerp(CLEARING_LOOK.y, 2.2, committed),
       THREE.MathUtils.lerp(CLEARING_LOOK.z, grove.z, committed)
     );
     look.current.lerp(tmp, 1 - Math.exp(-4 * d));
