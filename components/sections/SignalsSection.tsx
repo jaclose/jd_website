@@ -75,23 +75,7 @@ interface SpotifySignalResponse {
   recent: SpotifyItem[];
 }
 
-interface MymindItem {
-  id: string;
-  title: string;
-  kind: string;
-  excerpt: string | null;
-  savedAt: string | null;
-}
-
-interface MymindSignalResponse {
-  provider: "mymind";
-  configured: true;
-  generatedAt: string;
-  itemCount: number;
-  items: MymindItem[];
-}
-
-type SignalResponse = SetupSignalResponse | StravaSignalResponse | SpotifySignalResponse | MymindSignalResponse;
+type SignalResponse = SetupSignalResponse | StravaSignalResponse | SpotifySignalResponse;
 
 interface NativeState {
   loading: boolean;
@@ -105,7 +89,6 @@ function createNativeStates(): Record<NativeProvider, NativeState> {
   return {
     strava: { loading: false, data: null, error: null },
     spotify: { loading: false, data: null, error: null },
-    mymind: { loading: false, data: null, error: null },
   };
 }
 
@@ -133,12 +116,13 @@ function formatArtists(artists: string[]) {
   return artists.length ? artists.join(", ") : "Unknown artist";
 }
 
-function statusFor(state: NativeState) {
+function statusFor(signal: NativeSignal, state: NativeState) {
   if (state.loading) return "ACQUIRING";
   if (state.error) return "OFFLINE";
+  if (state.data && !state.data.configured && signal.embeds?.length) return "LIVE EMBED";
   if (state.data && !state.data.configured) return "NEEDS API";
   if (state.data?.configured) return "LIVE";
-  return "STANDBY";
+  return signal.embeds?.length ? "EMBED READY" : "STANDBY";
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
@@ -160,44 +144,20 @@ function LoadingRows() {
   );
 }
 
-function SetupPanel({ data }: { data: SetupSignalResponse }) {
-  return (
-    <div className="space-y-3">
-      <p className="font-serif text-sm leading-relaxed text-faint">{data.message}</p>
-      <div className="grid gap-2">
-        {data.needs.map((need) => (
-          <code
-            key={need}
-            className="border border-[rgba(232,230,225,0.08)] bg-space-deep px-3 py-2 font-mono text-[0.68rem] text-starlight"
-          >
-            {need}
-          </code>
-        ))}
-      </div>
-      {data.scopes?.length ? (
-        <p className="label text-[6.5px]! tracking-[0.18em]! text-dim">SCOPES · {data.scopes.join(" · ")}</p>
-      ) : null}
-      {data.docs ? (
-        <p className="break-all font-mono text-[0.65rem] leading-relaxed text-dim">docs: {data.docs}</p>
-      ) : null}
-    </div>
-  );
-}
-
 function EmbedFallback({ signal, setup }: { signal: NativeSignal; setup?: SetupSignalResponse }) {
   const message =
     signal.id === "spotify"
-      ? "Showing a Spotify player embed. Live currently-playing still needs the API relay."
-      : "Showing the embeddable activity widget while the API relay waits for OAuth credentials.";
+      ? "Player embed is live. Native now-playing can take over after the Spotify token lands."
+      : "Strava public widget is live here; the native relay can stay optional.";
 
   if (!signal.embeds?.length) {
-    return setup ? <SetupPanel data={setup} /> : null;
+    return setup ? <p className="font-serif text-sm leading-relaxed text-faint">{setup.message}</p> : null;
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="font-serif text-sm leading-relaxed text-faint">{message}</p>
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {signal.embeds.map((embed) => (
           <div key={embed.src} className="space-y-2">
             <iframe
@@ -214,16 +174,6 @@ function EmbedFallback({ signal, setup }: { signal: NativeSignal; setup?: SetupS
           </div>
         ))}
       </div>
-      {setup ? (
-        <details className="border-t border-[rgba(232,230,225,0.06)] pt-3">
-          <summary className="label cursor-pointer text-[6.5px]! tracking-[0.18em]! text-dim">
-            API RELAY SETUP
-          </summary>
-          <div className="mt-3">
-            <SetupPanel data={setup} />
-          </div>
-        </details>
-      ) : null}
     </div>
   );
 }
@@ -318,29 +268,6 @@ function SpotifyPanel({ data }: { data: SpotifySignalResponse }) {
   );
 }
 
-function MymindPanel({ data }: { data: MymindSignalResponse }) {
-  return (
-    <div className="space-y-4">
-      <Metric label="CARDS" value={`${data.itemCount}`} />
-      {data.items.length ? (
-        <ul className="space-y-2">
-          {data.items.map((item) => (
-            <li key={item.id} className="border-b border-[rgba(232,230,225,0.06)] pb-2">
-              <span className="label text-[6.5px]! tracking-[0.18em]! text-dim">
-                {item.kind} · {formatDate(item.savedAt)}
-              </span>
-              <p className="mt-1 font-serif text-sm text-ink">{item.title}</p>
-              {item.excerpt ? <p className="mt-1 line-clamp-3 font-serif text-xs text-faint">{item.excerpt}</p> : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="font-serif text-sm text-faint">mymind API connected, but no cards were returned.</p>
-      )}
-    </div>
-  );
-}
-
 function NativeBody({ signal, state }: { signal: NativeSignal; state: NativeState }) {
   if (state.loading) return <LoadingRows />;
   if (state.error) {
@@ -355,18 +282,27 @@ function NativeBody({ signal, state }: { signal: NativeSignal; state: NativeStat
 
   if (signal.id === "strava" && state.data.provider === "strava") return <StravaPanel data={state.data} />;
   if (signal.id === "spotify" && state.data.provider === "spotify") return <SpotifyPanel data={state.data} />;
-  if (signal.id === "mymind" && state.data.provider === "mymind") return <MymindPanel data={state.data} />;
 
   return <p className="font-serif text-sm text-[#d77a7a]">Signal response did not match the requested provider.</p>;
 }
 
-function NativeSignalCard({ signal, state }: { signal: NativeSignal; state: NativeState }) {
+function NativeSignalCard({
+  signal,
+  state,
+  className = "",
+}: {
+  signal: NativeSignal;
+  state: NativeState;
+  className?: string;
+}) {
   return (
-    <article className="group relative overflow-hidden border border-hairline bg-[rgba(8,10,16,0.5)] p-5 transition-colors hover:border-[rgba(232,230,225,0.18)]">
+    <article
+      className={`group relative min-w-0 overflow-hidden border border-hairline bg-[rgba(8,10,16,0.5)] p-4 transition-colors hover:border-[rgba(232,230,225,0.18)] ${className}`}
+    >
       <div className="relative z-10 flex items-start gap-4">
         <span
           aria-hidden
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border text-lg"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border text-base"
           style={{ borderColor: `${signal.accent}55`, color: signal.accent }}
         >
           {signal.glyph}
@@ -374,13 +310,13 @@ function NativeSignalCard({ signal, state }: { signal: NativeSignal; state: Nati
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
             <span className="font-display text-base font-light text-ink">{signal.label}</span>
-            <span className="label text-[6.5px]! text-dim">{statusFor(state)}</span>
+            <span className="label text-[6.5px]! text-dim">{statusFor(signal, state)}</span>
           </span>
           <span className="label mt-1 block text-[7px]! tracking-[0.18em]! text-dim">{signal.pending}</span>
         </span>
       </div>
 
-      <div className="relative z-10 mt-4 pl-0 sm:pl-[60px] lg:pl-[60px]">
+      <div className="relative z-10 mt-3 pl-0 sm:pl-14 lg:pl-0">
         <NativeBody signal={signal} state={state} />
       </div>
 
@@ -394,9 +330,8 @@ function NativeSignalCard({ signal, state }: { signal: NativeSignal; state: Nati
 }
 
 /**
- * The uplink array — GitHub streams from a public API. Strava, Spotify,
- * and mymind render native cards from local API routes so private tokens
- * never ship to the browser.
+ * GitHub streams from a public API. Strava and Spotify render native cards
+ * when token relays exist, then fall back to public embeds when they do not.
  */
 export default function SignalsSection() {
   const section = useRef<HTMLElement>(null);
@@ -405,6 +340,8 @@ export default function SignalsSection() {
   const [commits, setCommits] = useState<Commit[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [nativeStates, setNativeStates] = useState<Record<NativeProvider, NativeState>>(createNativeStates);
+  const stravaSignal = nativeSignals.find((signal) => signal.id === "strava");
+  const spotifySignal = nativeSignals.find((signal) => signal.id === "spotify");
 
   useEffect(() => {
     if (inView) unlockVisitor("tuned-in");
@@ -413,7 +350,7 @@ export default function SignalsSection() {
   useEffect(() => {
     if (!inView || commits || failed) return;
     const ctrl = new AbortController();
-    fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/commits?per_page=5`, {
+    fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/commits?per_page=4`, {
       signal: ctrl.signal,
       headers: { Accept: "application/vnd.github+json" },
     })
@@ -477,7 +414,7 @@ export default function SignalsSection() {
     <section
       ref={section}
       id="signals"
-      className="biome-signals relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-24 md:px-12"
+      className="biome-signals relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-20 md:px-12"
     >
       {/* radar sweep backdrop */}
       <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center opacity-[0.12]">
@@ -497,10 +434,10 @@ export default function SignalsSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl">
-        <div className="mb-10 flex items-end justify-between border-b border-hairline pb-5">
+      <div className="relative z-10 mx-auto w-full max-w-7xl">
+        <div className="mb-7 flex items-end justify-between border-b border-hairline pb-4">
           <div>
-            <p className="label mb-3 text-comet/70">LIVE UPLINK ARRAY · TELEMETRY FROM EARTH</p>
+            <p className="label mb-2 text-comet/70">LIVE UPLINK ARRAY · TELEMETRY FROM EARTH</p>
             <h2 className="font-display text-[clamp(1.9rem,4vw,3.2rem)] font-light leading-none text-ink">
               Signals
             </h2>
@@ -508,15 +445,15 @@ export default function SignalsSection() {
           <span className="label hidden text-[10px]! text-dim sm:block">06</span>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(420px,1fr)_340px_minmax(300px,0.8fr)] lg:items-start">
           {/* ——— GitHub: live feed ——— */}
           <a
             href={signals[0].href}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col border border-hairline bg-[rgba(8,10,16,0.55)] p-6 transition-colors hover:border-[rgba(232,230,225,0.2)]"
+            className="group min-w-0 border border-hairline bg-[rgba(8,10,16,0.55)] p-5 transition-colors hover:border-[rgba(232,230,225,0.2)]"
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between">
               <span className="flex items-center gap-3">
                 <span aria-hidden className="text-lg text-ink">
                   {signals[0].glyph}
@@ -537,7 +474,7 @@ export default function SignalsSection() {
                 </span>
               </span>
             </div>
-            <ul className="flex-1 space-y-2 font-mono">
+            <ul className="min-w-0 space-y-2 font-mono">
               {commits
                 ? commits.map((c) => (
                     <li
@@ -545,11 +482,13 @@ export default function SignalsSection() {
                       className="flex items-baseline gap-3 border-b border-[rgba(232,230,225,0.05)] pb-2 text-[0.72rem]"
                     >
                       <span className="shrink-0 text-starlight/80">{c.sha}</span>
-                      <span className="truncate text-faint transition-colors group-hover:text-ink">{c.message}</span>
+                      <span className="min-w-0 flex-1 truncate text-faint transition-colors group-hover:text-ink">
+                        {c.message}
+                      </span>
                       <span className="ml-auto shrink-0 text-[0.62rem] text-dim">{c.date}</span>
                     </li>
                   ))
-                : Array.from({ length: 5 }, (_, i) => (
+                : Array.from({ length: 4 }, (_, i) => (
                     <li key={i} className="flex items-center gap-3 pb-2">
                       <span className="h-2.5 w-14 animate-pulse rounded bg-[rgba(232,230,225,0.08)]" />
                       <span className="h-2.5 flex-1 animate-pulse rounded bg-[rgba(232,230,225,0.05)]" />
@@ -566,16 +505,28 @@ export default function SignalsSection() {
             </span>
           </a>
 
-          {/* ——— native service relays ——— */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-            {nativeSignals.map((signal) => (
-              <NativeSignalCard key={signal.id} signal={signal} state={nativeStates[signal.id]} />
-            ))}
+          {stravaSignal ? (
+            <NativeSignalCard
+              signal={stravaSignal}
+              state={nativeStates[stravaSignal.id]}
+              className="lg:min-h-[606px]"
+            />
+          ) : null}
+
+          <div className="grid min-w-0 gap-4">
+            {spotifySignal ? <NativeSignalCard signal={spotifySignal} state={nativeStates[spotifySignal.id]} /> : null}
+            <div className="min-w-0 border border-hairline bg-[rgba(8,10,16,0.38)] p-4">
+              <p className="label mb-2 text-[7px]! text-comet/70">SIGNAL ROUTING</p>
+              <p className="font-serif text-sm leading-relaxed text-faint">
+                GitHub streams live. Strava stays on its public widget. Spotify can switch from player embed to native
+                now-playing as soon as the token is added.
+              </p>
+            </div>
           </div>
         </div>
 
-        <p className="label mt-8 text-[8px]! tracking-[0.24em]! text-dim">
-          GITHUB STREAMS LIVE FROM THE PUBLIC API · STRAVA, SPOTIFY & MYMIND RENDER THROUGH LOCAL API RELAYS
+        <p className="label mt-5 text-[8px]! tracking-[0.24em]! text-dim">
+          GITHUB API · STRAVA PUBLIC WIDGET · SPOTIFY PLAYER WIDGET WITH NATIVE RELAY READY
         </p>
       </div>
     </section>

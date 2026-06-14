@@ -1,11 +1,10 @@
 /**
  * Live uplinks — the section of the site that phones home to the
- * services Jafar actually uses. GitHub is wired and public (no token).
- * The others are "antennae" awaiting an OAuth relay; flip `live` and add
- * the fetcher when the keys exist. Keep this list as the single source.
+ * services Jafar actually uses. GitHub is wired and public; Strava and
+ * Spotify use embeddable widgets until their optional OAuth relays are set.
  */
 export interface Signal {
-  id: "github" | "strava" | "spotify" | "mymind";
+  id: "github" | "strava" | "spotify";
   label: string;
   channel: string; // what it broadcasts
   accent: string;
@@ -15,7 +14,7 @@ export interface Signal {
   /** shown until the uplink is live */
   pending: string;
   href?: string;
-  endpoint?: `/api/signals/${"strava" | "spotify" | "mymind"}`;
+  endpoint?: `/api/signals/${"strava" | "spotify"}`;
   embeds?: {
     title: string;
     src: string;
@@ -48,18 +47,13 @@ export const signals: Signal[] = [
     glyph: "▲",
     live: false,
     status: "LINKED",
-    pending: "NATIVE API RELAY · iframe fallback available",
+    pending: "PUBLIC WIDGET · NATIVE API OPTIONAL",
     endpoint: "/api/signals/strava",
     embeds: [
       {
         title: "Jafar's latest Strava rides",
         src: "https://www.strava.com/athletes/86740264/latest-rides/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
         height: 454,
-      },
-      {
-        title: "Jafar's Strava activity summary",
-        src: "https://www.strava.com/athletes/86740264/activity-summary/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
-        height: 160,
       },
     ],
   },
@@ -71,7 +65,7 @@ export const signals: Signal[] = [
     glyph: "♪",
     live: false,
     status: "LINKED",
-    pending: "NATIVE API RELAY · player embed fallback available",
+    pending: "PLAYER WIDGET · NATIVE API OPTIONAL",
     endpoint: "/api/signals/spotify",
     embeds: [
       {
@@ -79,19 +73,8 @@ export const signals: Signal[] = [
         src: "https://open.spotify.com/embed/track/0Lc3coQTcMMJiiEFi7BG2z?utm_source=generator",
         height: 152,
         allow: "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",
-        note: "Spotify iframes can embed tracks/playlists, but currently-playing needs the API relay.",
+        note: "Currently-playing will switch on when the Spotify relay token is added.",
       },
     ],
-  },
-  {
-    id: "mymind",
-    label: "mymind",
-    channel: "the saved fragments, the half-thoughts",
-    accent: "#c9a0e8",
-    glyph: "❖",
-    live: false,
-    status: "STANDBY",
-    pending: "PRIVATE API WATCH · ready when mymind exposes an endpoint",
-    endpoint: "/api/signals/mymind",
   },
 ];
