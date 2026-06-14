@@ -39,7 +39,7 @@ function buildPlots(): Plot[] {
       glyph: { id: s.id, stage: s.stage },
       ghost: false,
       kicker: `PLOT ${String(i + 1).padStart(2, "0")} · ${STAGE_NAMES[s.stage].toUpperCase()} · ${s.domain.toUpperCase()}`,
-      title: s.name,
+      title: s.title,
       sub: `PLANTED ${dispatchDate(s.planted)}`,
       note: s.note,
       stage: s.stage,

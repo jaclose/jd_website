@@ -577,10 +577,10 @@ function Grove({
   const fwd = forward(domain.angle);
   const right = rightOf(domain.angle);
 
-  const trees: TreeSpec[] = useMemo(() => {
+  const { trees, stops } = useMemo(() => {
     const out: TreeSpec[] = [];
-    // a place expressed in trail-local coords: f forward of the grove centre,
-    // s sideways across the trail. keeps every grove framed by the camera.
+    const stopPts: { x: number; z: number }[] = [];
+    // a place in trail-local coords: f forward of the grove centre, s sideways.
     const at = (f: number, s: number) => ({
       x: center.x + fwd.x * f + right.x * s,
       z: center.z + fwd.z * f + right.z * s,
@@ -593,49 +593,35 @@ function Grove({
       const s = ((i - (BACK - 1) / 2) / (BACK - 1)) * 16 + (rnd() - 0.5) * 1.8;
       const f = 2.5 + rnd() * 5;
       const pt = at(f, s);
-      out.push({
-        x: pt.x,
-        z: pt.z,
-        kind: domain.kind,
-        scale: 0.85 + rnd() * 0.7,
-        seed: 700 + index * 40 + i,
-      });
+      out.push({ x: pt.x, z: pt.z, kind: domain.kind, scale: 0.85 + rnd() * 0.7, seed: 700 + index * 40 + i });
     }
 
-    // foreground — the planted skills themselves, in a near arc the camera
-    // walks up to. watering a skill (raising its stage) grows its tree here.
-    const fore = (n: number) =>
-      Array.from({ length: n }, (_, i) => {
-        const s = n === 1 ? (rnd() - 0.5) * 2 : ((i - (n - 1) / 2) / Math.max(1, n - 1)) * 5.5;
-        const f = -1.4 - rnd() * 1.8; // just ahead of the camera viewpoint, before the stand
-        return at(f + (rnd() - 0.5) * 0.8, s + (rnd() - 0.5) * 1.4);
-      });
+    // the planted skills as a procession of stops the camera walks up to —
+    // each set a little deeper and on the alternating side of the trail, so you
+    // pass them on the way in. watering a skill (raising its stage) grows its
+    // tree; an archived one stands faint, a thing the path has grown past.
+    const place = (n: number, i: number) => {
+      const f = n <= 1 ? 0.4 : -1.0 + (i / (n - 1)) * 5.2;
+      const side = i % 2 === 0 ? -1 : 1;
+      const s = side * (1.7 + (i % 3) * 0.55) + (rnd() - 0.5) * 0.7;
+      return at(f, s);
+    };
 
     if (planted.length) {
-      const slots = fore(planted.length);
-      planted.forEach((sk, i) =>
-        out.push({
-          x: slots[i].x,
-          z: slots[i].z,
-          kind: domain.kind,
-          scale: 0.6 + sk.stage * 0.18,
-          seed: 900 + index * 50 + i,
-        })
-      );
+      planted.forEach((sk, i) => {
+        const p = place(planted.length, i);
+        const ghost = sk.status === "archived";
+        out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 0.6 + sk.stage * 0.18, seed: 900 + index * 50 + i, faint: ghost });
+        if (!ghost) stopPts.push(p);
+      });
     } else {
       // nothing planted yet — translucent projections of what could grow
-      fore(3).forEach((slot, i) =>
-        out.push({
-          x: slot.x,
-          z: slot.z,
-          kind: domain.kind,
-          scale: 1.0 + (i % 2) * 0.3,
-          seed: 970 + index * 9 + i,
-          faint: true,
-        })
-      );
+      [0, 1, 2].forEach((i) => {
+        const p = place(3, i);
+        out.push({ x: p.x, z: p.z, kind: domain.kind, scale: 1.0 + (i % 2) * 0.3, seed: 970 + index * 9 + i, faint: true });
+      });
     }
-    return out;
+    return { trees: out, stops: stopPts };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -643,6 +629,20 @@ function Grove({
     <>
       {trees.map((t, i) => (
         <Tree key={i} spec={t} bark={bark} ramp={ramp} />
+      ))}
+      {/* a tended stone + a marker-light at each living stop, so a planted
+          skill reads as a place someone keeps, not just another tree */}
+      {stops.map((p, i) => (
+        <group key={`stop-${i}`} position={[p.x, 0, p.z]}>
+          <mesh position={[0, 0.12, 0]} scale={[0.55, 0.32, 0.55]}>
+            <dodecahedronGeometry args={[0.5, 0]} />
+            <meshStandardMaterial color="#5d6b4e" roughness={1} />
+          </mesh>
+          <mesh position={[0, 0.36, 0]}>
+            <sphereGeometry args={[0.08, 10, 10]} />
+            <meshBasicMaterial color={domain.sign} />
+          </mesh>
+        </group>
       ))}
     </>
   );

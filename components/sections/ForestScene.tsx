@@ -4,33 +4,13 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "framer-motion";
-import { biosphere, STAGE_NAMES, DOMAIN_SPECIES } from "@/data/garden";
+import { biosphere, STAGE_NAMES, DOMAIN_SPECIES, trailDef } from "@/data/garden";
 import { DOMAINS, domainSkills, type WalkState } from "@/components/garden/ForestCanvas";
 import { unlockVisitor } from "@/lib/visitor";
 
 const ForestCanvas = dynamic(() => import("@/components/garden/ForestCanvas"), {
   ssr: false,
 });
-
-/** the feel of each domain's grove, written into the survey notes */
-const DOMAIN_FEEL: Record<string, { weather: string; note: string }> = {
-  mind: {
-    weather: "snow-dusted · evergreen",
-    note: "The northern stand. Spruce holds its needles through every winter of study — disciplines of the mind grow here.",
-  },
-  craft: {
-    weather: "autumn · broad canopy",
-    note: "The oak grove. Load-bearing and slow — the crafts that one day shade whoever comes after.",
-  },
-  body: {
-    weather: "coastal · storm-bent",
-    note: "The palm line. Flexible where others snap — the practices of the body, bent but never broken.",
-  },
-  spirit: {
-    weather: "golden · deep-rooted",
-    note: "The acacia stand. Roots that reach water far below — the things of the spirit, oldest in the garden.",
-  },
-};
 
 export default function ForestScene() {
   const bio = biosphere();
@@ -61,6 +41,7 @@ export default function ForestScene() {
   };
 
   const current = domain >= 0 ? DOMAINS[domain] : null;
+  const trail = current ? trailDef(current.id) : null;
   const grovePlanted = current ? domainSkills(current.id) : [];
 
   return (
@@ -96,9 +77,9 @@ export default function ForestScene() {
       {/* route tracker, top right */}
       <div className="absolute right-6 top-24 z-20 hidden text-right md:right-12 md:block">
         <p className="label text-[8px]! tracking-[0.28em]! text-leaf/70">
-          {current ? `GROVE · ${DOMAIN_SPECIES[current.id].toUpperCase()}` : "TRAILHEAD · THE CLEARING"}
+          {trail ? trail.biome.toUpperCase() : "TRAILHEAD · THE CLEARING"}
         </p>
-        <p className="label mt-1.5 text-[8px]! text-dim">{current ? DOMAIN_FEEL[current.id].weather.toUpperCase() : "FOG LIGHT · NOMINAL"}</p>
+        <p className="label mt-1.5 text-[8px]! text-dim">{trail ? trail.weather.toUpperCase() : "FOG LIGHT · NOMINAL"}</p>
       </div>
 
       {/* survey panel — the clearing's four paths, or the current grove */}
@@ -109,9 +90,9 @@ export default function ForestScene() {
           animate={{ opacity: begun ? 1 : 0, y: 0 }}
           exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.5 }}
-          className="absolute bottom-20 left-1/2 z-20 w-[min(94vw,560px)] -translate-x-1/2 border border-hairline bg-[rgba(5,10,7,0.84)] backdrop-blur-md"
+          className="absolute bottom-20 left-1/2 z-20 w-[min(94vw,580px)] -translate-x-1/2 border border-hairline bg-[rgba(5,10,7,0.84)] backdrop-blur-md"
         >
-          {current ? (
+          {current && trail ? (
             <>
               <div className="flex items-baseline justify-between border-b border-[rgba(232,230,225,0.08)] px-5 py-2.5">
                 <span className="label text-[8px]! tracking-[0.26em]! text-leaf/80">
@@ -126,17 +107,49 @@ export default function ForestScene() {
                 </button>
               </div>
               <div className="px-5 py-4">
-                <p className="font-serif text-[0.98rem] italic leading-snug text-faint">
-                  {DOMAIN_FEEL[current.id].note}
-                </p>
+                <p className="font-serif text-[0.96rem] italic leading-snug text-faint">{trail.note}</p>
                 {grovePlanted.length ? (
-                  <ul className="mt-3 space-y-1.5">
+                  <ul className="mt-3 max-h-[34svh] space-y-2 overflow-y-auto pr-1">
                     {grovePlanted.map((s) => (
-                      <li key={s.id} className="flex items-baseline justify-between gap-3 font-mono text-[0.72rem]">
-                        <span className="truncate text-ink">{s.name}</span>
-                        <span className="shrink-0 text-leaf/80">
-                          {STAGE_NAMES[s.stage]} · {s.stage}/5
-                        </span>
+                      <li key={s.id} className="border-l border-hairline pl-2.5">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="truncate font-mono text-[0.74rem] text-ink">
+                            {s.symbol ? `${s.symbol} ` : ""}
+                            {s.title}
+                          </span>
+                          <span className="shrink-0 font-mono text-[0.66rem] text-leaf/80">
+                            {STAGE_NAMES[s.stage]} · {s.stage}/5
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                          <span className="label text-[7px]! tracking-[0.16em]! text-dim">
+                            {s.type.replace("-", " ").toUpperCase()} · {s.status.toUpperCase()}
+                          </span>
+                          {(s.repoUrl || s.projectUrl) && (
+                            <span className="flex shrink-0 gap-2.5">
+                              {s.projectUrl && (
+                                <a
+                                  href={s.projectUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="label text-[7px]! tracking-[0.14em]! text-leaf/80 transition-colors hover:text-leaf"
+                                >
+                                  VISIT ↗
+                                </a>
+                              )}
+                              {s.repoUrl && (
+                                <a
+                                  href={s.repoUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="label text-[7px]! tracking-[0.14em]! text-dim transition-colors hover:text-leaf"
+                                >
+                                  REPO ↗
+                                </a>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -163,20 +176,12 @@ export default function ForestScene() {
                       onClick={() => select(i)}
                       className="group flex flex-col items-center gap-1 bg-[rgba(5,10,7,0.6)] px-3 py-3.5 text-center transition-colors hover:bg-[rgba(10,18,12,0.9)]"
                     >
-                      <span
-                        aria-hidden
-                        className="mb-1 h-2.5 w-2.5 rounded-full"
-                        style={{ background: d.sign }}
-                      />
+                      <span aria-hidden className="mb-1 h-2.5 w-2.5 rounded-full" style={{ background: d.sign }} />
                       <span className="label text-[9px]! tracking-[0.2em]! text-ink transition-colors group-hover:text-leaf">
                         {d.label.toUpperCase()}
                       </span>
-                      <span className="label text-[7px]! tracking-[0.14em]! text-dim">
-                        {DOMAIN_SPECIES[d.id].toUpperCase()}
-                      </span>
-                      <span className="label text-[7px]! text-leaf/70">
-                        {n ? `${n} PLANTED` : "UNSOWN"}
-                      </span>
+                      <span className="label text-[7px]! tracking-[0.14em]! text-dim">{DOMAIN_SPECIES[d.id].toUpperCase()}</span>
+                      <span className="label text-[7px]! text-leaf/70">{n ? `${n} PLANTED` : "UNSOWN"}</span>
                     </button>
                   );
                 })}
@@ -218,6 +223,7 @@ export default function ForestScene() {
             ["TREES", String(bio.count)],
             ["POINTS", `${bio.points} / 50`],
             ["VEG", `${Math.round(bio.vegetation * 100)}%`],
+            ["HYDRO", `${Math.round(bio.water * 100)}%`],
           ].map(([k, v]) => (
             <div key={k} className="flex items-baseline gap-3">
               <dt className="label text-[7px]! text-dim">{k}</dt>
@@ -227,10 +233,7 @@ export default function ForestScene() {
         </dl>
       </div>
       <div className="absolute bottom-20 right-6 z-20 hidden md:block">
-        <Link
-          href="/garden"
-          className="label text-[8px]! tracking-[0.26em]! text-leaf transition-colors hover:text-ink"
-        >
+        <Link href="/garden" className="label text-[8px]! tracking-[0.26em]! text-leaf transition-colors hover:text-ink">
           {barren ? "FULL SURVEY ⟶" : "ENTER THE GARDEN ⟶"}
         </Link>
       </div>

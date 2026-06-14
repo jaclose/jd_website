@@ -106,7 +106,7 @@ export const bodies: CelestialBody[] = [
     footnote:
       bio.count === 0
         ? "surface survey · regolith, waiting"
-        : `latest sapling · ${skills[skills.length - 1].name.toLowerCase()} (${STAGE_NAMES[skills[skills.length - 1].stage]})`,
+        : `latest sapling · ${skills[skills.length - 1].title.toLowerCase()} (${STAGE_NAMES[skills[skills.length - 1].stage]})`,
   },
   {
     id: "about",

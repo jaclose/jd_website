@@ -15,6 +15,14 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
+      "the garden takes root — real projects planted from the repos: this site as a signal tower, Noctyrium under glass, a memory grove for spaced repetition, the acacia stand of faith. A richer world model (trails, biomes, feature-types, growth stages, statuses, repo links), groves that walk you past your planted stops, and the planet greening from orbit to 100% vegetation, 34% seas",
+    additions: 470,
+    deletions: 96,
+  },
+  {
+    date: "2026-06-14",
+    type: "garden",
+    message:
       "the garden forks — four trails diverge from the clearing into the domains of life (mind, craft, body, spirit); click a path on the screen to walk it, and every grove is a real stand of its species, where a planted skill grows as you water it",
     additions: 196,
     deletions: 84,
