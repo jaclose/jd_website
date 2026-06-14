@@ -13,6 +13,14 @@ export interface LogEntry {
 export const changelog: LogEntry[] = [
   {
     date: "2026-06-14",
+    type: "garden",
+    message:
+      "the garden forks — four trails diverge from the clearing into the domains of life (mind, craft, body, spirit); click a path on the screen to walk it, and every grove is a real stand of its species, where a planted skill grows as you water it",
+    additions: 196,
+    deletions: 84,
+  },
+  {
+    date: "2026-06-14",
     type: "feat",
     message:
       "signals go live — Strava rides + summary, the Spotify player, a mymind link-out, and a one-command Spotify token helper",
