@@ -33,3 +33,6 @@ next-env.d.ts
 
 # raw site-export assets (curated copies live in public/)
 04 ✍️ DabbaghMed/
+
+# local agent scratch (reference repos, harvested code)
+.claude/

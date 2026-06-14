@@ -51,6 +51,11 @@ export const signals: Signal[] = [
     endpoint: "/api/signals/strava",
     embeds: [
       {
+        title: "Jafar's Strava activity summary",
+        src: "https://www.strava.com/athletes/86740264/activity-summary/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
+        height: 160,
+      },
+      {
         title: "Jafar's latest Strava rides",
         src: "https://www.strava.com/athletes/86740264/latest-rides/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
         height: 454,
@@ -78,3 +83,18 @@ export const signals: Signal[] = [
     ],
   },
 ];
+
+/**
+ * mymind has no public API (private alpha), and its boards are account-gated,
+ * so this stays a link-out antenna rather than an embed or relay. It opens
+ * Jafar's saved-thoughts space in mymind.
+ */
+export const mymind = {
+  label: "mymind",
+  channel: "the saved fragments, the half-thoughts",
+  accent: "#c9a0e8",
+  glyph: "❖",
+  status: "LINK" as const,
+  note: "A space of saved cards — opens in mymind. No public API yet (private alpha).",
+  href: "https://access.mymind.com/spaces/000000039f8glwdJFDute8",
+};

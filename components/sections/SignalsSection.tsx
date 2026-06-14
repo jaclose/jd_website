@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { signals, GITHUB_USER, GITHUB_REPO, type Signal } from "@/data/signals";
+import { signals, mymind, GITHUB_USER, GITHUB_REPO, type Signal } from "@/data/signals";
 import { unlockVisitor } from "@/lib/visitor";
 
 interface Commit {
@@ -515,18 +515,47 @@ export default function SignalsSection() {
 
           <div className="grid min-w-0 gap-4">
             {spotifySignal ? <NativeSignalCard signal={spotifySignal} state={nativeStates[spotifySignal.id]} /> : null}
-            <div className="min-w-0 border border-hairline bg-[rgba(8,10,16,0.38)] p-4">
-              <p className="label mb-2 text-[7px]! text-comet/70">SIGNAL ROUTING</p>
-              <p className="font-serif text-sm leading-relaxed text-faint">
-                GitHub streams live. Strava stays on its public widget. Spotify can switch from player embed to native
-                now-playing as soon as the token is added.
-              </p>
-            </div>
+
+            {/* mymind — link-out antenna (no public API, account-gated) */}
+            <a
+              href={mymind.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative min-w-0 overflow-hidden border border-hairline bg-[rgba(8,10,16,0.5)] p-4 transition-colors hover:border-[rgba(232,230,225,0.18)]"
+            >
+              <div className="relative z-10 flex items-start gap-4">
+                <span
+                  aria-hidden
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border text-base"
+                  style={{ borderColor: `${mymind.accent}55`, color: mymind.accent }}
+                >
+                  {mymind.glyph}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-display text-base font-light text-ink">{mymind.label}</span>
+                    <span className="label text-[6.5px]! text-dim">{mymind.status}</span>
+                  </span>
+                  <span className="label mt-1 block text-[7px]! tracking-[0.18em]! text-dim">
+                    {mymind.channel.toUpperCase()}
+                  </span>
+                  <p className="mt-2 font-serif text-sm leading-relaxed text-faint">{mymind.note}</p>
+                  <span className="label mt-3 inline-block text-[8px]! text-comet/70 transition-colors group-hover:text-comet">
+                    OPEN IN MYMIND ↗
+                  </span>
+                </span>
+              </div>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -translate-x-full opacity-0 transition group-hover:translate-x-full group-hover:opacity-100 group-hover:duration-1000"
+                style={{ background: `linear-gradient(90deg, transparent, ${mymind.accent}18, transparent)` }}
+              />
+            </a>
           </div>
         </div>
 
         <p className="label mt-5 text-[8px]! tracking-[0.24em]! text-dim">
-          GITHUB API · STRAVA PUBLIC WIDGET · SPOTIFY PLAYER WIDGET WITH NATIVE RELAY READY
+          GITHUB API · STRAVA PUBLIC WIDGET · SPOTIFY PLAYER WIDGET WITH NATIVE RELAY READY · MYMIND LINK-OUT
         </p>
       </div>
     </section>

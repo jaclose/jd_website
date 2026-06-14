@@ -13,6 +13,14 @@ export interface LogEntry {
 export const changelog: LogEntry[] = [
   {
     date: "2026-06-14",
+    type: "feat",
+    message:
+      "signals go live — Strava rides + summary, the Spotify player, a mymind link-out, and a one-command Spotify token helper",
+    additions: 120,
+    deletions: 14,
+  },
+  {
+    date: "2026-06-14",
     type: "fix",
     message:
       "polish pass — toast moves to the bottom and actually leaves, white planet borders gone, a smooth-tailed comet, a real pulsar, a forest you click to walk",
