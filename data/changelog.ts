@@ -13,6 +13,14 @@ export interface LogEntry {
 export const changelog: LogEntry[] = [
   {
     date: "2026-06-15",
+    type: "feat",
+    message:
+      "the duel field — a Master-Duel-style deck above the archive: draw the deck, summon Noctyrium to the field, inspect it for build stats and a real download. Original midnight-ink card frame, holo foil, pointer-tilt, procedural SFX, reduced-motion safe, and data-driven so new deployments deal themselves",
+    additions: 340,
+    deletions: 4,
+  },
+  {
+    date: "2026-06-15",
     type: "garden",
     message:
       "nightfall in the garden — the walk turns nocturnal: moonlit steel-blue mist, a silver key raking between the trunks, drifting fireflies and dust motes, a moon and faint stars, and a cooler graded look. The trail fence is dialed back, and /garden now opens straight into the walk instead of the old gallery",

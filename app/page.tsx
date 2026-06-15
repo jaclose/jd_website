@@ -5,6 +5,7 @@ import EssaysGallery from "@/components/sections/EssaysGallery";
 import QuoteOfWeek from "@/components/sections/QuoteOfWeek";
 import ForestScene from "@/components/sections/ForestScene";
 import FieldNotesSection from "@/components/sections/FieldNotesSection";
+import DeploymentsDeck from "@/components/sections/DeploymentsDeck";
 import WorksArchive from "@/components/sections/WorksArchive";
 import TransmissionLog from "@/components/sections/TransmissionLog";
 import SignalsSection from "@/components/sections/SignalsSection";
@@ -15,7 +16,7 @@ export default function Home() {
     <main>
       <SpatialHero />
       <SectionSnap
-        ids={["statement", "essays", "quote", "garden", "field-notes", "archive", "log", "signals"]}
+        ids={["statement", "essays", "quote", "garden", "field-notes", "deployments", "archive", "log", "signals"]}
       />
       <div className="relative z-10">
         <Statement />
@@ -23,6 +24,7 @@ export default function Home() {
         <QuoteOfWeek />
         <ForestScene />
         <FieldNotesSection />
+        <DeploymentsDeck />
         <WorksArchive />
         <TransmissionLog />
         <SignalsSection />
