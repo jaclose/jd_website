@@ -3,9 +3,8 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { essays, fieldNotes, dispatchDate, readingTime } from "@/lib/content";
+import { essays, dispatchDate, readingTime } from "@/lib/content";
 import { essayMeta, essayHighlights } from "@/data/meta";
-import { works } from "@/data/works";
 import FallbackCover from "@/components/FallbackCover";
 
 /** thematic card types — like elemental energy */
@@ -140,15 +139,11 @@ function Card({ slug, index }: { slug: string; index: number }) {
 }
 
 export default function EssayDeck() {
-  // every essay is a card in the active deck; the PC holds everything else
+  // every essay is a card in the active deck; the PC holds 6 empty slots
   const deck = essays.map((e) => e.slug);
-  const pcItems = [
-    ...fieldNotes.map((n) => ({ kind: "note" as const, title: n.title, meta: dispatchDate(n.date), href: `/field-notes#${n.slug}` })),
-    ...works.map((w) => ({ kind: "work" as const, title: w.title, meta: w.year, href: w.pdf })),
-  ];
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
+    <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
       {/* ——— the deck ——— */}
       <div>
         <div className="mb-7 flex items-end justify-between border-b border-hairline pb-4">
@@ -167,50 +162,31 @@ export default function EssayDeck() {
         </div>
       </div>
 
-      {/* ——— the PC storage box ——— */}
+      {/* ——— Jafar's PC · Pokemon-style storage ——— */}
       <aside className="lg:sticky lg:top-24 lg:self-start">
-        <div className="rounded-lg border border-hairline bg-[rgba(8,10,16,0.6)] p-4">
-          <div className="mb-3 flex items-center justify-between border-b border-[rgba(232,230,225,0.08)] pb-2.5">
-            <span className="label text-[9px]! tracking-[0.26em]! text-comet/80">
-              ▣ STORAGE · BILL'S PC
-            </span>
-            <span className="label text-[8px]! text-dim">BOX 1</span>
+        <div className="rounded-[8px] border-2 border-[rgba(80,120,160,0.5)] bg-[linear-gradient(160deg,#1a2a40,#0f1820)] p-3 shadow-[0_8px_24px_rgba(0,0,0,0.6)]">
+          {/* PC header */}
+          <div className="mb-2 flex items-center gap-2 border-b border-[rgba(80,120,160,0.3)] pb-2">
+            <span className="h-2 w-2 rounded-full bg-[#e74c3c]" aria-hidden />
+            <span className="label text-[8px]! tracking-[0.24em]! text-comet/90">JAFAR'S PC</span>
+            <span className="ml-auto label text-[7px]! text-dim">BOX 1</span>
           </div>
-          <p className="label mb-3 text-[7px]! tracking-[0.2em]! text-dim">
-            DISPATCHES & DEEP SURVEYS — STORED, NOT IN THE DECK
-          </p>
-          <ul className="space-y-1.5">
-            {pcItems.map((it, i) => (
-              <li key={i}>
-                <Link
-                  href={it.href}
-                  {...(it.kind === "work" ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className="group flex items-center gap-2.5 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:border-[rgba(232,230,225,0.1)] hover:bg-[rgba(232,230,225,0.03)]"
-                >
-                  <span
-                    aria-hidden
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border text-[0.7rem]"
-                    style={{
-                      borderColor: it.kind === "note" ? "rgba(159,216,232,0.4)" : "rgba(212,184,134,0.4)",
-                      color: it.kind === "note" ? "#9fd8e8" : "#d4b886",
-                    }}
-                  >
-                    {it.kind === "note" ? "✦" : "▤"}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-mono text-[0.66rem] text-faint transition-colors group-hover:text-ink">
-                      {it.title}
-                    </span>
-                    <span className="label text-[6px]! text-dim">
-                      {it.kind === "note" ? "FIELD NOTE" : "ARCHIVE"} · {it.meta}
-                    </span>
-                  </span>
-                </Link>
-              </li>
+
+          {/* 6-slot grid (Pokemon team style) */}
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={i}
+                className="aspect-square rounded-[4px] border border-[rgba(80,120,160,0.4)] bg-[rgba(20,30,45,0.6)] flex items-center justify-center hover:border-[rgba(159,206,143,0.5)] transition-colors"
+              >
+                <span className="text-[0.7rem] text-dim">{i + 1}</span>
+              </div>
             ))}
-          </ul>
-          <p className="label mt-3 border-t border-[rgba(232,230,225,0.08)] pt-2.5 text-[6.5px]! tracking-[0.18em]! text-dim">
-            {pcItems.length} STORED · WITHDRAW ANYTIME
+          </div>
+
+          {/* status line */}
+          <p className="label text-[6px]! tracking-[0.16em]! text-dim text-center">
+            6 SLOTS · AWAITING NEW ESSAYS
           </p>
         </div>
       </aside>

@@ -12,6 +12,8 @@ const ForestCanvas = dynamic(() => import("@/components/garden/ForestCanvas"), {
   ssr: false,
 });
 
+const VISITED_TRAILS_KEY = "jd1184-visited-trails";
+
 export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}) {
   const bio = biosphere();
   const barren = bio.count === 0;
@@ -34,6 +36,26 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
     walk.route = i;
     walk.target = 1;
     unlockVisitor("wanderer");
+    
+    // Track visited trails for cartographer achievement
+    if (typeof window !== "undefined") {
+      try {
+        const visited = new Set(
+          JSON.parse(localStorage.getItem(VISITED_TRAILS_KEY) || "[]") as string[]
+        );
+        const domainId = DOMAINS[i]?.id;
+        if (domainId) {
+          visited.add(domainId);
+          localStorage.setItem(VISITED_TRAILS_KEY, JSON.stringify([...visited]));
+          // Unlock cartographer if all 4 domains have been visited
+          if (visited.size === 4) {
+            unlockVisitor("cartographer");
+          }
+        }
+      } catch {
+        /* localStorage unavailable */
+      }
+    }
   };
   const returnToClearing = () => {
     setDomain(-1);
