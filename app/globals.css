@@ -73,17 +73,21 @@ body {
   height: 200%;
   pointer-events: none;
   z-index: 80;
-  opacity: 0.05;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain-shift 9s steps(6) infinite;
+  animation: grain-drift 32s linear infinite;
 }
 
-@keyframes grain-shift {
-  0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-3%, 2%); }
-  40% { transform: translate(2%, -3%); }
-  60% { transform: translate(-2%, -2%); }
-  80% { transform: translate(3%, 3%); }
+@keyframes grain-drift {
+  0% { transform: translate3d(-1%, -1%, 0) rotate(0deg); }
+  50% { transform: translate3d(1%, 1%, 0) rotate(0.5deg); }
+  100% { transform: translate3d(-1%, -1%, 0) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain::after {
+    animation: none;
+  }
 }
 
 /* ————— prose: migrated WordPress essays ————— */
