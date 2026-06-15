@@ -15,9 +15,9 @@ export const changelog: LogEntry[] = [
     date: "2026-06-15",
     type: "feat",
     message:
-      "the duel field — a Master-Duel-style deck above the archive: draw the deck, summon Noctyrium to the field, inspect it for build stats and a real download. Original midnight-ink card frame, holo foil, pointer-tilt, procedural SFX, reduced-motion safe, and data-driven so new deployments deal themselves",
-    additions: 340,
-    deletions: 4,
+      "the duel field goes full-bleed — a whole-page night-sky arena with a tilted card-zone grid and a skyline of lights. Noctyrium is summoned from the deck and drops Master-Duel-style into the centre zone with a shake and a flash; its card wears the real app logo, a Yu-Gi-Oh-tinged frame ([App / Medicine], level, effect, build/platform), and a holographic foil. Deployments joins the planetary system (JD-1184 e) and the docked nav",
+    additions: 420,
+    deletions: 250,
   },
   {
     date: "2026-06-15",
