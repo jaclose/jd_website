@@ -12,6 +12,14 @@ export interface LogEntry {
 
 export const changelog: LogEntry[] = [
   {
+    date: "2026-06-15",
+    type: "garden",
+    message:
+      "nightfall in the garden — the walk turns nocturnal: moonlit steel-blue mist, a silver key raking between the trunks, drifting fireflies and dust motes, a moon and faint stars, and a cooler graded look. The trail fence is dialed back, and /garden now opens straight into the walk instead of the old gallery",
+    additions: 150,
+    deletions: 40,
+  },
+  {
     date: "2026-06-14",
     type: "garden",
     message:

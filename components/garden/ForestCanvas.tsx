@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, SMAA, HueSaturation, BrightnessContrast } from "@react-three/postprocessing";
 import { skills, type Skill, type FeatureType } from "@/data/garden";
 import Structure, { hasStructure } from "./Structures";
 
@@ -427,8 +427,8 @@ function Grass({ ramp }: { ramp: THREE.Texture }) {
     g.translate(0, HEIGHT / 2, 0);
     const pos = g.attributes.position as THREE.BufferAttribute;
     const col = new Float32Array(pos.count * 3);
-    const base = new THREE.Color("#3c5e33");
-    const tip = new THREE.Color("#a8d97e");
+    const base = new THREE.Color("#22351f");
+    const tip = new THREE.Color("#5d8a4c");
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
@@ -810,6 +810,7 @@ function LightShafts({ map }: { map: THREE.Texture }) {
           <planeGeometry args={[s.w, s.h]} />
           <meshBasicMaterial
             map={map}
+            color="#aebfe0"
             transparent
             opacity={s.o}
             depthWrite={false}
@@ -844,14 +845,50 @@ function Spores() {
   return (
     <points ref={pts} geometry={geom}>
       <pointsMaterial
-        size={0.035}
-        color="#d9e8a8"
+        size={0.03}
+        color="#9fb1c4"
         transparent
-        opacity={0.6}
+        opacity={0.4}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
         sizeAttenuation
       />
+    </points>
+  );
+}
+
+/* ————— fireflies: warm amber glints that wander and pulse ————— */
+function Fireflies() {
+  const ref = useRef<THREE.Points>(null!);
+  const { geom, bases, phases } = useMemo(() => {
+    const rnd = mulberry32(303);
+    const n = 70;
+    const bases = new Float32Array(n * 3);
+    const phases = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const p = scatterPoint(rnd, 9);
+      bases.set([p.x, 0.5 + rnd() * 3.4, p.z], i * 3);
+      phases.set([rnd() * 6.28, rnd() * 6.28, rnd() * 6.28], i * 3);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(bases.slice(), 3));
+    return { geom: g, bases, phases };
+  }, []);
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    const arr = ref.current.geometry.attributes.position.array as Float32Array;
+    const n = arr.length / 3;
+    for (let i = 0; i < n; i++) {
+      arr[i * 3] = bases[i * 3] + Math.sin(t * 0.5 + phases[i * 3]) * 0.6;
+      arr[i * 3 + 1] = bases[i * 3 + 1] + Math.sin(t * 0.7 + phases[i * 3 + 1]) * 0.4;
+      arr[i * 3 + 2] = bases[i * 3 + 2] + Math.cos(t * 0.45 + phases[i * 3 + 2]) * 0.6;
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+    (ref.current.material as THREE.PointsMaterial).opacity = 0.55 + Math.sin(t * 1.3) * 0.28;
+  });
+  return (
+    <points ref={ref} geometry={geom}>
+      <pointsMaterial size={0.14} color="#ffcf87" transparent opacity={0.7} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation toneMapped={false} />
     </points>
   );
 }
@@ -935,14 +972,15 @@ function TrailFence() {
     ROUTES.forEach((route) => {
       for (const side of [-1, 1]) {
         const pts: THREE.Vector3[] = [];
-        const N = 7;
+        const N = 4;
         for (let i = 0; i <= N; i++) {
-          const t = 0.18 + (i / N) * 0.74;
+          // start well past the fork so the four trails don't crisscross
+          const t = 0.52 + (i / N) * 0.4;
           const c = route.getPoint(t);
           const ahead = route.getPoint(Math.min(1, t + 0.02));
           const dir = ahead.clone().sub(c).setY(0).normalize();
           const rightV = new THREE.Vector3(dir.z, 0, -dir.x);
-          pts.push(c.clone().addScaledVector(rightV, side * 1.95));
+          pts.push(c.clone().addScaledVector(rightV, side * 1.85));
         }
         pts.forEach((p) =>
           posts.push(new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0.5, p.z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1)))
@@ -1021,14 +1059,14 @@ function MistBands({ map }: { map: THREE.Texture }) {
   );
 }
 
-/* ————— a misty gradient sky enclosing the grove ————— */
+/* ————— a moonlit gradient sky enclosing the grove ————— */
 function Backdrop() {
   const geom = useMemo(() => {
     const g = new THREE.SphereGeometry(58, 24, 16);
     const pos = g.attributes.position as THREE.BufferAttribute;
     const col = new Float32Array(pos.count * 3);
-    const top = new THREE.Color("#c6d4c0");
-    const bot = new THREE.Color("#0c1c12");
+    const top = new THREE.Color("#3a4a5c"); // moonlit steel-blue haze
+    const bot = new THREE.Color("#090d14"); // midnight ink at the roots
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const k = THREE.MathUtils.clamp((pos.getY(i) / 58 + 0.18) / 1.1, 0, 1);
@@ -1038,10 +1076,38 @@ function Backdrop() {
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
     return g;
   }, []);
+  const stars = useMemo(() => {
+    const rnd = mulberry32(140);
+    const n = 160;
+    const p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * Math.PI * 2;
+      const y = 0.3 + rnd() * 0.6;
+      const r = Math.sqrt(1 - y * y);
+      p.set([Math.cos(a) * r * 54, y * 54, Math.sin(a) * r * 54 - 6], i * 3);
+    }
+    const bg = new THREE.BufferGeometry();
+    bg.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    return bg;
+  }, []);
   return (
-    <mesh geometry={geom} renderOrder={-1}>
-      <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
-    </mesh>
+    <group renderOrder={-1}>
+      <mesh geometry={geom} renderOrder={-1}>
+        <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
+      </mesh>
+      <points geometry={stars}>
+        <pointsMaterial size={0.18} color="#cdd8ee" transparent opacity={0.7} sizeAttenuation fog={false} toneMapped={false} />
+      </points>
+      {/* the moon, where the key light comes from */}
+      <mesh position={[-24, 30, -42]}>
+        <sphereGeometry args={[2.4, 24, 24]} />
+        <meshBasicMaterial color="#eaf1ff" fog={false} toneMapped={false} />
+      </mesh>
+      <mesh position={[-24, 30, -42.2]}>
+        <circleGeometry args={[5.2, 32]} />
+        <meshBasicMaterial color="#9fb6d8" transparent opacity={0.18} fog={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
   );
 }
 
@@ -1139,13 +1205,14 @@ export default function ForestCanvas({
       gl={{ antialias: true, powerPreference: "high-performance", toneMappingExposure: 1.05 }}
       style={{ background: "transparent" }}
     >
-      <fog attach="fog" args={["#9aa896", 11, 56]} />
-      <hemisphereLight intensity={1.15} color="#dcd6c0" groundColor="#2c2410" />
-      {/* warm key from front-left so the camera-facing bark reads red, not black */}
-      <directionalLight position={[-11, 16, 13]} intensity={2.6} color="#ffdca8" castShadow shadow-mapSize={[1024, 1024]} />
-      {/* cool back rim for the misty shafts */}
-      <directionalLight position={[6, 14, -20]} intensity={0.9} color="#cfe0d8" />
-      <ambientLight intensity={0.4} color="#5a6e54" />
+      {/* nocturnal: distant ranks of trunks fade into moonlit steel-blue mist */}
+      <fog attach="fog" args={["#33424f", 9, 46]} />
+      <hemisphereLight intensity={0.7} color="#5e7390" groundColor="#0e131b" />
+      {/* the moon — a cool silver key raking down between the trunks */}
+      <directionalLight position={[-14, 22, -10]} intensity={1.75} color="#b2c6e2" castShadow shadow-mapSize={[1024, 1024]} />
+      {/* a low warm lantern accent so camera-facing bark keeps some ember */}
+      <directionalLight position={[11, 7, 13]} intensity={0.55} color="#e8b873" />
+      <ambientLight intensity={0.26} color="#2b3a4c" />
 
       <Backdrop />
       <Dolly walk={walk} />
@@ -1205,17 +1272,20 @@ export default function ForestCanvas({
       <LightShafts map={shaft} />
       <MistBands map={mist} />
       <Spores />
+      <Fireflies />
 
-      {/* high canopy shadow, framing the grove from far above */}
+      {/* high canopy, closing the cathedral over the grove */}
       <mesh position={[0, 26, -16]} rotation={[Math.PI / 2.3, 0, 0]}>
         <planeGeometry args={[120, 72]} />
-        <meshBasicMaterial color="#0c1c12" transparent opacity={0.38} side={THREE.DoubleSide} fog={false} />
+        <meshBasicMaterial color="#070b12" transparent opacity={0.5} side={THREE.DoubleSide} fog={false} />
       </mesh>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={0.42} luminanceThreshold={0.74} luminanceSmoothing={0.4} mipmapBlur />
+        <Bloom intensity={0.62} luminanceThreshold={0.55} luminanceSmoothing={0.4} mipmapBlur />
         <SMAA />
-        <Vignette eskil={false} offset={0.32} darkness={0.5} />
+        <HueSaturation saturation={-0.16} hue={0} />
+        <BrightnessContrast brightness={-0.05} contrast={0.12} />
+        <Vignette eskil={false} offset={0.3} darkness={0.64} />
       </EffectComposer>
     </Canvas>
   );

@@ -12,7 +12,7 @@ const ForestCanvas = dynamic(() => import("@/components/garden/ForestCanvas"), {
   ssr: false,
 });
 
-export default function ForestScene() {
+export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}) {
   const bio = biosphere();
   const barren = bio.count === 0;
   const section = useRef<HTMLElement>(null);
@@ -233,9 +233,15 @@ export default function ForestScene() {
         </dl>
       </div>
       <div className="absolute bottom-20 right-6 z-20 hidden md:block">
-        <Link href="/garden" className="label text-[8px]! tracking-[0.26em]! text-leaf transition-colors hover:text-ink">
-          {barren ? "FULL SURVEY ⟶" : "ENTER THE GARDEN ⟶"}
-        </Link>
+        {surveyHref ? (
+          <a href={surveyHref} className="label text-[8px]! tracking-[0.26em]! text-leaf transition-colors hover:text-ink">
+            THE FULL SURVEY ⤓
+          </a>
+        ) : (
+          <Link href="/garden" className="label text-[8px]! tracking-[0.26em]! text-leaf transition-colors hover:text-ink">
+            {barren ? "FULL SURVEY ⟶" : "ENTER THE GARDEN ⟶"}
+          </Link>
+        )}
       </div>
     </section>
   );

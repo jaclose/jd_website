@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
-import SeedCutscene from "@/components/garden/SeedCutscene";
+import ForestScene from "@/components/sections/ForestScene";
 import GardenGallery from "@/components/garden/GardenGallery";
 import AchievementsGrid from "@/components/garden/AchievementsGrid";
 import { biosphere } from "@/data/garden";
@@ -19,11 +19,11 @@ export default function GardenPage() {
     <>
       <SiteHeader current="garden" />
       <main>
-        <SeedCutscene />
-        <GardenGallery />
+        {/* the walk itself — a nocturnal old-growth trail you move through */}
+        <ForestScene surveyHref="#terraform" />
 
         {/* planet status — how the garden terraforms JD-1184 c */}
-        <section className="mx-auto max-w-4xl px-6 py-28 text-center md:px-10">
+        <section id="terraform" className="mx-auto max-w-4xl px-6 py-28 text-center md:px-10">
           <Reveal>
             <p className="label mb-8 text-leaf/80">TERRAFORMING REPORT</p>
             {bio.count === 0 ? (
@@ -66,6 +66,9 @@ export default function GardenPage() {
             </div>
           </Reveal>
         </section>
+
+        {/* every planted plot, by growth stage */}
+        <GardenGallery />
 
         <AchievementsGrid />
       </main>
