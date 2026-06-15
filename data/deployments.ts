@@ -31,7 +31,7 @@ export const deployments: Deployment[] = [
       "The ultimate medical-school accountability and resource companion. While on the field: heatmaps, productivity tracking, study resources, and a second brain that keeps the night's work.",
     stats: { version: "v0.03.01.5", platform: "Web", size: "—" },
     repoUrl: "https://github.com/jaclose/Noctyrium",
-    webUrl: "https://vercel.com/jacloses-projects/noctyrium",
+    webUrl: "https://noctyrium-app.vercel.app",
     downloadUrl: undefined, // Coming soon — desktop app in progress
     rarity: "foil",
   },
