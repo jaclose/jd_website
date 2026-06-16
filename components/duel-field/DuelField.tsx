@@ -72,6 +72,8 @@ export default function DeploymentsDeck() {
   const [summonGlow, setSummonGlow] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [summoning, setSummoning] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [seizureAck, setSeizureAck] = useState(true); // assume acked until checked
   const fieldRef = useRef<HTMLDivElement>(null);
 
   const hand = deployments;
@@ -86,6 +88,34 @@ export default function DeploymentsDeck() {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
+  // photosensitivity notice — shown once, then remembered
+  useEffect(() => {
+    try {
+      setSeizureAck(!!localStorage.getItem("jd1184-duel-ack"));
+    } catch {
+      /* private mode — show it, harmless */
+      setSeizureAck(false);
+    }
+  }, []);
+  const ackSeizure = () => {
+    setSeizureAck(true);
+    try {
+      localStorage.setItem("jd1184-duel-ack", "1");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // after a beat at rest, invite the visitor to draw
+  useEffect(() => {
+    if (phase !== "rest" || reduce) {
+      setShowPrompt(false);
+      return;
+    }
+    const t = setTimeout(() => setShowPrompt(true), 4200);
+    return () => clearTimeout(t);
+  }, [phase, reduce]);
 
   const draw = () => {
     blip("draw");
@@ -183,6 +213,27 @@ export default function DeploymentsDeck() {
           )}
         </AnimatePresence>
 
+        {/* Draw invitation — appears after a beat, points to the deck */}
+        <AnimatePresence>
+          {phase === "rest" && showPrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12, transition: { duration: 0.3 } }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute left-1/2 top-[39%] z-30 -translate-x-1/2 text-center"
+            >
+              <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}>
+                <p className="label text-[8px]! tracking-[0.34em]! text-starlight/70">A BUILD AWAITS THE FIELD</p>
+                <p className="mt-2 font-display text-[clamp(1.6rem,3vw,2.4rem)] font-light text-ink [text-shadow:0_2px_18px_rgba(0,0,0,0.9)]">
+                  Draw the card
+                </p>
+                <p className="label mt-2 text-[8px]! tracking-[0.3em]! text-dim">FROM THE DECK, LOWER-RIGHT ↘</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Deck pile */}
         <AnimatePresence>
           {phase === "rest" && (
@@ -267,6 +318,31 @@ export default function DeploymentsDeck() {
           </span>
         )}
       </div>
+
+      {/* Photosensitivity notice — once, then remembered */}
+      <AnimatePresence>
+        {!seizureAck && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.5 }}
+            className="absolute bottom-6 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-md border border-hairline bg-[rgba(6,9,15,0.94)] px-4 py-2.5 backdrop-blur-md"
+          >
+            <span aria-hidden className="text-starlight/80">⚠</span>
+            <p className="label text-[7.5px]! tracking-[0.16em]! text-faint">
+              BRIEF FLASHING LIGHT IN THIS SCENE · PHOTOSENSITIVITY NOTICE
+            </p>
+            <button
+              type="button"
+              onClick={ackSeizure}
+              className="label shrink-0 text-[8px]! tracking-[0.24em]! text-starlight transition-colors hover:text-ink"
+            >
+              GOT IT ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Controls */}
       <div className="absolute bottom-6 left-6 z-40 flex items-center gap-5 md:left-12">
