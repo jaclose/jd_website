@@ -14,7 +14,8 @@ export interface Deployment {
   effect: string; // short "effect text" in the description box
   stats: { version: string; platform: string; size: string };
   repoUrl: string;
-  downloadUrl: string;
+  webUrl?: string; // primary deployment/web link
+  downloadUrl?: string; // app download, if available
   rarity: "common" | "foil" | "legendary";
 }
 
@@ -24,13 +25,14 @@ export const deployments: Deployment[] = [
     name: "Noctyrium",
     art: "/cards/noctyrium.png",
     attribute: "NOCTURNAL",
-    cardType: "App / Medicine",
+    cardType: "App / Effect",
     level: 4,
     effect:
-      "A nocturnal medical-study companion. While on the field: heatmaps, productivity tracking, and a second brain that keeps the night's work.",
-    stats: { version: "v0.03.01.5", platform: "macOS", size: "—" },
+      "The ultimate medical-school accountability and resource companion. While on the field: heatmaps, productivity tracking, study resources, and a second brain that keeps the night's work.",
+    stats: { version: "v0.03.01.5", platform: "Web", size: "—" },
     repoUrl: "https://github.com/jaclose/Noctyrium",
-    downloadUrl: "https://github.com/jaclose/Noctyrium/releases/latest",
+    webUrl: "https://vercel.com/jacloses-projects/noctyrium",
+    downloadUrl: undefined, // Coming soon — desktop app in progress
     rarity: "foil",
   },
 ];

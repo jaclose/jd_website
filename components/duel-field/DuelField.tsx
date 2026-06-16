@@ -1,0 +1,284 @@
+"use client";
+
+import { useMemo, useRef, useState, useEffect } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+} from "framer-motion";
+import { deployments, type Deployment } from "@/data/deployments";
+import { DuelStarfield } from "./DuelStarfield";
+import { DuelFieldBoard } from "./DuelFieldBoard";
+import { DuelCard } from "./DuelCard";
+import { DuelInspectPanel } from "./DuelInspectPanel";
+
+type DuelPhase = "rest" | "hand" | "field";
+
+/* ————— Soft procedural audio cue (no file assets) ————— */
+function blip(kind: "draw" | "summon") {
+  try {
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    if (kind === "draw") {
+      o.type = "sine";
+      o.frequency.setValueAtTime(440, t);
+      o.frequency.exponentialRampToValueAtTime(880, t + 0.16);
+      g.gain.setValueAtTime(0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    } else {
+      o.type = "triangle";
+      o.frequency.setValueAtTime(200, t);
+      o.frequency.exponentialRampToValueAtTime(52, t + 0.26);
+      g.gain.setValueAtTime(0.14, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+    }
+    o.start();
+    o.stop(t + 0.4);
+    setTimeout(() => ctx.close(), 700);
+  } catch {
+    /* audio blocked — silent is fine */
+  }
+}
+
+function CardBack({ style, className }: { style?: React.CSSProperties; className?: string }) {
+  return (
+    <div
+      style={style}
+      className={`absolute h-full w-full rounded-[12px] border-2 border-[rgba(212,184,134,0.34)] bg-[linear-gradient(160deg,#0d1322,#070b12)] shadow-[0_16px_44px_rgba(0,0,0,0.6)] ${className ?? ""}`}
+    >
+      <div className="absolute inset-2 rounded-[8px] border border-[rgba(212,184,134,0.16)]" />
+      <svg viewBox="0 0 60 60" className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2">
+        <g transform="translate(30 30)" fill="none" stroke="#d4b886" strokeWidth="1.2" opacity="0.85">
+          <circle r="13" />
+          <circle r="13" cx="5.5" cy="-2.5" stroke="#070b12" strokeWidth="3" />
+        </g>
+        <circle cx="44" cy="16" r="1.6" fill="#d4b886" opacity="0.85" />
+      </svg>
+    </div>
+  );
+}
+
+export default function DeploymentsDeck() {
+  const reduce = useReducedMotion();
+  const [phase, setPhase] = useState<DuelPhase>(reduce ? "field" : "rest");
+  const [revealed, setRevealed] = useState<boolean>(!!reduce);
+  const [shake, setShake] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [summoning, setSummoning] = useState(false);
+  const fieldRef = useRef<HTMLDivElement>(null);
+
+  const hand = deployments;
+  const active = hand[0];
+
+  // Track mouse position for cursor-aware effects
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  const draw = () => {
+    blip("draw");
+    setPhase("hand");
+  };
+
+  const summon = () => {
+    blip("summon");
+    setSummoning(true);
+    setPhase("field");
+
+    // The slam: field shake + flash on impact
+    setTimeout(() => {
+      setFlash(true);
+      setShake(true);
+      setTimeout(() => setFlash(false), 220);
+      setTimeout(() => {
+        setShake(false);
+        setSummoning(false);
+      }, 460);
+    }, 540);
+  };
+
+  const reset = () => {
+    setRevealed(false);
+    setPhase("rest");
+    setSummoning(false);
+  };
+
+  return (
+    <section
+      id="deployments"
+      className="biome-archive relative flex min-h-svh w-full items-center justify-center overflow-hidden"
+    >
+      <style>{`
+        @keyframes dep-shake {
+          0%, 100% { transform: translate(0, 0); }
+          20% { transform: translate(-6px, 3px); }
+          40% { transform: translate(6px, -2px); }
+          60% { transform: translate(-4px, 2px); }
+          80% { transform: translate(3px, -1px); }
+        }
+      `}</style>
+
+      {/* Dynamic starfield background */}
+      <DuelStarfield
+        active={phase !== "rest"}
+        mouseX={mousePos.x}
+        mouseY={mousePos.y}
+      />
+
+      {/* Heading */}
+      <div className="pointer-events-none absolute left-6 top-20 z-20 md:left-12">
+        <p className="label mb-2 text-starlight/70 [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
+          DEPLOYMENTS · SHIPPED BUILDS
+        </p>
+        <h2 className="font-display text-[clamp(2rem,5vw,4rem)] font-light leading-none text-ink [text-shadow:0_2px_20px_rgba(0,0,0,0.95)]">
+          The Duel Field
+        </h2>
+        <p className="label mt-2 text-[8px]! tracking-[0.26em]! text-dim">
+          {phase === "rest"
+            ? "DRAW TO BEGIN"
+            : phase === "hand"
+              ? "SUMMON THE BUILD"
+              : "DEPLOYED · CLICK TO INSPECT"}
+        </p>
+      </div>
+
+      {/* Play area */}
+      <div
+        ref={fieldRef}
+        className="absolute inset-0 z-10"
+        style={shake ? { animation: "dep-shake 0.45s ease-in-out" } : undefined}
+      >
+        {/* The game board */}
+        <DuelFieldBoard
+          active={phase !== "rest"}
+          mouseX={mousePos.x}
+          mouseY={mousePos.y}
+          summoning={summoning}
+        />
+
+        {/* Summon flash effect */}
+        <AnimatePresence>
+          {flash && (
+            <motion.span
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="pointer-events-none absolute left-1/2 top-[46%] h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(212,184,134,0.7),transparent_60%)] blur-xl"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Deck pile */}
+        <AnimatePresence>
+          {phase === "rest" && (
+            <motion.button
+              type="button"
+              onClick={draw}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              whileHover={{ y: -5 }}
+              aria-label={`Draw the ${active?.name} card`}
+              className="group absolute bottom-[10%] right-[8%] z-20 h-[clamp(11rem,22vw,15rem)] w-[clamp(8rem,16vw,11rem)] cursor-pointer"
+            >
+              <CardBack style={{ transform: "rotate(-7deg) translate(7px,7px)" }} />
+              <CardBack style={{ transform: "rotate(-3deg) translate(3px,3px)" }} />
+              <CardBack className="transition-transform duration-300 group-hover:-translate-y-1.5" />
+              <span className="label absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px]! tracking-[0.3em]! text-starlight/85">
+                DRAW ↑
+              </span>
+              <span className="label absolute -top-6 left-1/2 -translate-x-1/2 text-[7px]! text-dim">
+                {hand.length} IN DECK
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Active card */}
+        {active && phase !== "rest" && (
+          <motion.div
+            initial={
+              reduce
+                ? false
+                : { x: 0, y: -480, rotateZ: -3, scale: 0.7, opacity: 0 }
+            }
+            animate={
+              phase === "field"
+                ? { x: 0, y: 0, rotateZ: 0, scale: [0.7, 1.16, 1.02], opacity: 1 }
+                : { x: 0, y: 150, rotateZ: 0, scale: 0.82, opacity: 1 }
+            }
+            transition={
+              reduce
+                ? { duration: 0 }
+                : phase === "field"
+                  ? { duration: 0.78, ease: [0.5, 0, 0.2, 1], times: [0, 0.7, 1] }
+                  : { type: "spring", stiffness: 150, damping: 16 }
+            }
+            className="absolute left-1/2 top-[46%] z-30 h-[clamp(13rem,26vw,18rem)] w-[clamp(9.5rem,19vw,13rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+            onClick={() => (phase === "hand" ? summon() : setRevealed((v) => !v))}
+            role="button"
+            aria-label={
+              phase === "hand" ? `Summon ${active.name}` : `Inspect ${active.name}`
+            }
+          >
+            <DuelCard
+              deployment={active}
+              tilt={phase === "field"}
+              mouseX={mousePos.x}
+              mouseY={mousePos.y}
+            />
+            {phase === "hand" && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="label absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px]! tracking-[0.3em]! text-starlight/85"
+              >
+                CLICK TO SUMMON ↑
+              </motion.span>
+            )}
+          </motion.div>
+        )}
+
+        {/* Inspection panel */}
+        {active && (
+          <DuelInspectPanel deployment={active} visible={phase === "field" && revealed} />
+        )}
+
+        {/* Hint for deployed card */}
+        {phase === "field" && !revealed && (
+          <span className="label absolute bottom-[8%] left-1/2 -translate-x-1/2 text-[8px]! tracking-[0.3em]! text-starlight/70">
+            CLICK THE CARD TO INSPECT
+          </span>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div className="absolute bottom-6 left-6 z-40 flex items-center gap-5 md:left-12">
+        <p className="label text-[8px]! text-dim">ONE BUILD ON THE FIELD · MORE SHIP IN TIME</p>
+        {phase !== "rest" && !reduce && (
+          <button
+            type="button"
+            onClick={reset}
+            className="label text-[8px]! tracking-[0.26em]! text-dim transition-colors hover:text-starlight"
+          >
+            ⟲ RETURN TO DECK
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
