@@ -69,7 +69,7 @@ export default function DeploymentsDeck() {
   const [phase, setPhase] = useState<DuelPhase>(reduce ? "field" : "rest");
   const [revealed, setRevealed] = useState<boolean>(!!reduce);
   const [shake, setShake] = useState(false);
-  const [flash, setFlash] = useState(false);
+  const [summonGlow, setSummonGlow] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [summoning, setSummoning] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -97,11 +97,11 @@ export default function DeploymentsDeck() {
     setSummoning(true);
     setPhase("field");
 
-    // The slam: field shake + flash on impact
+    // The landing uses a soft glow and brief shake, avoiding a bright flash.
     setTimeout(() => {
-      setFlash(true);
+      setSummonGlow(true);
       setShake(true);
-      setTimeout(() => setFlash(false), 220);
+      setTimeout(() => setSummonGlow(false), 900);
       setTimeout(() => {
         setShake(false);
         setSummoning(false);
@@ -112,6 +112,7 @@ export default function DeploymentsDeck() {
   const reset = () => {
     setRevealed(false);
     setPhase("rest");
+    setSummonGlow(false);
     setSummoning(false);
   };
 
@@ -168,15 +169,16 @@ export default function DeploymentsDeck() {
           summoning={summoning}
         />
 
-        {/* Summon flash effect */}
+        {/* Summon glow effect */}
         <AnimatePresence>
-          {flash && (
+          {summonGlow && (
             <motion.span
               aria-hidden
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
+              initial={{ opacity: 0, scale: 0.72 }}
+              animate={{ opacity: [0, 0.24, 0], scale: [0.72, 1.12, 1.55] }}
               exit={{ opacity: 0 }}
-              className="pointer-events-none absolute left-1/2 top-[46%] h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(212,184,134,0.7),transparent_60%)] blur-xl"
+              transition={{ duration: 0.9, ease: "easeOut" }}
+              className="pointer-events-none absolute left-1/2 top-[46%] h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(212,184,134,0.24)] bg-[radial-gradient(circle,rgba(212,184,134,0.24),rgba(127,212,232,0.08)_42%,transparent_68%)] blur-md"
             />
           )}
         </AnimatePresence>

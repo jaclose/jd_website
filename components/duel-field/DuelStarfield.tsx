@@ -54,9 +54,10 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
 
     const w = canvas.offsetWidth;
     const h = canvas.offsetHeight;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Star count based on quality
-    const starCount = quality === "high" ? 700 : quality === "medium" ? 400 : 200;
+    const starCount = reducedMotion ? 180 : quality === "high" ? 700 : quality === "medium" ? 400 : 200;
 
     // Initialize stars if empty
     if (starsRef.current.length === 0) {
@@ -66,14 +67,14 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
           x: Math.random() * w,
           y: Math.random() * h,
           z: Math.random() * 100,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          vz: (Math.random() - 0.5) * 0.5,
-          brightness: Math.random() * 0.6 + 0.3,
-          targetBrightness: Math.random() * 0.6 + 0.3,
+          vx: reducedMotion ? 0 : (Math.random() - 0.5) * 0.18,
+          vy: reducedMotion ? 0 : (Math.random() - 0.5) * 0.18,
+          vz: reducedMotion ? 0 : (Math.random() - 0.5) * 0.24,
+          brightness: Math.random() * 0.45 + 0.25,
+          targetBrightness: Math.random() * 0.45 + 0.25,
           size: Math.random() * 1.85 + 0.75,
           color: colors[Math.floor(Math.random() * colors.length)],
-          twinklePeriod: Math.random() * 3000 + 2000,
+          twinklePeriod: Math.random() * 4500 + 5500,
           twinkling: Math.random() * Math.PI * 2,
         });
       }
@@ -103,13 +104,13 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
         if (star.y < -50) star.y = h + 50;
         if (star.y > h + 50) star.y = -50;
 
-        // Twinkling via sine wave
-        star.twinkling += (Math.PI * 2) / (star.twinklePeriod / 16);
+        // Slow twinkle via sine wave.
+        star.twinkling += reducedMotion ? 0 : (Math.PI * 2) / (star.twinklePeriod / 16);
         if (star.twinkling > Math.PI * 2) star.twinkling -= Math.PI * 2;
-        const twinkle = Math.sin(star.twinkling) * 0.3 + 0.7;
+        const twinkle = reducedMotion ? 0.9 : Math.sin(star.twinkling) * 0.12 + 0.82;
 
         // Cursor attraction (if mouse position provided and active)
-        if (active && mouseX !== 0 && mouseY !== 0) {
+        if (!reducedMotion && active && mouseX !== 0 && mouseY !== 0) {
           const dx = mouseX - star.x;
           const dy = mouseY - star.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -147,24 +148,22 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
         ctx.globalAlpha = 1;
       });
 
-      // Draw subtle connections between nearby stars (14% of stars)
-      if (quality === "high" && frameCount % 4 === 0) {
-        const connectionChance = 0.14;
-        ctx.strokeStyle = "rgba(160, 236, 255, 0.28)";
+      // Draw stable subtle connections between nearby stars.
+      if (!reducedMotion && quality === "high") {
+        ctx.strokeStyle = "rgba(160, 236, 255, 0.18)";
         ctx.lineWidth = 0.75;
         ctx.setLineDash([4, 14]);
 
         stars.forEach((star, i) => {
-          if (Math.random() > connectionChance) return;
-
           for (let j = i + 1; j < Math.min(i + 6, stars.length); j++) {
+            if (((i * 17 + j * 31) % 100) > 8) continue;
             const other = stars[j];
             const dx = other.x - star.x;
             const dy = other.y - star.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < 95) {
-              ctx.globalAlpha = (1 - dist / 95) * 0.6;
+              ctx.globalAlpha = (1 - dist / 95) * 0.28;
               ctx.beginPath();
               ctx.moveTo(star.x, star.y);
               ctx.lineTo(other.x, other.y);

@@ -48,7 +48,7 @@ export function DuelFieldBoard({ active = false, mouseX = 0, mouseY = 0, summoni
         }
         @keyframes duel-summon-ring {
           0% { 
-            opacity: 1;
+            opacity: 0.55;
             transform: scale(0.8);
           }
           100% { 
@@ -60,7 +60,7 @@ export function DuelFieldBoard({ active = false, mouseX = 0, mouseY = 0, summoni
           animation: duel-zone-pulse 2s ease-in-out infinite;
         }
         .duel-summon-ring {
-          animation: duel-summon-ring 0.8s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+          animation: duel-summon-ring 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
@@ -101,7 +101,7 @@ export function DuelFieldBoard({ active = false, mouseX = 0, mouseY = 0, summoni
           className="pointer-events-none absolute left-1/2 top-1/2 h-[34%] w-[34%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(160,180,220,0.18)] bg-[radial-gradient(circle,rgba(60,80,120,0.16),transparent_70%)]"
           style={{
             boxShadow: summoning
-              ? "0 0 40px rgba(212, 184, 134, 0.4), inset 0 0 30px rgba(160, 220, 240, 0.2)"
+              ? "0 0 34px rgba(212, 184, 134, 0.24), inset 0 0 26px rgba(160, 220, 240, 0.14)"
               : undefined,
           }}
         />
@@ -110,7 +110,7 @@ export function DuelFieldBoard({ active = false, mouseX = 0, mouseY = 0, summoni
         {summoning && (
           <span
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[rgba(212,184,134,0.6)] duel-summon-ring"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(212,184,134,0.34)] duel-summon-ring"
           />
         )}
       </div>
