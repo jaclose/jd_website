@@ -7,6 +7,8 @@ import { essayMeta } from "@/data/meta";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import ReadingProgress from "@/components/ReadingProgress";
+import JsonLd from "@/components/JsonLd";
+import { essayJsonLd } from "@/lib/seo";
 
 export function generateStaticParams() {
   return essays.map((e) => ({ slug: e.slug }));
@@ -20,9 +22,27 @@ export async function generateMetadata({
   const { slug } = await params;
   const essay = essayBySlug(slug);
   if (!essay) return {};
+  const description = essay.excerpt.slice(0, 160);
+  const cover = essayMeta[slug]?.cover;
+  const path = `/essays/${slug}`;
   return {
     title: `${essay.title} — Jafar Dabbagh`,
-    description: essay.excerpt.slice(0, 160),
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "article",
+      url: path,
+      title: essay.title,
+      description,
+      publishedTime: essay.date,
+      authors: ["Jafar Dabbagh"],
+      ...(cover ? { images: [{ url: cover }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: essay.title,
+      description,
+    },
   };
 }
 
@@ -42,6 +62,15 @@ export default async function EssayPage({
 
   return (
     <>
+      <JsonLd
+        data={essayJsonLd({
+          slug,
+          title: essay.title,
+          date: essay.date,
+          description: essay.excerpt.slice(0, 160),
+          image: meta?.cover,
+        })}
+      />
       <SiteHeader current="essays" />
       <ReadingProgress />
       <main className="mx-auto max-w-3xl px-6 pb-28 pt-36 md:px-8">

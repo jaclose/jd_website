@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Field Notes — Jafar Dabbagh",
   description:
     "Dispatches from study, faith, and the battle to stay present.",
+  alternates: { canonical: "/field-notes" },
 };
 
 export default function FieldNotesPage() {

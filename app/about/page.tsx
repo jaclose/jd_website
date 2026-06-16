@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "About — Jafar Dabbagh",
   description:
     "The inner world. Never satisfied with surfaces — the thought before the action, the mercy inside the motion.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

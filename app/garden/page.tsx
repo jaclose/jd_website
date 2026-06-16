@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "The Garden — Jafar Dabbagh",
   description:
     "Every skill is a tree. The garden terraforms its planet as the work deepens.",
+  alternates: { canonical: "/garden" },
 };
 
 export default function GardenPage() {

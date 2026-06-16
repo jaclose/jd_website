@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import SpatialHero from "@/components/hero/SpatialHero";
 import SectionSnap from "@/components/SectionSnap";
 import Statement from "@/components/sections/Statement";
@@ -10,10 +11,18 @@ import WorksArchive from "@/components/sections/WorksArchive";
 import TransmissionLog from "@/components/sections/TransmissionLog";
 import SignalsSection from "@/components/sections/SignalsSection";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
+import { personJsonLd, websiteJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
     <main>
+      <JsonLd data={personJsonLd} />
+      <JsonLd data={websiteJsonLd} />
       <SpatialHero />
       <SectionSnap
         ids={["statement", "essays", "quote", "garden", "field-notes", "deployments", "archive", "log", "signals"]}

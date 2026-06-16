@@ -39,6 +39,22 @@ export default function Footer() {
             </Link>
           ))}
           <a
+            href="https://www.linkedin.com/in/jafardabbagh/"
+            target="_blank"
+            rel="noopener noreferrer me"
+            className="label link-reveal text-[10px]! text-faint hover:text-ink"
+          >
+            LinkedIn
+          </a>
+          <a
+            href="https://github.com/jaclose"
+            target="_blank"
+            rel="noopener noreferrer me"
+            className="label link-reveal text-[10px]! text-faint hover:text-ink"
+          >
+            GitHub
+          </a>
+          <a
             href="mailto:jafardabbagh@gmail.com"
             className="label link-reveal text-[10px]! text-starlight/80 hover:text-starlight"
           >

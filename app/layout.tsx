@@ -4,6 +4,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import Cursor from "@/components/Cursor";
 import VisitTracker from "@/components/VisitTracker";
 import AchievementToast from "@/components/AchievementToast";
+import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -32,9 +33,27 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Jafar Dabbagh — the JD-1184 system",
   description:
     "Essays, field notes, and a garden that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+  authors: [{ name: "Jafar Dabbagh", url: SITE_URL }],
+  creator: "Jafar Dabbagh",
+  openGraph: {
+    type: "website",
+    siteName: "Jafar Dabbagh",
+    url: SITE_URL,
+    locale: "en_US",
+    title: "Jafar Dabbagh — the JD-1184 system",
+    description:
+      "Essays, field notes, and a garden that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jafar Dabbagh — the JD-1184 system",
+    description:
+      "Essays, field notes, and a garden that terraforms its planet.",
+  },
 };
 
 export default function RootLayout({

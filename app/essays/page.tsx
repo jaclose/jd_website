@@ -8,6 +8,7 @@ import EssayDeck from "@/components/essays/EssayDeck";
 export const metadata: Metadata = {
   title: "Essays — Jafar Dabbagh",
   description: "Long-form thought from the JD-1184 system, dealt as a deck.",
+  alternates: { canonical: "/essays" },
 };
 
 export default function EssaysPage() {
