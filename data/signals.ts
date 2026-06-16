@@ -85,16 +85,17 @@ export const signals: Signal[] = [
 ];
 
 /**
- * mymind has no public API (private alpha), and its boards are account-gated,
- * so this stays a link-out antenna rather than an embed or relay. It opens
- * Jafar's saved-thoughts space in mymind.
+ * LinkedIn — the professional record. No anonymous embed (LinkedIn blocks
+ * iframing and unauthenticated scraping), so this is a link-out antenna that
+ * opens Jafar's profile.
  */
-export const mymind = {
-  label: "mymind",
-  channel: "the saved fragments, the half-thoughts",
-  accent: "#c9a0e8",
-  glyph: "❖",
+export const linkedin = {
+  label: "LinkedIn",
+  channel: "the professional record — roles, history, connections",
+  accent: "#4aa3e0",
+  glyph: "in",
   status: "LINK" as const,
-  note: "A space of saved cards — opens in mymind. No public API yet (private alpha).",
-  href: "https://access.mymind.com/spaces/000000039f8glwdJFDute8",
+  note: "The full professional record — opens on LinkedIn.",
+  href: "https://www.linkedin.com/in/jafardabbagh/",
+  handle: "in/jafardabbagh",
 };
