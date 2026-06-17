@@ -38,6 +38,12 @@ function featureKicker(feature: GardenFeature) {
   return "Site Landmark";
 }
 
+function eventTone(status?: "past" | "current" | "future") {
+  if (status === "current") return "text-leaf";
+  if (status === "future") return "text-[rgba(167,183,199,0.82)]";
+  return "text-[rgba(232,230,225,0.76)]";
+}
+
 function GardenFeatureInspector({
   feature,
   onClose,
@@ -45,6 +51,9 @@ function GardenFeatureInspector({
   feature: GardenFeature;
   onClose: () => void;
 }) {
+  const storyEvents = feature.story?.events ?? [];
+  const growth = feature.growth ?? [];
+
   return (
     <motion.aside
       initial={{ opacity: 0, y: 12 }}
@@ -68,6 +77,48 @@ function GardenFeatureInspector({
       </div>
       <p className="mt-3 font-serif text-base leading-snug text-[rgba(232,230,225,0.84)]">{feature.plaqueText}</p>
       <p className="mt-3 font-mono text-[0.68rem] leading-relaxed text-faint">{feature.visualNotes}</p>
+      {feature.story ? (
+        <div className="mt-4 border-t border-[rgba(232,230,225,0.1)] pt-3">
+          <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Story Seed</p>
+          <p className="mt-2 font-serif text-sm leading-snug text-[rgba(232,230,225,0.78)]">
+            {feature.story.summary}
+          </p>
+        </div>
+      ) : null}
+      {growth.length ? (
+        <div className="mt-4 space-y-2">
+          <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Growth Rings</p>
+          {growth.map((ring) => (
+            <div key={`${feature.id}-${ring.label}`} className="grid grid-cols-[86px_1fr] items-center gap-3">
+              <span className="truncate font-mono text-[0.62rem] uppercase tracking-[0.12em] text-faint">
+                {ring.label}
+              </span>
+              <span className="group relative h-2 overflow-hidden bg-[rgba(232,230,225,0.08)]">
+                <span
+                  className="block h-full bg-[linear-gradient(90deg,rgba(159,206,143,0.28),rgba(240,199,124,0.76))]"
+                  style={{ width: `${Math.max(4, Math.min(100, ring.value))}%` }}
+                />
+                <span className="pointer-events-none absolute left-0 top-3 hidden w-[220px] border border-[rgba(232,230,225,0.12)] bg-[rgba(5,10,8,0.94)] p-2 font-mono text-[0.62rem] leading-snug text-faint shadow-xl group-hover:block">
+                  {ring.detail}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {storyEvents.length ? (
+        <div className="mt-4 space-y-2">
+          <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Event Rings</p>
+          {storyEvents.map((event) => (
+            <div key={`${feature.id}-${event.label}`} className="border-l border-[rgba(159,206,143,0.22)] pl-3">
+              <p className={`font-mono text-[0.64rem] uppercase tracking-[0.14em] ${eventTone(event.status)}`}>
+                {event.label}
+              </p>
+              <p className="mt-1 font-mono text-[0.64rem] leading-snug text-faint">{event.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {feature.links?.length ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {feature.links.map((link) => (
@@ -175,10 +226,10 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
 
       <div className="absolute right-5 top-24 z-20 hidden max-w-[260px] text-right md:right-10 md:block">
         <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">
-          Trail camera · constrained walk
+          Trail camera · look around
         </p>
         <p className="mt-2 font-mono text-[0.68rem] leading-relaxed text-faint">
-          Follow the path, inspect plaques, and choose a fork when the trail waits.
+          Follow the path, inspect glowing plaque orbs, and choose a fork when the trail waits.
         </p>
       </div>
 
@@ -203,7 +254,7 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
                 {moving ? "Moving along the trail" : started ? branchLabel(currentNode.branch) : "Trailhead"}
               </p>
               <p className="mt-1 truncate font-mono text-sm text-ink">
-                {started ? locationLabel : "A central path waits under the trees."}
+                {started ? locationLabel : "Click the glowing trail marker, or begin the walk below."}
               </p>
             </div>
 
@@ -212,7 +263,7 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
                 <button
                   type="button"
                   onClick={beginWalk}
-                  className="border border-leaf/45 bg-leaf/10 px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-ink transition-colors hover:bg-leaf/20"
+                  className="border border-leaf/45 bg-leaf/10 px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-ink shadow-[0_0_28px_rgba(159,206,143,0.18)] transition-colors hover:bg-leaf/20"
                 >
                   Begin the Walk
                 </button>

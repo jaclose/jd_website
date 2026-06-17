@@ -254,6 +254,15 @@ function makeSoftMistTexture(seed = 5): THREE.Texture {
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "destination-in";
+  const edgeFade = ctx.createRadialGradient(s / 2, s / 2, 18, s / 2, s / 2, s / 2);
+  edgeFade.addColorStop(0, "rgba(0,0,0,0.95)");
+  edgeFade.addColorStop(0.58, "rgba(0,0,0,0.58)");
+  edgeFade.addColorStop(0.88, "rgba(0,0,0,0.16)");
+  edgeFade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = edgeFade;
+  ctx.fillRect(0, 0, s, s);
+  ctx.globalCompositeOperation = "source-over";
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -285,16 +294,11 @@ function makeMountainTexture(): THREE.Texture {
   const h = 520;
   const c = makeCanvas(w, h);
   const ctx = c.getContext("2d")!;
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#28394d");
-  sky.addColorStop(0.52, "#152233");
-  sky.addColorStop(1, "#081016");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
+  ctx.clearRect(0, 0, w, h);
   const layers = [
-    { y: 300, color: "rgba(50,73,82,0.56)", amp: 74, seed: 1 },
-    { y: 350, color: "rgba(28,53,55,0.72)", amp: 94, seed: 2 },
-    { y: 405, color: "rgba(11,28,27,0.92)", amp: 82, seed: 3 },
+    { y: 270, color: "rgba(85,109,122,0.38)", amp: 70, seed: 1 },
+    { y: 332, color: "rgba(47,75,81,0.54)", amp: 94, seed: 2 },
+    { y: 405, color: "rgba(16,37,36,0.78)", amp: 86, seed: 3 },
   ];
   layers.forEach((layer) => {
     const rnd = mulberry32(900 + layer.seed);
@@ -315,6 +319,23 @@ function makeMountainTexture(): THREE.Texture {
   fog.addColorStop(1, "rgba(168,188,194,0)");
   ctx.fillStyle = fog;
   ctx.fillRect(0, 250, w, h - 250);
+  ctx.globalCompositeOperation = "destination-in";
+  const verticalFade = ctx.createLinearGradient(0, 0, 0, h);
+  verticalFade.addColorStop(0, "rgba(0,0,0,0)");
+  verticalFade.addColorStop(0.22, "rgba(0,0,0,0.72)");
+  verticalFade.addColorStop(0.76, "rgba(0,0,0,0.92)");
+  verticalFade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = verticalFade;
+  ctx.fillRect(0, 0, w, h);
+  const sideFade = ctx.createLinearGradient(0, 0, w, 0);
+  sideFade.addColorStop(0, "rgba(0,0,0,0)");
+  sideFade.addColorStop(0.08, "rgba(0,0,0,0.82)");
+  sideFade.addColorStop(0.5, "rgba(0,0,0,1)");
+  sideFade.addColorStop(0.92, "rgba(0,0,0,0.82)");
+  sideFade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = sideFade;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = "source-over";
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -460,6 +481,17 @@ function distanceToTrail(p: THREE.Vector3) {
   return best;
 }
 
+function terrainHeightAt(x: number, z: number) {
+  const dist = distanceToTrail(new THREE.Vector3(x, 0, z));
+  const trailFlatten = THREE.MathUtils.smoothstep(dist, 2.25, 8.8);
+  const ridge =
+    Math.sin(x * 0.11 + z * 0.047) * 0.62 +
+    Math.sin(x * 0.31 - z * 0.075) * 0.25 +
+    Math.cos(Math.hypot(x + 14, z + 36) * 0.11) * 0.34;
+  const slope = THREE.MathUtils.clamp((-z - 14) / 86, 0, 1) * 0.72;
+  return -0.035 + (ridge * 0.48 + slope) * trailFlatten;
+}
+
 function scatterNearTrail(rnd: () => number, spread: number) {
   const curve = TRAIL_CURVES[Math.floor(rnd() * TRAIL_CURVES.length)];
   const t = 0.04 + rnd() * 0.93;
@@ -574,8 +606,9 @@ function PhysicalPlaque({
     >
       <mesh castShadow>
         <boxGeometry args={[1.72, 0.64, 0.08]} />
-        <meshStandardMaterial color="#6b4a31" roughness={0.96} />
+        <meshStandardMaterial color="#8a6642" roughness={0.96} />
       </mesh>
+      <InspectableOrb position={[0.73, 0.25, 0.12]} color={feature.id === "noctyrium" ? "#9697ff" : "#f0c77c"} />
       <mesh position={[0, -0.52, -0.01]} castShadow>
         <cylinderGeometry args={[0.045, 0.06, 0.8, 7]} />
         <meshStandardMaterial color="#4f3826" roughness={1} />
@@ -604,6 +637,35 @@ function PhysicalPlaque({
       >
         {stage.toUpperCase()}
       </Text>
+    </group>
+  );
+}
+
+function InspectableOrb({
+  position,
+  color,
+}: {
+  position: [number, number, number];
+  color: string;
+}) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame((state) => {
+    if (!ref.current) return;
+    const pulse = 1 + Math.sin(state.clock.elapsedTime * 2.3) * 0.12;
+    ref.current.scale.setScalar(pulse);
+    ref.current.rotation.z = state.clock.elapsedTime * 0.55;
+  });
+  return (
+    <group ref={ref} position={position}>
+      <mesh>
+        <sphereGeometry args={[0.055, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      <mesh>
+        <torusGeometry args={[0.115, 0.006, 8, 36]} />
+        <meshBasicMaterial color={color} transparent opacity={0.62} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      <GlowSphere color={color} position={[0, 0, 0]} size={0.22} opacity={0.16} />
     </group>
   );
 }
@@ -790,6 +852,7 @@ function NoctyriumSapling({ feature, bark, leaf }: { feature: GardenFeature; bar
       })}
       <GlowSphere color="#7677ff" position={[0, 0.26 * scale, 0]} size={0.72 * scale} opacity={0.18} />
       <GlowSphere color="#b0a8ff" position={[0.15 * scale, h * 0.95, 0.1 * scale]} size={0.16 * scale} opacity={0.55} />
+      <pointLight position={[0.1 * scale, 1.1 * scale, 0.1 * scale]} color="#8f91ff" intensity={1.15} distance={5.8} decay={2} />
     </group>
   );
 }
@@ -1014,14 +1077,46 @@ function TrailPath({ dirt }: { dirt: Pick<ReturnType<typeof useGardenTextures>, 
             map={dirt.dirtColor}
             normalMap={dirt.dirtNormal}
             roughnessMap={dirt.dirtRoughness}
-            color={i === 0 ? "#b3926e" : "#9d8062"}
+            color={i === 0 ? "#c1a17c" : "#ab8d6b"}
             roughness={1}
-            emissive={i === 0 ? "#150d06" : "#0f0905"}
-            emissiveIntensity={0.18}
+            emissive={i === 0 ? "#21130a" : "#160c06"}
+            emissiveIntensity={0.26}
           />
         </mesh>
       ))}
     </group>
+  );
+}
+
+function TerrainGround({ map }: { map: THREE.Texture }) {
+  const geometry = useMemo(() => {
+    const g = new THREE.PlaneGeometry(GROUND_SPAN, GROUND_SPAN, 132, 132);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const colors = new Float32Array(pos.count * 3);
+    const low = new THREE.Color("#23331f");
+    const high = new THREE.Color("#6c765b");
+    const trail = new THREE.Color("#5c624d");
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const worldZ = -pos.getY(i);
+      const h = terrainHeightAt(x, worldZ);
+      const dist = distanceToTrail(new THREE.Vector3(x, 0, worldZ));
+      pos.setZ(i, h);
+      const k = THREE.MathUtils.clamp((h + 0.42) / 1.36, 0, 1);
+      c.copy(low).lerp(high, k);
+      if (dist < 3.6) c.lerp(trail, 0.32);
+      colors.set([c.r, c.g, c.b], i * 3);
+    }
+    pos.needsUpdate = true;
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    g.computeVertexNormals();
+    return g;
+  }, []);
+  return (
+    <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <meshStandardMaterial map={map} vertexColors color="#7d8567" roughness={1} />
+    </mesh>
   );
 }
 
@@ -1071,6 +1166,64 @@ function ForkSignpost({ onSelectNode }: { onSelectNode?: (nodeId: string) => voi
   );
 }
 
+function TrailLantern({
+  position,
+  yaw = 0,
+  side = 1,
+  height = 1.72,
+}: {
+  position: [number, number, number];
+  yaw?: number;
+  side?: 1 | -1;
+  height?: number;
+}) {
+  return (
+    <group position={position} rotation={[0, yaw, 0]}>
+      <mesh position={[0, height * 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.035, 0.055, height, 7]} />
+        <meshStandardMaterial color="#5e4029" roughness={1} />
+      </mesh>
+      <mesh position={[side * 0.18, height - 0.08, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.018, 0.025, 0.42, 7]} />
+        <meshStandardMaterial color="#5e4029" roughness={1} />
+      </mesh>
+      <mesh position={[side * 0.38, height - 0.28, 0]} castShadow>
+        <boxGeometry args={[0.19, 0.28, 0.16]} />
+        <meshStandardMaterial color="#4b3323" roughness={0.9} transparent opacity={0.62} />
+      </mesh>
+      <mesh position={[side * 0.38, height - 0.28, 0]}>
+        <sphereGeometry args={[0.09, 14, 14]} />
+        <meshBasicMaterial color="#ffd18a" transparent opacity={0.92} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      <pointLight position={[side * 0.38, height - 0.28, 0]} color="#ffc778" intensity={1.35} distance={7.6} decay={2.05} />
+      <GlowSphere color="#ffd18a" position={[side * 0.38, height - 0.28, 0]} size={0.48} opacity={0.13} />
+    </group>
+  );
+}
+
+function TrailLanterns() {
+  const lanterns: {
+    position: [number, number, number];
+    yaw: number;
+    side: 1 | -1;
+    height: number;
+  }[] = [
+    { position: [-2.15, 0.02, 3.9], yaw: 0.32, side: 1 as const, height: 1.58 },
+    { position: [2.65, 0.02, -2.2], yaw: -0.2, side: -1 as const, height: 1.72 },
+    { position: [-3.2, 0.02, -7.1], yaw: 0.58, side: 1 as const, height: 1.76 },
+    { position: [1.05, 0.02, -17.0], yaw: -0.24, side: -1 as const, height: 1.48 },
+    { position: [-1.2, 0.02, -24.6], yaw: 0.15, side: 1 as const, height: 1.62 },
+    { position: [3.5, 0.02, -28.2], yaw: -0.46, side: -1 as const, height: 1.58 },
+  ];
+  return (
+    <>
+      {lanterns.map((lantern, i) => (
+        <TrailLantern key={i} {...lantern} />
+      ))}
+    </>
+  );
+}
+
 function GroundRing({
   node,
   visible,
@@ -1083,15 +1236,14 @@ function GroundRing({
   const ref = useRef<THREE.Group>(null!);
   useFrame((state) => {
     if (!ref.current) return;
-    const k = 1 + Math.sin(state.clock.elapsedTime * 1.7) * 0.045;
+    const k = 1 + Math.sin(state.clock.elapsedTime * 1.7) * 0.075;
     ref.current.scale.setScalar(k);
   });
   if (!visible) return null;
   return (
     <group
       ref={ref}
-      position={[node.position[0], 0.06, node.position[2]]}
-      rotation={[-Math.PI / 2, 0, 0]}
+      position={[node.position[0], 0.07, node.position[2]]}
       onClick={(ev) => {
         ev.stopPropagation();
         onSelectNode?.(node.id);
@@ -1104,14 +1256,25 @@ function GroundRing({
         document.body.style.cursor = "";
       }}
     >
-      <mesh>
-        <torusGeometry args={[0.68, 0.012, 8, 64]} />
-        <meshBasicMaterial color="#f0c77c" transparent opacity={0.48} blending={THREE.AdditiveBlending} toneMapped={false} />
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh>
+          <torusGeometry args={[0.9, 0.018, 8, 72]} />
+          <meshBasicMaterial color="#f0c77c" transparent opacity={0.68} blending={THREE.AdditiveBlending} toneMapped={false} />
+        </mesh>
+        <mesh>
+          <ringGeometry args={[0.48, 0.82, 64]} />
+          <meshBasicMaterial color="#f0c77c" transparent opacity={0.16} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+      <mesh position={[0, 0.62, 0]}>
+        <sphereGeometry args={[0.115, 18, 18]} />
+        <meshBasicMaterial color="#ffd18a" transparent opacity={0.92} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
-      <mesh>
-        <ringGeometry args={[0.54, 0.58, 48]} />
-        <meshBasicMaterial color="#f0c77c" transparent opacity={0.08} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      <mesh position={[0, 0.58, 0]}>
+        <cylinderGeometry args={[0.2, 0.52, 1.15, 24, 1, true]} />
+        <meshBasicMaterial color="#f0c77c" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
+      <pointLight position={[0, 0.7, 0]} color="#ffc778" intensity={0.65} distance={5.5} decay={2} />
     </group>
   );
 }
@@ -1216,20 +1379,20 @@ function GiantForest({ bark, leaf, quality }: { bark: THREE.Texture; leaf: THREE
     const rnd = mulberry32(314);
     const out: { p: THREE.Vector3; rs: number; hs: number; rot: number; tint: THREE.Color; canopy: [number, number, number] }[] = [];
     const frame = [
-      [-7.5, 9.8],
-      [7.8, 8.8],
-      [-8.4, 3.4],
-      [8.7, 2.8],
-      [-6.8, -3.2],
-      [7.4, -5.6],
-      [-9.6, -16],
-      [9.8, -18],
+      [-11.2, 10.2],
+      [11.8, 9.2],
+      [-10.4, 3.4],
+      [11.2, 2.8],
+      [-9.3, -3.2],
+      [10.5, -5.6],
+      [-12.2, -16],
+      [12.5, -18],
     ];
     frame.forEach(([x, z], i) => {
       const p = new THREE.Vector3(x + (rnd() - 0.5) * 0.7, 0, z + (rnd() - 0.5) * 0.8);
       out.push({
         p,
-        rs: 0.86 + rnd() * 0.44,
+        rs: 0.72 + rnd() * 0.34,
         hs: 1.1 + rnd() * 0.55,
         rot: rnd() * Math.PI * 2,
         tint: new THREE.Color(i % 2 ? "#a56e4c" : "#85583e"),
@@ -1319,20 +1482,21 @@ function MistBands({ map, quality }: { map: THREE.Texture; quality: GardenQualit
     const rnd = mulberry32(88);
     return Array.from({ length: qualityCount(quality, 6, 9, 13, 16) }, () => ({
       x: (rnd() - 0.5) * 54,
-      y: 0.38 + rnd() * 2.2,
+      y: 0.08 + rnd() * 0.58,
       z: 8 - rnd() * 78,
-      s: 12 + rnd() * 22,
+      s: 8 + rnd() * 16,
       spd: (0.55 + rnd() * 1.1) * (rnd() > 0.5 ? 1 : -1),
       ph: rnd() * 6.28,
-      o: 0.1 + rnd() * 0.15,
+      o: 0.025 + rnd() * 0.055,
     }));
   }, [quality]);
   useFrame((state) => {
     const tt = state.clock.elapsedTime;
-    refs.current.forEach((mesh, i) => {
-      if (!mesh) return;
-      mesh.position.x = bands[i].x + Math.sin(tt * 0.055 * bands[i].spd + bands[i].ph) * 6;
-      mesh.position.z = bands[i].z + Math.cos(tt * 0.04 * bands[i].spd + bands[i].ph) * 3;
+    refs.current.slice(0, bands.length).forEach((mesh, i) => {
+      const band = bands[i];
+      if (!mesh || !band) return;
+      mesh.position.x = band.x + Math.sin(tt * 0.055 * band.spd + band.ph) * 6;
+      mesh.position.z = band.z + Math.cos(tt * 0.04 * band.spd + band.ph) * 3;
     });
   });
   return (
@@ -1342,12 +1506,13 @@ function MistBands({ map, quality }: { map: THREE.Texture; quality: GardenQualit
           key={i}
           ref={(el) => {
             if (el) refs.current[i] = el;
+            else delete refs.current[i];
           }}
           position={[b.x, b.y, b.z]}
-          rotation={[-Math.PI / 2 + 0.18, 0, b.ph]}
+          rotation={[-Math.PI / 2 + 0.08, 0, b.ph]}
         >
           <planeGeometry args={[b.s, b.s * 0.66]} />
-          <meshBasicMaterial map={map} transparent opacity={b.o} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+          <meshBasicMaterial map={map} transparent opacity={b.o} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       ))}
     </>
@@ -1402,14 +1567,14 @@ function Backdrop({ mountain }: { mountain: THREE.Texture }) {
         <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
       </mesh>
       <mesh position={[0, 13, -82]}>
-        <planeGeometry args={[112, 42]} />
-        <meshBasicMaterial map={mountain} fog={false} depthWrite={false} />
+        <planeGeometry args={[148, 46]} />
+        <meshBasicMaterial map={mountain} transparent opacity={0.9} depthWrite={false} />
       </mesh>
-      <mesh position={[-30, 34, -55]}>
+      <mesh position={[24, 34, -58]}>
         <sphereGeometry args={[2.2, 24, 24]} />
         <meshBasicMaterial color="#eaf1ff" fog={false} toneMapped={false} />
       </mesh>
-      <mesh position={[-30, 34, -55.3]}>
+      <mesh position={[24, 34, -58.3]}>
         <circleGeometry args={[5.2, 32]} />
         <meshBasicMaterial color="#9fb6d8" transparent opacity={0.16} fog={false} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
@@ -1463,8 +1628,8 @@ function GardenCameraRig({
     targetLook.copy(vectorFromTuple(targetNode.lookAt));
     tmp.lerp(targetLook, THREE.MathUtils.smoothstep(t, 0.45, 1));
     if (targetNode.allowLookAround) {
-      tmp.x += state.pointer.x * 0.62;
-      tmp.y += state.pointer.y * 0.24;
+      tmp.x += state.pointer.x * 1.35;
+      tmp.y += state.pointer.y * 0.52;
     }
     look.current.lerp(tmp, 1 - Math.exp(-4.8 * Math.min(dt, 0.05)));
     camera.lookAt(look.current);
@@ -1506,22 +1671,19 @@ function GardenScene({
 
   return (
     <>
-      <fog attach="fog" args={["#263a42", 12, 74]} />
-      <hemisphereLight intensity={0.62} color="#6f86a3" groundColor="#09130d" />
-      <directionalLight position={[-16, 24, -10]} intensity={2.05} color="#b8cce8" castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[9, 6, 11]} intensity={0.72} color="#e6b06c" />
-      <ambientLight intensity={0.34} color="#2f4058" />
+      <fog attach="fog" args={["#263a42", 10, 82]} />
+      <hemisphereLight intensity={0.74} color="#8aa1bf" groundColor="#0a150e" />
+      <directionalLight position={[18, 30, -20]} intensity={2.55} color="#d5e2ff" castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[9, 8, 9]} intensity={0.92} color="#f0b86f" />
+      <ambientLight intensity={0.44} color="#40536e" />
 
       <Backdrop mountain={mountain} />
       <GardenCameraRig currentNodeId={currentNodeId} targetNodeId={targetNodeId} onArrive={onArrive} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[GROUND_SPAN, GROUND_SPAN]} />
-        <meshStandardMaterial map={floor} color="#607052" roughness={1} />
-      </mesh>
-
+      <TerrainGround map={floor} />
       <TrailPath dirt={textures} />
       <ForkSignpost onSelectNode={onSelectNode} />
+      <TrailLanterns />
 
       {gardenFeatures.map((feature) => (
         <FeatureObject key={feature.id} feature={feature} bark={textures.barkColor} leaf={leaf} onInspect={onInspectFeature} />
@@ -1539,17 +1701,12 @@ function GardenScene({
       <LightShafts map={shaft} />
       <Fireflies quality={quality} />
 
-      <mesh position={[0, 26, -34]} rotation={[Math.PI / 2.18, 0, 0]}>
-        <planeGeometry args={[130, 92]} />
-        <meshBasicMaterial color="#05090d" transparent opacity={0.14} side={THREE.DoubleSide} fog={false} />
-      </mesh>
-
       <EffectComposer multisampling={0}>
-        <Bloom intensity={0.72} luminanceThreshold={0.52} luminanceSmoothing={0.42} mipmapBlur />
+        <Bloom intensity={0.86} luminanceThreshold={0.48} luminanceSmoothing={0.42} mipmapBlur />
         <SMAA />
-        <HueSaturation saturation={-0.1} hue={0} />
-        <BrightnessContrast brightness={-0.045} contrast={0.16} />
-        <Vignette eskil={false} offset={0.26} darkness={0.66} />
+        <HueSaturation saturation={-0.04} hue={0} />
+        <BrightnessContrast brightness={-0.012} contrast={0.12} />
+        <Vignette eskil={false} offset={0.28} darkness={0.52} />
       </EffectComposer>
     </>
   );
@@ -1575,7 +1732,7 @@ export default function GardenCanvas({
 }: GardenCanvasProps) {
   return (
     <Canvas
-      camera={{ fov: 58, position: [0, EYE_HEIGHT, 8.5], near: 0.1, far: 115 }}
+      camera={{ fov: 64, position: [0, EYE_HEIGHT, 8.5], near: 0.1, far: 125 }}
       dpr={quality === "low" ? [1, 1.2] : [1, 1.75]}
       frameloop={active ? "always" : "demand"}
       shadows
