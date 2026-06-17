@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import Subscribe from "@/components/Subscribe";
 
 export default function Footer() {
   return (
     <footer className="relative z-10 border-t border-[rgba(232,230,225,0.1)]">
+      <div className="mx-auto max-w-6xl border-b border-[rgba(232,230,225,0.08)] px-6 py-10 md:px-10">
+        <Subscribe />
+      </div>
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 md:flex-row md:items-end md:justify-between md:px-10">
         <div>
           <div className="flex items-center gap-4">

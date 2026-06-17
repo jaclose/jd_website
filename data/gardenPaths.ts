@@ -1,0 +1,190 @@
+export interface GardenPathNode {
+  id: string;
+  branch: "main" | "medicine" | "projects";
+  label: string;
+  type: "start" | "feature" | "fork" | "return";
+  position: [number, number, number];
+  lookAt: [number, number, number];
+  nextNodes: string[];
+  previousNode?: string;
+  featureId?: string;
+  cameraSpeed?: number;
+  allowLookAround?: boolean;
+}
+
+export const gardenPathNodes: GardenPathNode[] = [
+  {
+    id: "start",
+    branch: "main",
+    label: "Trailhead",
+    type: "start",
+    position: [0, 0, 8.5],
+    lookAt: [0, 1.15, -4],
+    nextNodes: ["website-tree"],
+    cameraSpeed: 0.78,
+    allowLookAround: true,
+  },
+  {
+    id: "website-tree",
+    branch: "main",
+    label: "This Website",
+    type: "feature",
+    position: [0.55, 0, -5.25],
+    lookAt: [-2.85, 1.75, -10.4],
+    nextNodes: ["noctyrium"],
+    previousNode: "start",
+    featureId: "website-tree",
+    cameraSpeed: 0.68,
+    allowLookAround: true,
+  },
+  {
+    id: "noctyrium",
+    branch: "main",
+    label: "Noctyrium",
+    type: "feature",
+    position: [1.2, 0, -13.4],
+    lookAt: [3.15, 1.4, -15.5],
+    nextNodes: ["main-fork"],
+    previousNode: "website-tree",
+    featureId: "noctyrium",
+    cameraSpeed: 0.62,
+    allowLookAround: true,
+  },
+  {
+    id: "main-fork",
+    branch: "main",
+    label: "Main Fork",
+    type: "fork",
+    position: [0, 0, -22.5],
+    lookAt: [0, 1.2, -31],
+    nextNodes: ["term-3", "training-journey"],
+    previousNode: "noctyrium",
+    cameraSpeed: 0.58,
+    allowLookAround: true,
+  },
+  {
+    id: "term-3",
+    branch: "medicine",
+    label: "Term 3 · SGU",
+    type: "feature",
+    position: [-2.9, 0, -28.2],
+    lookAt: [-4, 1.2, -28],
+    nextNodes: ["term-2"],
+    previousNode: "main-fork",
+    featureId: "term-3",
+    cameraSpeed: 0.68,
+    allowLookAround: true,
+  },
+  {
+    id: "term-2",
+    branch: "medicine",
+    label: "Term 2 · SGU",
+    type: "feature",
+    position: [-5.4, 0, -36.6],
+    lookAt: [-6.7, 2.1, -37],
+    nextNodes: ["term-1"],
+    previousNode: "term-3",
+    featureId: "term-2",
+    cameraSpeed: 0.62,
+    allowLookAround: true,
+  },
+  {
+    id: "term-1",
+    branch: "medicine",
+    label: "Term 1 · SGU",
+    type: "feature",
+    position: [-7.2, 0, -46.2],
+    lookAt: [-8.4, 2.4, -47],
+    nextNodes: ["utk"],
+    previousNode: "term-2",
+    featureId: "term-1",
+    cameraSpeed: 0.66,
+    allowLookAround: true,
+  },
+  {
+    id: "utk",
+    branch: "medicine",
+    label: "UT Knoxville",
+    type: "feature",
+    position: [-8.4, 0, -57.2],
+    lookAt: [-9.6, 1.8, -58],
+    nextNodes: ["mcat"],
+    previousNode: "term-1",
+    featureId: "utk",
+    cameraSpeed: 0.7,
+    allowLookAround: true,
+  },
+  {
+    id: "mcat",
+    branch: "medicine",
+    label: "MCAT",
+    type: "feature",
+    position: [-9.7, 0, -67.2],
+    lookAt: [-10.6, 1.6, -69],
+    nextNodes: ["main-fork"],
+    previousNode: "utk",
+    featureId: "mcat",
+    cameraSpeed: 0.72,
+    allowLookAround: true,
+  },
+  {
+    id: "training-journey",
+    branch: "projects",
+    label: "Training Journey",
+    type: "feature",
+    position: [3.8, 0, -30],
+    lookAt: [5.4, 2.1, -30],
+    nextNodes: ["soccer"],
+    previousNode: "main-fork",
+    featureId: "training-journey",
+    cameraSpeed: 0.68,
+    allowLookAround: true,
+  },
+  {
+    id: "soccer",
+    branch: "projects",
+    label: "Soccer",
+    type: "feature",
+    position: [7.2, 0, -40.5],
+    lookAt: [8.6, 1.2, -41],
+    nextNodes: ["wave-depth"],
+    previousNode: "training-journey",
+    featureId: "soccer",
+    cameraSpeed: 0.7,
+    allowLookAround: true,
+  },
+  {
+    id: "wave-depth",
+    branch: "projects",
+    label: "Wave Depth",
+    type: "feature",
+    position: [8.9, 0, -51.5],
+    lookAt: [10.2, 1.15, -52.5],
+    nextNodes: ["future-plot"],
+    previousNode: "soccer",
+    featureId: "wave-depth",
+    cameraSpeed: 0.66,
+    allowLookAround: true,
+  },
+  {
+    id: "future-plot",
+    branch: "projects",
+    label: "Unsown Plot",
+    type: "feature",
+    position: [8.2, 0, -62],
+    lookAt: [9.1, 1.1, -63],
+    nextNodes: ["main-fork"],
+    previousNode: "wave-depth",
+    featureId: "future-plot",
+    cameraSpeed: 0.72,
+    allowLookAround: true,
+  },
+];
+
+export const gardenPathNodeMap = new Map(gardenPathNodes.map((node) => [node.id, node]));
+
+export function gardenPathNodeById(id: string) {
+  const node = gardenPathNodeMap.get(id);
+  if (!node) throw new Error(`Unknown garden path node: ${id}`);
+  return node;
+}

@@ -29,6 +29,10 @@ function hashId(id: string) {
   return h >>> 0;
 }
 
+function svgNum(n: number) {
+  return Number(n.toFixed(3));
+}
+
 interface Limb {
   d: string;
   w: number;
@@ -345,7 +349,7 @@ export default function TreeGlyph({
     <svg
       viewBox={`0 0 ${W} ${H}`}
       height={height}
-      width={(height * W) / H}
+      width={svgNum((height * W) / H)}
       className={className}
       aria-hidden
     >
@@ -434,10 +438,10 @@ export default function TreeGlyph({
       {/* soft canopy mass behind the clusters */}
       {showLeaves && cr > 0 && (
         <ellipse
-          cx={cx}
-          cy={cy}
-          rx={cr * 1.04}
-          ry={cr * 0.86}
+          cx={svgNum(cx)}
+          cy={svgNum(cy)}
+          rx={svgNum(cr * 1.04)}
+          ry={svgNum(cr * 0.86)}
           fill={leafTones[0]}
           opacity={ghost ? 0.18 : 0.55}
         />
@@ -478,16 +482,19 @@ export default function TreeGlyph({
                 const r = (4 + leafRnd() * 7) * (stage >= 4 ? 1.3 : 0.95);
                 const ox = (leafRnd() - 0.5) * 14 - tone * 1.5;
                 const oy = (leafRnd() - 0.5) * 10 - tone * 2;
+                const lx = svgNum(t.x + ox);
+                const ly = svgNum(t.y + oy);
+                const angle = svgNum((leafRnd() - 0.5) * 40);
                 return (
                   <ellipse
                     key={j}
-                    cx={t.x + ox}
-                    cy={t.y + oy}
-                    rx={r * 1.15}
-                    ry={r * 0.85}
+                    cx={lx}
+                    cy={ly}
+                    rx={svgNum(r * 1.15)}
+                    ry={svgNum(r * 0.85)}
                     fill={leafTones[tone]}
                     opacity={ghost ? 0.16 + tone * 0.05 : 0.5 + tone * 0.16}
-                    transform={`rotate(${(leafRnd() - 0.5) * 40} ${t.x + ox} ${t.y + oy})`}
+                    transform={`rotate(${angle} ${lx} ${ly})`}
                   />
                 );
               })}
@@ -503,8 +510,8 @@ export default function TreeGlyph({
           .map((t, i) => (
             <circle
               key={`b-${i}`}
-              cx={t.x + (leafRnd() - 0.5) * 10}
-              cy={t.y - 3 - leafRnd() * 6}
+              cx={svgNum(t.x + (leafRnd() - 0.5) * 10)}
+              cy={svgNum(t.y - 3 - leafRnd() * 6)}
               r={1.7}
               fill="#e9cf9b"
               opacity={0.95}
