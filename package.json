@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "spotify:token": "node scripts/spotify-refresh-token.mjs",
+    "email:dispatch": "tsx scripts/send-publication-broadcast.ts",
     "lint": "next lint"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.12.4",
     "three": "^0.175.0"
   },
   "devDependencies": {
@@ -29,6 +31,7 @@
     "@types/three": "^0.175.0",
     "playwright-core": "^1.60.0",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.5.0"
   }
 }

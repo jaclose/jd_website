@@ -3,6 +3,7 @@ import { fieldNotes, dispatchDate } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
+import EssaySignup from "@/components/newsletter/EssaySignup";
 
 export const metadata: Metadata = {
   title: "Field Notes — Jafar Dabbagh",
@@ -54,7 +55,11 @@ export default function FieldNotesPage() {
           ))}
         </div>
 
-        <p className="label mt-24 text-center text-[9px]! text-dim">
+        <div className="mt-24">
+          <EssaySignup type="field_note" />
+        </div>
+
+        <p className="label mt-16 text-center text-[9px]! text-dim">
           THE COMET RETURNS · NEXT PERIHELION UNKNOWN
         </p>
       </main>

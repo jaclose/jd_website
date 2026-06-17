@@ -8,6 +8,7 @@ import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import ReadingProgress from "@/components/ReadingProgress";
 import JsonLd from "@/components/JsonLd";
+import EssaySignup from "@/components/newsletter/EssaySignup";
 import { essayJsonLd } from "@/lib/seo";
 
 export function generateStaticParams() {
@@ -138,7 +139,11 @@ export default async function EssayPage({
           dangerouslySetInnerHTML={{ __html: essay.html }}
         />
 
-        <nav className="mt-24 grid gap-px border border-[rgba(232,230,225,0.1)] bg-[rgba(232,230,225,0.1)] sm:grid-cols-2">
+        <div className="mt-20">
+          <EssaySignup slug={slug} type="essay" />
+        </div>
+
+        <nav className="mt-20 grid gap-px border border-[rgba(232,230,225,0.1)] bg-[rgba(232,230,225,0.1)] sm:grid-cols-2">
           {[
             { e: prev, label: "OLDER ←", align: "text-left" },
             { e: next, label: "→ NEWER", align: "text-right sm:col-start-2" },
