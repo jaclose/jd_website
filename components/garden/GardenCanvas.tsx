@@ -762,7 +762,7 @@ function StandardTree({
 function WebsiteTree({ feature, bark, leaf }: { feature: GardenFeature; bark: THREE.Texture; leaf: THREE.Texture }) {
   const scale = feature.scale ?? 1;
   const h = 10.8 * scale;
-  const branchLabels = ["Essays", "Field Notes", "Garden", "Deployments", "About", "Vault", "Achievements"];
+  const branchLabels = ["Essays", "Field Notes", "Sanctum", "Deployments", "About", "Vault", "Achievements"];
   return (
     <group position={feature.position}>
       <mesh castShadow receiveShadow>

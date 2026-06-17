@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Jafar Dabbagh — the JD-1184 system",
   description:
-    "Essays, field notes, and a garden that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+    "Essays, field notes, and a Sanctum that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
   authors: [{ name: "Jafar Dabbagh", url: SITE_URL }],
   creator: "Jafar Dabbagh",
   openGraph: {
@@ -46,13 +46,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     title: "Jafar Dabbagh — the JD-1184 system",
     description:
-      "Essays, field notes, and a garden that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+      "Essays, field notes, and a Sanctum that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Jafar Dabbagh — the JD-1184 system",
     description:
-      "Essays, field notes, and a garden that terraforms its planet.",
+      "Essays, field notes, and a Sanctum that terraforms its planet.",
   },
 };
 

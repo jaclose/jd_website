@@ -19,7 +19,7 @@ import {
 const SHORT: Record<string, string> = {
   essays: "essays",
   "field-notes": "notes",
-  garden: "garden",
+  garden: "sanctum",
   about: "about",
   vault: "vault",
   quote: "quote",

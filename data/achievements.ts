@@ -44,7 +44,7 @@ export const visitorAchievements: VisitorAchievement[] = [
   {
     id: "starter-seed",
     title: "Starter Seed",
-    description: "You chose your seed. Every gardener remembers their first.",
+    description: "You chose your seed. Every Sanctum keeper remembers their first.",
     condition: "Choose a starter species in the Vault",
     hidden: false,
     tier: "common",
@@ -61,7 +61,7 @@ export const visitorAchievements: VisitorAchievement[] = [
   },
   {
     id: "gardener-eye",
-    title: "A Gardener's Eye",
+    title: "A Keeper's Eye",
     description: "You watched the seed land and waited for the truth of the frame.",
     condition: "Hidden — keep exploring",
     hidden: true,
@@ -222,7 +222,7 @@ export const achievements: Achievement[] = [
   {
     id: "first-canopy",
     title: "First Canopy",
-    description: "A tree in the garden reached full growth.",
+    description: "A tree in the Sanctum reached full growth.",
     condition: "Grow one skill to stage 4",
     unlocked: bio.grown >= 1,
     unlockedOn: "2024-01-01",
@@ -230,7 +230,7 @@ export const achievements: Achievement[] = [
   {
     id: "terraformer",
     title: "Terraformer",
-    description: "The garden planet shows green from orbit.",
+    description: "The Sanctum planet shows green from orbit.",
     condition: "Reach 15 growth points",
     unlocked: bio.points >= 15,
     unlockedOn: "2026-06-11",

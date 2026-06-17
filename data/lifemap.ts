@@ -195,7 +195,7 @@ export const provinces: Province[] = [
   /* ——— THE OLD WORLD — eras not yet lived (sea-locked) ——— */
   {
     id: "garden-frontier",
-    name: "The Garden Frontier",
+    name: "The Sanctum Frontier",
     era: "unwritten",
     role: "Frontier · surveyed, not settled",
     detail:

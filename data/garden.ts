@@ -1,5 +1,5 @@
 /**
- * The Garden — a living map of what Jafar is building, studying, practicing,
+ * The Sanctum — a living map of what Jafar is building, studying, practicing,
  * and becoming. Every pursuit is a planted feature in an explorable world;
  * as the work deepens, its tree grows and the planet JD-1184 c terraforms
  * from orbit (green shows at 15 growth points, the first seas at 50).
@@ -7,7 +7,7 @@
  * ── HOW TO PLANT ──────────────────────────────────────────────────────
  * Add an entry to `garden` below and everything updates by itself: the
  * groves you walk on the homepage, the rows and report on /garden, the
- * biosphere score, and the garden planet in the hero.
+ * biosphere score, and the sanctum planet in the hero.
  *
  *   {
  *     id: "medicine",
@@ -31,7 +31,7 @@
 
 /** the four trails you can walk today */
 export type DomainId = "mind" | "craft" | "body" | "spirit";
-/** every trail, including ground the garden will expand into */
+/** every trail, including ground the Sanctum will expand into */
 export type TrailId =
   | DomainId
   | "research-marsh"
@@ -44,7 +44,7 @@ export type Species = "spruce" | "oak" | "palm" | "acacia";
 
 /** what a planted pursuit becomes in the world — environmental storytelling,
  *  never a flat card. (3D currently renders the species tree + a tended
- *  marker for every type; bespoke structures land as the garden grows.) */
+ *  marker for every type; bespoke structures land as the Sanctum grows.) */
 export type FeatureType =
   | "tree"
   | "memory-grove" // spaced-repetition / Anki
@@ -161,7 +161,7 @@ export const TRAILS: TrailDef[] = [
     accent: "#e6cf9a",
     note: "The acacia stand. Roots that reach water far below — faith, gratitude, the Ramadan pages, and the legacy set down for those who come after.",
   },
-  // ── charted ground the garden will expand into ──
+  // ── charted ground the Sanctum will expand into ──
   {
     id: "research-marsh",
     label: "Research Marsh",
@@ -217,7 +217,7 @@ export function trailDef(id: TrailId): TrailDef | undefined {
 /* ————— the planted world ————— */
 
 /**
- * A real starter garden, seeded from Jafar's actual repositories and the
+ * A real starter sanctum, seeded from Jafar's actual repositories and the
  * disciplines he keeps. Stages are conservative honest estimates — edit
  * them as the work moves. Add, water (raise stage), or retire (archive)
  * freely; the world re-renders itself.
@@ -293,7 +293,7 @@ export const garden: GardenItem[] = [
     status: "active",
     note: "The signal tower — this very world, built layer by layer.",
     description:
-      "JD-1184: the solar-system site you are standing in. A signal tower on the craft trail, broadcasting everything else in the garden.",
+      "JD-1184: the solar-system site you are standing in. A signal tower on the craft trail, broadcasting everything else in the Sanctum.",
     planted: "2026-06-11",
     lastUpdated: "2026-06-14",
     repoUrl: "https://github.com/jaclose/jd_website",
@@ -402,7 +402,7 @@ export const garden: GardenItem[] = [
     status: "active",
     note: "The acacia stand — dua, gratitude, the quiet discipline.",
     description:
-      "The oldest roots in the garden. Daily prayer, gratitude, the moral discipline that holds the rest of the ground together.",
+      "The oldest roots in the Sanctum. Daily prayer, gratitude, the moral discipline that holds the rest of the ground together.",
     planted: "2010-01-01",
     symbol: "✺",
     tags: ["faith", "reflection", "discipline"],
@@ -430,14 +430,14 @@ export const garden: GardenItem[] = [
     status: "planted",
     note: "Roots set down for those who come after.",
     description:
-      "The thing the whole garden is ultimately for: family, and a legacy worth inheriting. Newly planted, deliberately tended.",
+      "The thing the whole Sanctum is ultimately for: family, and a legacy worth inheriting. Newly planted, deliberately tended.",
     planted: "2025-02-11",
     symbol: "❧",
     tags: ["family", "legacy"],
   },
 ];
 
-/** earlier callers imported `skills`; keep the name pointing at the garden */
+/** earlier callers imported `skills`; keep the name pointing at the Sanctum data */
 export const skills: GardenItem[] = garden;
 
 /** items that count toward terraforming — what's actually growing now */
@@ -466,7 +466,7 @@ export const STATUS_LABELS: Record<Status, string> = {
 };
 
 /**
- * The greening function. The garden terraforms its planet: vegetation rises
+ * The greening function. The Sanctum terraforms its planet: vegetation rises
  * with cumulative growth (15 stage-points reads as visibly green) and water
  * appears once the biosphere passes 50 points. The hero planet, the /garden
  * report, and the forest HUD all read these numbers directly.

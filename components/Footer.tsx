@@ -33,7 +33,7 @@ export default function Footer() {
           {[
             ["Essays", "/essays"],
             ["Field Notes", "/field-notes"],
-            ["The Garden", "/garden"],
+            ["The Sanctum", "/garden"],
             ["The Archive", "/#archive"],
             ["The Vault", "/vault"],
             ["About", "/about"],

@@ -1,6 +1,6 @@
-# Garden Asset Credits
+# Sanctum Asset Credits
 
-The Garden scene uses a mix of lightweight procedural geometry, Canvas-generated leaf/mist/firefly textures, and permissively licensed material maps.
+The Sanctum scene uses a mix of lightweight procedural geometry, Canvas-generated leaf/mist/firefly textures, and permissively licensed material maps.
 
 ## External Textures
 
@@ -15,5 +15,5 @@ The Garden scene uses a mix of lightweight procedural geometry, Canvas-generated
 ## Implementation Notes
 
 - Close trees are optimized scene-native meshes with bark PBR maps, alpha-tested leaf clusters, and shader-driven wind movement.
-- Far trees and mountains are lightweight generated backdrops so the Garden keeps a reasonable portfolio-page payload.
+- Far trees and mountains are lightweight generated backdrops so the Sanctum keeps a reasonable portfolio-page payload.
 - Poly Haven CC0 tree models were evaluated as future GLB candidates, but the realistic tree assets are too large to ship directly without a Blender optimization pass.

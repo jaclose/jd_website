@@ -39,8 +39,8 @@ export interface CelestialBody {
 
 const bio = biosphere(skills);
 
-// vegetation/water drive the garden planet's color ramp in the shader;
-// exported so the hero and the garden page agree on the numbers.
+// vegetation/water drive the sanctum planet's color ramp in the shader;
+// exported so the hero and the sanctum page agree on the numbers.
 export const gardenState = bio;
 
 export const bodies: CelestialBody[] = [
@@ -88,7 +88,7 @@ export const bodies: CelestialBody[] = [
   {
     id: "garden",
     designation: "JD-1184 c",
-    name: "The Garden",
+    name: "The Sanctum",
     kind: "terrestrial",
     href: "/garden",
     orbit: 8.2,
@@ -102,7 +102,7 @@ export const bodies: CelestialBody[] = [
       bio.count === 0
         ? "A barren world, prepared for terraforming. Nothing has been planted yet — each skill that takes root will turn it greener, and at 50 growth points the first seas condense."
         : `A terraforming world. ${bio.count} trees planted, ${bio.grown} fully grown — biosphere at ${bio.points} growth points. Each skill that matures turns it greener; at 50 points, the first seas condense.`,
-    links: [{ label: "Enter the garden", href: "/garden" }],
+    links: [{ label: "Enter the Sanctum", href: "/garden" }],
     footnote:
       bio.count === 0
         ? "surface survey · regolith, waiting"
@@ -157,7 +157,7 @@ export const bodies: CelestialBody[] = [
     color: "#6e7681",
     accent: "#aeb8c4",
     blurb:
-      "A hollowed asteroid station for travelers. Leave a journal entry, choose a starter seed, and grow a garden of your own — your record stays with you.",
+      "A hollowed asteroid station for travelers. Leave a journal entry, choose a starter seed, and tend a sanctum of your own — your record stays with you.",
     links: [{ label: "Dock and sign the log", href: "/vault" }],
     footnote: "visitor journal · open to all callsigns",
   },

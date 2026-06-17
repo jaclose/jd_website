@@ -7,7 +7,7 @@ import VaultConsole from "@/components/vault/VaultConsole";
 export const metadata: Metadata = {
   title: "The Vault — Jafar Dabbagh",
   description:
-    "A hollowed asteroid station for travelers: sign the log, choose a starter seed, grow a garden of your own.",
+    "A hollowed asteroid station for travelers: sign the log, choose a starter seed, and tend a sanctum of your own.",
   alternates: { canonical: "/vault" },
 };
 

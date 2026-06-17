@@ -8,9 +8,9 @@ import AchievementsGrid from "@/components/garden/AchievementsGrid";
 import { biosphere } from "@/data/garden";
 
 export const metadata: Metadata = {
-  title: "The Garden — Jafar Dabbagh",
+  title: "The Sanctum — Jafar Dabbagh",
   description:
-    "Every skill is a tree. The garden terraforms its planet as the work deepens.",
+    "Every skill is a tree. The Sanctum terraforms its planet as the work deepens.",
   alternates: { canonical: "/garden" },
 };
 
@@ -23,7 +23,7 @@ export default function GardenPage() {
         {/* the walk itself — a nocturnal old-growth trail you move through */}
         <ForestScene surveyHref="#terraform" />
 
-        {/* planet status — how the garden terraforms JD-1184 c */}
+        {/* planet status — how the sanctum terraforms JD-1184 c */}
         <section id="terraform" className="mx-auto max-w-4xl px-6 py-28 text-center md:px-10">
           <Reveal>
             <p className="label mb-8 text-leaf/80">TERRAFORMING REPORT</p>

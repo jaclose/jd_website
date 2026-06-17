@@ -251,7 +251,7 @@ export default function SeedCutscene() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
         >
-          The Garden
+          The Sanctum
         </motion.h1>
         <motion.p
           className="mx-auto mt-6 max-w-md px-6 font-serif text-xl italic leading-relaxed text-faint"

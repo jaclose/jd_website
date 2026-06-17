@@ -79,7 +79,7 @@ export const gardenFeatures: GardenFeature[] = [
     plaqueText:
       "The central tree: essays, notes, projects, archives, deployments, and the living map of what is still growing.",
     visualNotes:
-      "Huge ancient tree, real bark texture, branches labeled Essays, Field Notes, Garden, Deployments, About, Vault, Achievements.",
+      "Huge ancient tree, real bark texture, branches labeled Essays, Field Notes, Sanctum, Deployments, About, Vault, Achievements.",
     story: {
       summary:
         "The site tree is the map for the whole place: writing, projects, deployments, notes, and whatever is still pushing new branches.",
@@ -91,7 +91,7 @@ export const gardenFeatures: GardenFeature[] = [
         },
         {
           label: "Branch labels",
-          detail: "Essays, field notes, garden, deployments, archive spaces, and public record begin to separate into visible limbs.",
+          detail: "Essays, field notes, Sanctum, deployments, archive spaces, and public record begin to separate into visible limbs.",
           status: "current",
         },
         {
@@ -391,7 +391,7 @@ export const gardenFeatures: GardenFeature[] = [
       events: [
         {
           label: "Rebuild",
-          detail: "The body becomes part of the garden instead of a side quest.",
+          detail: "The body becomes part of the Sanctum instead of a side quest.",
           status: "past",
         },
         {
@@ -508,7 +508,7 @@ export const gardenFeatures: GardenFeature[] = [
     visualNotes: "Empty prepared soil, marker stones, quiet firefly glow.",
     story: {
       summary:
-        "Unsown ground is intentional: a visible promise that the garden has room for future projects, skills, and stories.",
+        "Unsown ground is intentional: a visible promise that the Sanctum has room for future projects, skills, and stories.",
       events: [
         {
           label: "Prepared soil",

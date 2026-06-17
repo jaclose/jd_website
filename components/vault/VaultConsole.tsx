@@ -100,7 +100,7 @@ export default function VaultConsole() {
         </h1>
         <p className="mt-6 max-w-xl font-serif text-xl italic leading-relaxed text-faint">
           A station for travelers. Claim a callsign, choose a seed, and tend a
-          garden that grows every time you return — your record waits for you,
+          sanctum that grows every time you return — your record waits for you,
           no password, no email.
         </p>
       </Reveal>
@@ -206,11 +206,11 @@ export default function VaultConsole() {
         </section>
       </Reveal>
 
-      {/* ——— your garden ——— */}
+      {/* ——— your sanctum ——— */}
       <Reveal delay={0.1}>
         <section className="mt-12 border border-[rgba(232,230,225,0.1)] p-8 text-center">
           <h2 className="label mb-2 text-[10px]! tracking-[0.3em]! text-leaf/80">
-            YOUR GARDEN
+            YOUR SANCTUM
           </h2>
           {ready && (
             <>
@@ -225,7 +225,7 @@ export default function VaultConsole() {
                   ? `${starter.toUpperCase()} · STAGE ${stage} / 5 · ${journal.length} ${
                       journal.length === 1 ? "ENTRY" : "ENTRIES"
                     } LOGGED`
-                  : "A SEED AWAITS ITS GARDENER"}
+                  : "A SEED AWAITS ITS KEEPER"}
               </p>
               {starter && stage < 5 && (
                 <p className="label mt-1 text-[7px]! tracking-[0.2em]! text-dim">

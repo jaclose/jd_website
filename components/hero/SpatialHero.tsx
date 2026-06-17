@@ -104,7 +104,7 @@ export default function SpatialHero() {
             Dabbagh
           </h1>
           <p className="mt-5 max-w-sm font-serif text-lg italic leading-relaxed text-faint [text-shadow:0_1px_12px_rgba(3,4,8,0.9)]">
-            Essays, field notes, and a garden that terraforms its planet —
+            Essays, field notes, and a Sanctum that terraforms its planet —
             dispatches from study, faith, and the battle to stay present.
           </p>
           <p className="label mt-6 text-[9px]! text-dim">

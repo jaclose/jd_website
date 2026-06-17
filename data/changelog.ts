@@ -23,7 +23,7 @@ export const changelog: LogEntry[] = [
     date: "2026-06-15",
     type: "garden",
     message:
-      "nightfall in the garden — the walk turns nocturnal: moonlit steel-blue mist, a silver key raking between the trunks, drifting fireflies and dust motes, a moon and faint stars, and a cooler graded look. The trail fence is dialed back, and /garden now opens straight into the walk instead of the old gallery",
+      "nightfall in the Sanctum — the walk turns nocturnal: moonlit steel-blue mist, a silver key raking between the trunks, drifting fireflies and dust motes, a moon and faint stars, and a cooler graded look. The trail fence is dialed back, and /garden now opens straight into the walk instead of the old gallery",
     additions: 150,
     deletions: 40,
   },
@@ -31,7 +31,7 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
-      "the redwoods rise — the garden becomes a cinematic old-growth walk: towering fluted red trunks framing every view, a split-rail fence lining the trails, drifting ground mist and raked sun-shafts, a misty gradient sky, and a warm graded look (bloom, vignette). The toon stands soften back into lush understory",
+      "the redwoods rise — the Sanctum becomes a cinematic old-growth walk: towering fluted red trunks framing every view, a split-rail fence lining the trails, drifting ground mist and raked sun-shafts, a misty gradient sky, and a warm graded look (bloom, vignette). The toon stands soften back into lush understory",
     additions: 300,
     deletions: 26,
   },
@@ -39,7 +39,7 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
-      "the garden builds — every planted pursuit raises its own architecture: a signal tower for this site, a glass greenhouse for the med app, an observatory and field station up the mind trail, training posts and a tide pool on the coast, a stone shrine and a small library in the sacred grove. No more cards wearing leaves — places you walk up to",
+      "the Sanctum builds — every planted pursuit raises its own architecture: a signal tower for this site, a glass greenhouse for the med app, an observatory and field station up the mind trail, training posts and a tide pool on the coast, a stone shrine and a small library in the sacred grove. No more cards wearing leaves — places you walk up to",
     additions: 360,
     deletions: 28,
   },
@@ -47,7 +47,7 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
-      "the garden takes root — real projects planted from the repos: this site as a signal tower, Noctyrium under glass, a memory grove for spaced repetition, the acacia stand of faith. A richer world model (trails, biomes, feature-types, growth stages, statuses, repo links), groves that walk you past your planted stops, and the planet greening from orbit to 100% vegetation, 34% seas",
+      "the Sanctum takes root — real projects planted from the repos: this site as a signal tower, Noctyrium under glass, a memory grove for spaced repetition, the acacia stand of faith. A richer world model (trails, biomes, feature-types, growth stages, statuses, repo links), groves that walk you past your planted stops, and the planet greening from orbit to 100% vegetation, 34% seas",
     additions: 470,
     deletions: 96,
   },
@@ -55,7 +55,7 @@ export const changelog: LogEntry[] = [
     date: "2026-06-14",
     type: "garden",
     message:
-      "the garden forks — four trails diverge from the clearing into the domains of life (mind, craft, body, spirit); click a path on the screen to walk it, and every grove is a real stand of its species, where a planted skill grows as you water it",
+      "the Sanctum forks — four trails diverge from the clearing into the domains of life (mind, craft, body, spirit); click a path on the screen to walk it, and every grove is a real stand of its species, where a planted skill grows as you water it",
     additions: 196,
     deletions: 84,
   },
@@ -134,7 +134,7 @@ export const changelog: LogEntry[] = [
   {
     date: "2026-06-12",
     type: "garden",
-    message: "the garden cleared to honest zero — one seed rests, unsown",
+    message: "the Sanctum cleared to honest zero — one seed rests, unsown",
     additions: 1,
     deletions: 18,
   },
@@ -169,7 +169,7 @@ export const changelog: LogEntry[] = [
   {
     date: "2026-06-11",
     type: "garden",
-    message: "garden plots surveyed — the greening function awaits its first seed",
+    message: "Sanctum plots surveyed — the greening function awaits its first seed",
     additions: 1,
     deletions: 0,
   },

@@ -217,7 +217,7 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
           Guided nature walk
         </p>
         <h2 className="font-display text-[clamp(2.1rem,4.5vw,3.8rem)] font-light leading-none text-ink [text-shadow:0_2px_22px_rgba(3,8,5,0.95)]">
-          The Garden
+          The Sanctum
         </h2>
         <p className="label mt-3 text-[8px]! tracking-[0.22em]! text-leaf/65 [text-shadow:0_1px_8px_rgba(3,8,5,0.9)]">
           {branchLabel(targetNode.branch)} · {locationLabel}
@@ -339,7 +339,7 @@ export default function ForestScene({ surveyHref }: { surveyHref?: string } = {}
           </a>
         ) : (
           <Link href="/garden" className="label text-[8px]! tracking-[0.24em]! text-leaf transition-colors hover:text-ink">
-            Enter the Garden
+            Enter the Sanctum
           </Link>
         )}
       </div>
