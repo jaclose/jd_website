@@ -8,6 +8,7 @@
     "start": "next start",
     "spotify:token": "node scripts/spotify-refresh-token.mjs",
     "email:dispatch": "tsx scripts/send-publication-broadcast.ts",
+    "test:newsletter": "node --import tsx --test tests/newsletter.test.ts",
     "lint": "next lint"
   },
   "dependencies": {

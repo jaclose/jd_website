@@ -1,7 +1,7 @@
 import { SITE_ORIGIN } from "@/lib/resend/client";
 
 export interface PublicationPayload {
-  type: "essay" | "field_note" | "announcement";
+  type: "essay" | "field_note";
   title: string;
   slug?: string;
   excerpt?: string;
@@ -28,20 +28,29 @@ function esc(s: string): string {
 
 function kind(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Field Note";
-  if (type === "announcement") return "Announcement";
   return "Essay";
 }
 
 export function publicationSubject(p: PublicationPayload): string {
   if (p.type === "field_note") return `New Field Note: ${p.title}`;
-  if (p.type === "announcement") return p.title;
   return `New Essay: ${p.title}`;
 }
 
 function ctaLabel(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Read the field note";
-  if (type === "announcement") return "Read more";
   return "Read the full essay";
+}
+
+export function publicationPreviewText(p: PublicationPayload): string {
+  return p.type === "field_note"
+    ? "A new field note has been logged."
+    : "A new essay has been published.";
+}
+
+function publicationUrl(p: PublicationPayload): string {
+  if (p.url) return p.url;
+  if (!p.slug) return SITE_ORIGIN;
+  return p.type === "field_note" ? `${SITE_ORIGIN}/field-notes#${p.slug}` : `${SITE_ORIGIN}/essays/${p.slug}`;
 }
 
 function prettyDate(iso?: string): string {
@@ -54,10 +63,9 @@ function prettyDate(iso?: string): string {
 /** the literary, dark, minimal HTML email. {{{RESEND_UNSUBSCRIBE_URL}}} is
  *  Resend's broadcast unsubscribe token, substituted at send time. */
 export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
-  const url = p.url || (p.slug ? `${SITE_ORIGIN}/essays/${p.slug}` : SITE_ORIGIN);
+  const url = publicationUrl(p);
   const date = prettyDate(p.publishedAt);
-  const preheader =
-    p.type === "field_note" ? "A new field note has been logged." : p.type === "announcement" ? "A note from the system." : "A new essay has been published.";
+  const preheader = publicationPreviewText(p);
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -75,6 +83,7 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
         <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${GOLD};">${kind(p.type)}${date ? ` · ${esc(date)}` : ""}</div>
         <h1 style="margin:12px 0 0;font-size:28px;font-weight:400;line-height:1.2;color:${INK};">${esc(p.title)}</h1>
       </td></tr>
+      <tr><td style="padding:18px 32px 0;"><p style="margin:0;font-size:16px;line-height:1.6;color:rgba(232,230,225,0.86);">Hi {{{contact.first_name|there}}},</p></td></tr>
       ${p.excerpt ? `<tr><td style="padding:16px 32px 0;"><p style="margin:0;font-size:16px;font-style:italic;line-height:1.6;color:rgba(232,230,225,0.82);">${esc(p.excerpt)}</p></td></tr>` : ""}
       <tr><td style="padding:26px 32px 4px;">
         <a href="${esc(url)}" style="display:inline-block;background:rgba(212,184,134,0.12);border:1px solid rgba(212,184,134,0.5);color:${GOLD};text-decoration:none;font-family:'Courier New',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;padding:12px 22px;border-radius:4px;">${esc(ctaLabel(p.type))} &rarr;</a>
@@ -92,10 +101,12 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
 
 /** plain-text fallback */
 export function renderPublicationBroadcastText(p: PublicationPayload): string {
-  const url = p.url || (p.slug ? `${SITE_ORIGIN}/essays/${p.slug}` : SITE_ORIGIN);
+  const url = publicationUrl(p);
   const date = prettyDate(p.publishedAt);
   return [
     `${SITE_NAME} — ${kind(p.type)}${date ? ` · ${date}` : ""}`,
+    "",
+    "Hi {{{contact.first_name|there}}},",
     "",
     p.title,
     p.excerpt ? `\n${p.excerpt}` : "",

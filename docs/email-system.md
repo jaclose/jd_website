@@ -1,85 +1,148 @@
-# Email system — Resend Broadcasts
+# Email System - Resend Broadcasts and Segments
 
-The list lives in **Resend**. Visitors subscribe from the end of every essay and
-field note (and the site footer); publishing a new essay/field note creates a
-Resend **Broadcast** to the audience. Nothing homemade stores the list — Resend
-is the source of truth and owns unsubscribe.
+The mailing list lives in Resend. This site only collects signup intent, creates
+or reuses a Resend Contact, adds that contact to the right Segment, and creates
+Resend Broadcasts when new writing is published. There is no local subscriber
+table; Resend owns contacts, unsubscribes, personalization, export, and
+deliverability.
 
-## Pieces
+## Files
 
 | File | Role |
 |---|---|
-| `lib/resend/client.ts` | Server-only Resend client + env (`canSubscribe` / `canBroadcast` / `DRY_RUN`). |
-| `app/api/newsletter/subscribe/route.ts` | Adds a contact to the audience. Honeypot + rate limit. Never leaks the key or raw Resend errors. |
-| `app/api/broadcast/new-publication/route.ts` | Secret-guarded (`x-publish-secret`) — creates/sends a broadcast for one item. |
-| `lib/email/templates/publicationBroadcast.ts` | `renderPublicationBroadcastHtml` + `renderPublicationBroadcastText`. |
-| `lib/email/sendPublicationBroadcast.ts` | Creates a draft (or sends) broadcast; honours `DRY_RUN_EMAILS`. |
-| `scripts/send-publication-broadcast.ts` | Scans essays + field notes, dedupes via the log, makes broadcasts. `npm run email:dispatch`. |
-| `data/email-dispatch-log.json` | Permanent dedupe state — an item is emailed once. Commit it. |
-| `components/newsletter/NewsletterSignup.tsx` / `EssaySignup.tsx` | The signup UI. |
+| `components/newsletter/NewsletterSignup.tsx` | Client signup UI with email, optional first name, honeypot, and hidden source/slug/type fields. |
+| `components/newsletter/EssaySignup.tsx` | Essay and field-note footer wrapper. |
+| `app/api/newsletter/subscribe/route.ts` | Server-only signup route. Validates, rate-limits, creates Contacts, and adds Segments. |
+| `lib/newsletter/subscription.ts` | Testable subscription validation, rate limiting, and Resend contact/segment logic. |
+| `lib/resend/client.ts` | Server-only Resend client and environment wiring. |
+| `lib/email/templates/publicationBroadcast.ts` | Reusable HTML and plain-text broadcast template. |
+| `lib/email/sendPublicationBroadcast.ts` | Creates draft, immediate, or scheduled Resend Broadcasts. |
+| `scripts/send-publication-broadcast.ts` | Scans published essays and field notes, dedupes, and dispatches broadcasts. |
+| `data/email-dispatch-log.json` | Broadcast dedupe log. This is not a mailing list. Commit it after real dispatches. |
 
 ## Environment
 
-Set in Vercel → Settings → Environment Variables (and `.env.local` for dev):
-
-```
-RESEND_API_KEY=          # secret — server only
-RESEND_FROM_EMAIL=notes@jafardabbagh.com   # on a VERIFIED domain, not gmail
-RESEND_FROM_NAME=Jafar Dabbagh
-RESEND_AUDIENCE_ID=      # Resend → Audiences → your list → ID
-PUBLISH_WEBHOOK_SECRET=  # random string; guards the broadcast route
-NEXT_PUBLIC_SITE_URL=https://www.jafardabbagh.com
-DRY_RUN_EMAILS=          # "true" to render without sending
-```
-
-> Resend Contacts don't store arbitrary custom fields, so `source` / `slug` are
-> logged server-side for audit (and could become tags/segments later). Email +
-> first name go to Resend.
-
-## Deliverability (do this once)
-
-1. **Verify your domain** in Resend → Domains. Add the DNS records it gives you.
-2. Configure **SPF, DKIM, DMARC** (Resend's domain step sets SPF/DKIM; add a
-   DMARC TXT record like `v=DMARC1; p=none; rua=mailto:you@domain`).
-3. Use a real **from address**: `Jafar Dabbagh <notes@jafardabbagh.com>`. **Never
-   send from a Gmail address** — it will fail DMARC and land in spam.
-4. Keep the **unsubscribe** link active (the template includes Resend's
-   `{{{RESEND_UNSUBSCRIBE_URL}}}` token; Broadcasts handle the rest).
-5. Avoid spammy subject lines (no ALL CAPS, no "FREE!!!"). The templates use
-   `New Essay: …` / `New Field Note: …`.
-6. Only send on **real publish events** — never on draft saves.
-
-## Sending on publish
-
-After a new essay/field note lands in `content/`:
+Set these in Vercel and in `.env.local` for local testing:
 
 ```bash
-# 1. preview only — writes /tmp/email-preview.html, no Resend calls
-DRY_RUN_EMAILS=true npm run email:dispatch
-
-# 2. create DRAFT broadcasts in Resend (review, then send from the dashboard)
-npm run email:dispatch
-
-# 3. or create AND send immediately
-npm run email:dispatch -- --send
+RESEND_API_KEY=          # full-access server-side key
+RESEND_FROM_EMAIL=notes@jafardabbagh.com
+RESEND_FROM_NAME=Jafar Dabbagh
+SEGMENT_ESSAYS_ID=
+SEGMENT_FIELDNOTES_ID=
+NEXT_PUBLIC_SITE_URL=https://www.jafardabbagh.com
 ```
 
-Then commit the updated `data/email-dispatch-log.json` so the item is never
-emailed twice.
+Optional:
 
-Single item by hand / from CI (guarded):
+```bash
+RESEND_TOPIC_ID=         # optional Broadcast topic for granular unsubscribes
+PUBLISH_WEBHOOK_SECRET=  # required only for POST /api/broadcast/new-publication
+DRY_RUN_EMAILS=true      # render previews without calling Resend
+```
+
+Create the two Segments in Resend first, either in the dashboard or with the
+Segments API:
+
+- Essay subscribers -> `SEGMENT_ESSAYS_ID`
+- Field-note subscribers -> `SEGMENT_FIELDNOTES_ID`
+
+Do not use `RESEND_AUDIENCE_ID`. Audiences are deprecated in the current SDK;
+Contacts plus Segments are the supported path.
+
+## Subscribe Flow
+
+Essay pages and every field note render `EssaySignup`. The form sends:
+
+- `email`
+- optional `firstName`
+- hidden `source`: `essay_footer`, `fieldnote_footer`, or `site_footer`
+- hidden `slug`
+- hidden `contentType`: `essay`, `field_note`, or `all`
+- hidden honeypot field: `company`
+
+`POST /api/newsletter/subscribe` never exposes `RESEND_API_KEY`. It validates the
+email, rate-limits by IP and email, silently accepts honeypot submissions without
+calling Resend, creates the Contact with `resend.contacts.create`, then adds the
+Contact with `resend.contacts.segments.add`.
+
+Responses are intentionally small:
+
+```json
+{ "ok": true, "status": "subscribed" }
+{ "ok": true, "status": "already_subscribed" }
+{ "ok": false, "error": "Couldn't sign you up just now." }
+```
+
+## Broadcast Template
+
+The reusable template includes:
+
+- inline styles only
+- safe font stacks
+- HTML and plain-text output
+- greeting placeholder: `{{{contact.first_name|there}}}`
+- unsubscribe placeholder: `{{{RESEND_UNSUBSCRIBE_URL}}}`
+- title, excerpt, date, and a read-more link
+
+Resend replaces the personalization and unsubscribe placeholders at send time.
+
+## Dispatch On Publish
+
+After new content is fully committed, run the dispatch script:
+
+```bash
+# Preview only. Writes /tmp/email-preview.html and /tmp/email-preview.txt.
+DRY_RUN_EMAILS=true npm run email:dispatch
+
+# Create draft Broadcasts in Resend for manual review.
+npm run email:dispatch
+
+# Create and send immediately.
+npm run email:dispatch -- --send
+
+# Create and schedule.
+npm run email:dispatch -- --schedule=2026-06-19T14:00:00.000Z
+```
+
+The script scans `content/essays.json` and `content/field-notes.json`, skips
+anything already recorded in `data/email-dispatch-log.json`, and sends essays to
+`SEGMENT_ESSAYS_ID` and field notes to `SEGMENT_FIELDNOTES_ID`.
+
+After any real draft, send, or scheduled dispatch, commit
+`data/email-dispatch-log.json` so the same slug is not emailed again.
+
+## Single-Item Admin Route
+
+For CI or a trusted manual call:
 
 ```bash
 curl -X POST "$SITE/api/broadcast/new-publication" \
   -H "x-publish-secret: $PUBLISH_WEBHOOK_SECRET" \
   -H "content-type: application/json" \
-  -d '{"type":"essay","title":"…","slug":"…","excerpt":"…","sendImmediately":false}'
+  -d '{"type":"essay","title":"Title","slug":"slug","excerpt":"Short excerpt","sendImmediately":false}'
 ```
 
-## Notes
+This route is guarded by `PUBLISH_WEBHOOK_SECRET`. Prefer the script when you
+need dedupe logging in the repository.
 
-- **Marketing vs transactional**: Broadcasts are for publication/announcement
-  emails. Keep any future transactional mail (confirmations, etc.) on a separate
-  Resend path so reputation doesn't mix.
-- The subscribe route is rate-limited per instance and honeypotted; add
-  Cloudflare Turnstile if spam appears.
+## Deliverability
+
+Verify the sending domain in Resend before sending:
+
+- Use a real domain email, not Gmail.
+- Add Resend's SPF and DKIM DNS records.
+- Add a DMARC record for the domain.
+- Keep the unsubscribe link in every Broadcast.
+- Send only on real publish events.
+
+## Tests
+
+Run the newsletter-focused tests:
+
+```bash
+npm run test:newsletter
+```
+
+The tests cover new signups, duplicate Contact handling, Resend errors, invalid
+emails, and IP/email rate limiting.

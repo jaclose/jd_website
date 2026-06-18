@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 type Status = "idle" | "loading" | "subscribed" | "already" | "error";
 
@@ -10,16 +10,19 @@ type Status = "idle" | "loading" | "subscribed" | "already" | "error";
 export default function NewsletterSignup({
   source,
   contentSlug,
-  contentType = "announcement",
+  contentType = "all",
   heading = "Subscribe to new writing",
-  blurb = "New essays, field notes, and rare announcements. No spam. Unsubscribe anytime.",
+  blurb = "New essays and field notes. No spam. Unsubscribe anytime.",
 }: {
   source?: string;
   contentSlug?: string;
-  contentType?: "essay" | "field_note" | "announcement";
+  contentType?: "essay" | "field_note" | "all";
   heading?: string;
   blurb?: string;
 }) {
+  const formId = useId();
+  const nameId = `${formId}-name`;
+  const emailId = `${formId}-email`;
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [company, setCompany] = useState(""); // honeypot
@@ -35,7 +38,7 @@ export default function NewsletterSignup({
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, firstName, company, source, contentSlug, contentType }),
+        body: JSON.stringify({ email, firstName, company, source, slug: contentSlug, contentType }),
       });
       const data = await res.json().catch(() => ({ ok: false, error: "" }));
       if (data.ok) {
@@ -68,6 +71,9 @@ export default function NewsletterSignup({
         <>
           <p className="mt-2 font-serif text-base italic leading-snug text-faint">{blurb}</p>
           <form onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+            <input type="hidden" name="source" value={source ?? ""} />
+            <input type="hidden" name="slug" value={contentSlug ?? ""} />
+            <input type="hidden" name="contentType" value={contentType} />
             {/* honeypot — visually hidden, not display:none, off the a11y tree */}
             <input
               type="text"
@@ -79,11 +85,11 @@ export default function NewsletterSignup({
               name="company"
               className="absolute h-0 w-0 overflow-hidden opacity-0"
             />
-            <label className="sr-only" htmlFor="nl-name">
+            <label className="sr-only" htmlFor={nameId}>
               First name (optional)
             </label>
             <input
-              id="nl-name"
+              id={nameId}
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -91,11 +97,11 @@ export default function NewsletterSignup({
               autoComplete="given-name"
               className="w-full border border-hairline bg-[rgba(0,0,0,0.25)] px-3 py-2.5 font-mono text-xs text-ink outline-none transition-colors placeholder:text-dim focus:border-starlight/50 sm:w-32"
             />
-            <label className="sr-only" htmlFor="nl-email">
+            <label className="sr-only" htmlFor={emailId}>
               Email address
             </label>
             <input
-              id="nl-email"
+              id={emailId}
               type="email"
               required
               value={email}
