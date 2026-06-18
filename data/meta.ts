@@ -9,12 +9,21 @@
 export interface CoverMeta {
   cover: string;
   alt: string;
+  subtitle?: string;
   /** a line lifted from the writing, shown in the gallery */
   highlight: string;
   aspect: "landscape" | "portrait" | "square";
 }
 
 export const essayMeta: Record<string, CoverMeta> = {
+  "the-cost-of-knowing-better": {
+    cover: "/images/essays/the-cost-of-knowing-better/cover.png",
+    alt: "A medical student working beside an orbiting Sanctum world under the title The Cost of Knowing Better",
+    subtitle: "Pain paid early, and the currency of moments.",
+    highlight:
+      "Discipline is not punishment. It is pain paid early. Regret is pain collected later, with interest.",
+    aspect: "portrait",
+  },
   "anatomy-of-the-test": {
     cover: "/images/essays/anatomy-of-the-test.jpg",
     alt: "The three ways God tests you — gratitude, patience, trust — over Islamic geometry",

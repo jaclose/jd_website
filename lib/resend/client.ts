@@ -10,14 +10,22 @@ import { SITE_URL } from "@/lib/seo";
  *   RESEND_API_KEY              secret key (server only)
  *   RESEND_FROM_EMAIL           e.g. notes@jafardabbagh.com (verified domain)
  *   RESEND_FROM_NAME            e.g. Jafar Dabbagh
- *   RESEND_AUDIENCE_ID          the newsletter audience (a.k.a. segment) id
+ *   SEGMENT_ESSAYS_ID           Resend segment for essay subscribers
+ *   SEGMENT_FIELDNOTES_ID       Resend segment for field-note subscribers
+ *   RESEND_TOPIC_ID             optional Resend topic for granular unsubscribes
  *   PUBLISH_WEBHOOK_SECRET      guards the broadcast route
  *   NEXT_PUBLIC_SITE_URL        canonical origin (falls back to SITE_URL)
  */
 export const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-export const RESEND_AUDIENCE_ID =
-  process.env.RESEND_AUDIENCE_ID || process.env.RESEND_NEWSLETTER_SEGMENT_ID || "";
+export const SEGMENT_ESSAYS_ID = process.env.SEGMENT_ESSAYS_ID || "";
+export const SEGMENT_FIELDNOTES_ID = process.env.SEGMENT_FIELDNOTES_ID || "";
+export const RESEND_TOPIC_ID = process.env.RESEND_TOPIC_ID || "";
+
+export const NEWSLETTER_SEGMENTS = {
+  essays: SEGMENT_ESSAYS_ID,
+  fieldNotes: SEGMENT_FIELDNOTES_ID,
+};
 
 export const RESEND_FROM = (() => {
   const name = process.env.RESEND_FROM_NAME || "Jafar Dabbagh";
@@ -27,14 +35,16 @@ export const RESEND_FROM = (() => {
 
 export const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
 
-/** subscriptions only need the client + an audience */
 export function canSubscribe(): boolean {
-  return !!resend && !!RESEND_AUDIENCE_ID;
+  return !!resend && !!SEGMENT_ESSAYS_ID && !!SEGMENT_FIELDNOTES_ID;
 }
 
-/** broadcasts also need a verified from-address */
-export function canBroadcast(): boolean {
-  return !!resend && !!RESEND_AUDIENCE_ID && !!RESEND_FROM;
+export function segmentIdForPublication(type: "essay" | "field_note"): string {
+  return type === "essay" ? SEGMENT_ESSAYS_ID : SEGMENT_FIELDNOTES_ID;
+}
+
+export function canBroadcast(type: "essay" | "field_note"): boolean {
+  return !!resend && !!RESEND_FROM && !!segmentIdForPublication(type);
 }
 
 export const DRY_RUN = process.env.DRY_RUN_EMAILS === "true";

@@ -13,7 +13,7 @@ export default function EssaySignup({
 }) {
   return (
     <NewsletterSignup
-      source={type === "essay" ? "essay_footer" : "field_note_footer"}
+      source={type === "essay" ? "essay_footer" : "fieldnote_footer"}
       contentSlug={slug}
       contentType={type}
       heading={type === "essay" ? "Get the next essay" : "Get the next dispatch"}

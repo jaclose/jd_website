@@ -50,13 +50,12 @@ export default function FieldNotesPage() {
                   className="prose-space mt-6 text-[1.15rem]!"
                   dangerouslySetInnerHTML={{ __html: n.html }}
                 />
+                <div className="mt-10">
+                  <EssaySignup slug={n.slug} type="field_note" />
+                </div>
               </article>
             </Reveal>
           ))}
-        </div>
-
-        <div className="mt-24">
-          <EssaySignup type="field_note" />
         </div>
 
         <p className="label mt-16 text-center text-[9px]! text-dim">

@@ -10,6 +10,7 @@ import FallbackCover from "@/components/FallbackCover";
 /** thematic card types — like elemental energy */
 type CardType = "faith" | "trial" | "body" | "growth";
 const TYPE: Record<string, CardType> = {
+  "the-cost-of-knowing-better": "growth",
   "anatomy-of-the-test": "faith",
   "the-anatomy-of-arrival": "growth",
   "threads-of-serendipity-veins-of-trial": "trial",
@@ -17,6 +18,8 @@ const TYPE: Record<string, CardType> = {
   "the-echoes-of-the-body-and-the-whispers-of-the-weaver": "body",
   "hello-world": "growth",
 };
+
+const ACTIVE_DECK_SIZE = 6;
 const TYPE_META: Record<CardType, { glyph: string; label: string; color: string; ring: string }> = {
   faith: { glyph: "☾", label: "FAITH", color: "#d4b886", ring: "rgba(212,184,134,0.6)" },
   trial: { glyph: "✦", label: "TRIAL", color: "#c98aa0", ring: "rgba(201,138,160,0.6)" },
@@ -139,8 +142,8 @@ function Card({ slug, index }: { slug: string; index: number }) {
 }
 
 export default function EssayDeck() {
-  // every essay is a card in the active deck; the PC holds 6 empty slots
-  const deck = essays.map((e) => e.slug);
+  const deck = essays.slice(0, ACTIVE_DECK_SIZE).map((e) => e.slug);
+  const storage = essays.slice(ACTIVE_DECK_SIZE);
 
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
@@ -152,7 +155,7 @@ export default function EssayDeck() {
             <h2 className="font-display text-2xl font-light text-ink">Your Six</h2>
           </div>
           <span className="label text-[9px]! text-dim">
-            {deck.length} CARDS · HOVER TO FOIL · TAP TO READ
+            {deck.length} ACTIVE · {storage.length} IN PC
           </span>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -172,21 +175,46 @@ export default function EssayDeck() {
             <span className="ml-auto label text-[7px]! text-dim">BOX 1</span>
           </div>
 
-          {/* 6-slot grid (Pokemon team style) */}
-          <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {/* storage grid */}
+          <div className="mb-2 grid grid-cols-3 gap-1.5">
             {Array.from({ length: 6 }, (_, i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-[4px] border border-[rgba(80,120,160,0.4)] bg-[rgba(20,30,45,0.6)] flex items-center justify-center hover:border-[rgba(159,206,143,0.5)] transition-colors"
-              >
-                <span className="text-[0.7rem] text-dim">{i + 1}</span>
-              </div>
+              storage[i] ? (
+                <Link
+                  key={storage[i].slug}
+                  href={`/essays/${storage[i].slug}`}
+                  className="group relative aspect-square overflow-hidden rounded-[4px] border border-[rgba(80,120,160,0.55)] bg-[rgba(20,30,45,0.7)] transition-colors hover:border-[rgba(159,206,143,0.72)]"
+                  title={storage[i].title}
+                >
+                  {essayMeta[storage[i].slug] ? (
+                    <Image
+                      src={essayMeta[storage[i].slug].cover}
+                      alt=""
+                      fill
+                      sizes="90px"
+                      className="object-cover opacity-70 transition-opacity group-hover:opacity-95"
+                    />
+                  ) : (
+                    <FallbackCover title={storage[i].title} />
+                  )}
+                  <span className="absolute inset-0 bg-linear-to-t from-[#071018] via-transparent to-transparent" />
+                  <span className="label absolute bottom-1 left-1 right-1 truncate text-[5.5px]! leading-tight text-ink">
+                    {storage[i].title}
+                  </span>
+                </Link>
+              ) : (
+                <div
+                  key={`empty-${i}`}
+                  className="flex aspect-square items-center justify-center rounded-[4px] border border-[rgba(80,120,160,0.4)] bg-[rgba(20,30,45,0.6)] transition-colors hover:border-[rgba(159,206,143,0.5)]"
+                >
+                  <span className="text-[0.7rem] text-dim">{i + 1}</span>
+                </div>
+              )
             ))}
           </div>
 
           {/* status line */}
-          <p className="label text-[6px]! tracking-[0.16em]! text-dim text-center">
-            6 SLOTS · AWAITING NEW ESSAYS
+          <p className="label text-center text-[6px]! tracking-[0.16em]! text-dim">
+            {storage.length > 0 ? `${storage.length} STORED · OLDEST TRANSMISSIONS` : "6 SLOTS · AWAITING NEW ESSAYS"}
           </p>
         </div>
       </aside>

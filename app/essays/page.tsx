@@ -24,8 +24,8 @@ export default function EssaysPage() {
             Essays
           </h1>
           <p className="mt-6 max-w-xl font-serif text-xl italic leading-relaxed text-faint">
-            The active deck — every essay a holographic card. Older dispatches
-            and deep surveys wait in storage.
+            The active deck — six transmissions on the table. Older dispatches
+            and deep surveys wait in Jafar's PC.
           </p>
         </Reveal>
 

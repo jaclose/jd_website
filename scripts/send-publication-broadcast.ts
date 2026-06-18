@@ -5,6 +5,7 @@
  *
  *   npm run email:dispatch            # create DRAFT broadcasts (review in Resend)
  *   npm run email:dispatch -- --send  # create AND send immediately
+ *   npm run email:dispatch -- --schedule=2026-06-19T14:00:00.000Z
  *   DRY_RUN_EMAILS=true npm run email:dispatch   # render only, no Resend calls
  *
  * Run locally or in CI after content lands. Commit the updated dispatch log.
@@ -23,6 +24,7 @@ interface DispatchEntry {
   broadcastId?: string;
   createdAt: string;
   sentAt?: string;
+  scheduledAt?: string;
   status: string;
 }
 interface DispatchLog {
@@ -44,6 +46,9 @@ function saveLog(log: DispatchLog) {
 
 async function main() {
   const send = process.argv.includes("--send");
+  const scheduledAt =
+    process.argv.find((arg) => arg.startsWith("--scheduledAt="))?.split("=").slice(1).join("=") ||
+    process.argv.find((arg) => arg.startsWith("--schedule="))?.split("=").slice(1).join("=");
   const log = loadLog();
   const done = new Set(log.dispatches.map((d) => `${d.contentType}:${d.slug}`));
 
@@ -70,7 +75,9 @@ async function main() {
     console.log("Nothing new to dispatch — every published item already has a broadcast.");
     return;
   }
-  console.log(`${queue.length} item(s) to dispatch${DRY_RUN ? " (DRY RUN)" : send ? " (will send)" : " (draft only)"}:`);
+  console.log(
+    `${queue.length} item(s) to dispatch${DRY_RUN ? " (DRY RUN)" : scheduledAt ? ` (scheduled for ${scheduledAt})` : send ? " (will send)" : " (draft only)"}:`
+  );
 
   for (const item of queue) {
     const result = await sendPublicationBroadcast(
@@ -82,7 +89,7 @@ async function main() {
         publishedAt: item.publishedAt,
         url: item.url,
       },
-      { sendImmediately: send }
+      { sendImmediately: send, scheduledAt }
     );
     console.log(`  · ${item.contentType} "${item.title}" → ${result.status}${result.broadcastId ? ` (${result.broadcastId})` : ""}${result.error ? ` — ${result.error}` : ""}`);
 
@@ -95,6 +102,7 @@ async function main() {
         broadcastId: result.broadcastId,
         createdAt: new Date().toISOString(),
         sentAt: result.status === "sent" ? new Date().toISOString() : undefined,
+        scheduledAt: result.status === "scheduled" ? scheduledAt : undefined,
         status: result.status,
       });
     }

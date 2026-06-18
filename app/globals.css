@@ -179,6 +179,174 @@ body {
   margin: 2em 0;
 }
 
+/* ————— scientific-paper essay mode ————— */
+.scientific-paper {
+  font-size: clamp(1.05rem, 1.3vw, 1.18rem);
+  line-height: 1.78;
+  color: rgba(232, 230, 225, 0.86);
+}
+.scientific-paper p,
+.scientific-paper h2 {
+  max-width: 68ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.scientific-paper .paper-abstract-card {
+  position: relative;
+  max-width: 760px;
+  margin: 0 auto 4rem;
+  overflow: hidden;
+  border: 1px solid rgba(212, 184, 134, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 184, 134, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(16, 21, 31, 0.92), rgba(6, 8, 13, 0.88));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(255, 255, 255, 0.025) inset;
+}
+.scientific-paper .paper-abstract-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(232, 230, 225, 0.025) 47px 48px),
+    radial-gradient(circle at 85% 0%, rgba(159, 216, 232, 0.12), transparent 34%);
+  opacity: 0.8;
+}
+.scientific-paper .paper-abstract-card summary {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.35rem;
+  list-style: none;
+}
+.scientific-paper .paper-abstract-card summary::-webkit-details-marker {
+  display: none;
+}
+.scientific-paper .paper-abstract-card summary::after {
+  content: "+";
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(212, 184, 134, 0.32);
+  border-radius: 999px;
+  color: var(--color-starlight);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  transition: transform 0.3s, background 0.3s;
+}
+.scientific-paper .paper-abstract-card[open] summary::after {
+  transform: rotate(45deg);
+  background: rgba(212, 184, 134, 0.1);
+}
+.scientific-paper .paper-abstract-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1;
+  color: var(--color-ink);
+}
+.scientific-paper .paper-abstract-action {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(212, 184, 134, 0.72);
+}
+.scientific-paper .paper-abstract-card[open] .paper-abstract-action {
+  color: rgba(159, 216, 232, 0.72);
+}
+.scientific-paper .paper-abstract-body {
+  position: relative;
+  padding: 0 1.35rem 1.35rem;
+}
+.scientific-paper .paper-abstract-body p {
+  max-width: none;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.scientific-paper .paper-keywords {
+  border-top: 1px solid rgba(232, 230, 225, 0.09);
+  padding-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem !important;
+  letter-spacing: 0.04em;
+  color: rgba(232, 230, 225, 0.68);
+}
+.scientific-paper .paper-section {
+  position: relative;
+  margin: 4.2rem 0 0;
+  padding-top: 0.35rem;
+}
+.scientific-paper .paper-section + .paper-section {
+  border-top: 1px solid rgba(232, 230, 225, 0.08);
+}
+.scientific-paper .paper-section h2 {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.8rem;
+  align-items: start;
+  margin-top: 0;
+  margin-bottom: 1.45rem;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.scientific-paper .paper-section h2 span {
+  color: var(--color-starlight);
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  line-height: 1.45;
+}
+.scientific-paper .paper-section p {
+  margin-bottom: 1.28em;
+}
+.scientific-paper .paper-figure {
+  position: relative;
+  width: 100%;
+  margin: 3.4rem auto 4rem;
+}
+.scientific-paper .paper-figure--portrait {
+  max-width: 640px;
+}
+.scientific-paper .paper-figure--landscape {
+  max-width: 980px;
+}
+.scientific-paper .paper-figure img {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border: 1px solid rgba(212, 184, 134, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.46);
+  opacity: 1;
+}
+.scientific-paper .paper-figure figcaption {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.95rem auto 0;
+  max-width: 68ch;
+  border-left: 1px solid rgba(212, 184, 134, 0.55);
+  padding-left: 1rem;
+  color: rgba(232, 230, 225, 0.68);
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.scientific-paper .paper-figure figcaption strong {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-starlight);
+}
+
 /* first letter of an essay */
 .prose-space.dropcap > p:first-of-type::first-letter {
   font-family: var(--font-display);

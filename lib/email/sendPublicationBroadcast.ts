@@ -1,11 +1,13 @@
 import {
   resend,
-  RESEND_AUDIENCE_ID,
   RESEND_FROM,
+  RESEND_TOPIC_ID,
   canBroadcast,
   DRY_RUN,
+  segmentIdForPublication,
 } from "@/lib/resend/client";
 import {
+  publicationPreviewText,
   publicationSubject,
   renderPublicationBroadcastHtml,
   renderPublicationBroadcastText,
@@ -14,7 +16,7 @@ import {
 
 export interface BroadcastResult {
   ok: boolean;
-  status: "dry_run" | "draft_created" | "sent" | "failed";
+  status: "dry_run" | "draft_created" | "sent" | "scheduled" | "failed";
   broadcastId?: string;
   subject: string;
   error?: string;
@@ -27,7 +29,7 @@ export interface BroadcastResult {
  */
 export async function sendPublicationBroadcast(
   payload: PublicationPayload,
-  opts: { sendImmediately?: boolean } = {}
+  opts: { sendImmediately?: boolean; scheduledAt?: string } = {}
 ): Promise<BroadcastResult> {
   const subject = publicationSubject(payload);
   const html = renderPublicationBroadcastHtml(payload);
@@ -44,31 +46,38 @@ export async function sendPublicationBroadcast(
     return { ok: true, status: "dry_run", subject };
   }
 
-  if (!canBroadcast() || !resend) {
+  if (!canBroadcast(payload.type) || !resend) {
     return { ok: false, status: "failed", subject, error: "Resend broadcast env not configured." };
   }
 
   try {
-    const created = await resend.broadcasts.create({
-      audienceId: RESEND_AUDIENCE_ID,
+    const segmentId = segmentIdForPublication(payload.type);
+    const name = `${subject} · ${new Date().toISOString().slice(0, 10)}`;
+    const shouldSend = opts.sendImmediately || !!opts.scheduledAt;
+    const base = {
+      segmentId,
       from: RESEND_FROM,
       subject,
       html,
       text,
-      name: `${subject} · ${new Date().toISOString().slice(0, 10)}`,
-    });
+      name,
+      previewText: publicationPreviewText(payload),
+      topicId: RESEND_TOPIC_ID || undefined,
+    };
+    const created = await resend.broadcasts.create(
+      shouldSend
+        ? { ...base, send: true, ...(opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : {}) }
+        : { ...base, send: false }
+    );
+    if (created.error) {
+      return { ok: false, status: "failed", subject, error: created.error.message };
+    }
     const broadcastId = created.data?.id;
     if (!broadcastId) {
-      return { ok: false, status: "failed", subject, error: created.error?.message || "No broadcast id returned." };
+      return { ok: false, status: "failed", subject, error: "No broadcast id returned." };
     }
-    if (opts.sendImmediately) {
-      const sent = await resend.broadcasts.send(broadcastId);
-      if (sent.error) {
-        return { ok: false, status: "failed", subject, broadcastId, error: sent.error.message };
-      }
-      return { ok: true, status: "sent", subject, broadcastId };
-    }
-    return { ok: true, status: "draft_created", subject, broadcastId };
+    const status = opts.scheduledAt ? "scheduled" : opts.sendImmediately ? "sent" : "draft_created";
+    return { ok: true, status, subject, broadcastId };
   } catch (e) {
     return { ok: false, status: "failed", subject, error: e instanceof Error ? e.message : "Unknown error" };
   }

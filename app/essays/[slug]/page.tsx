@@ -60,6 +60,7 @@ export default async function EssayPage({
   const prev = essays[idx + 1]; // older
   const next = essays[idx - 1]; // newer
   const meta = essayMeta[slug];
+  const paperMode = slug === "the-cost-of-knowing-better";
 
   return (
     <>
@@ -74,7 +75,7 @@ export default async function EssayPage({
       />
       <SiteHeader current="essays" />
       <ReadingProgress />
-      <main className="mx-auto max-w-3xl px-6 pb-28 pt-36 md:px-8">
+      <main className={`mx-auto px-6 pb-28 pt-36 md:px-8 ${paperMode ? "max-w-4xl" : "max-w-3xl"}`}>
         <Link
           href="/essays"
           className="label mb-10 inline-block text-[9px]! text-dim transition-colors hover:text-starlight"
@@ -88,6 +89,11 @@ export default async function EssayPage({
           <h1 className="font-display text-[clamp(2.2rem,6vw,4rem)] font-light leading-[1.08] text-ink">
             {essay.title}
           </h1>
+          {meta?.subtitle ? (
+            <p className="mx-auto mt-5 max-w-2xl font-serif text-xl italic leading-relaxed text-faint md:text-2xl">
+              {meta.subtitle}
+            </p>
+          ) : null}
           <div className="mt-8 flex items-center justify-center gap-3">
             <Image
               src="/brand/avatar.png"
@@ -111,7 +117,9 @@ export default async function EssayPage({
           <figure className="mb-16">
             <div
               className={`relative overflow-hidden ${
-                meta.aspect === "portrait"
+                paperMode
+                  ? "mx-auto aspect-3/4 max-w-xl"
+                  : meta.aspect === "portrait"
                   ? "mx-auto aspect-3/4 max-w-md"
                   : meta.aspect === "square"
                     ? "mx-auto aspect-square max-w-lg"
@@ -135,7 +143,7 @@ export default async function EssayPage({
         )}
 
         <article
-          className="prose-space dropcap"
+          className={`prose-space ${paperMode ? "scientific-paper" : "dropcap"}`}
           dangerouslySetInnerHTML={{ __html: essay.html }}
         />
 
