@@ -154,9 +154,19 @@ export default function EssayDeck() {
             <p className="label mb-2 text-starlight/70">JD-1184 b · ACTIVE DECK</p>
             <h2 className="font-display text-2xl font-light text-ink">Your Six</h2>
           </div>
-          <span className="label text-[9px]! text-dim">
-            {deck.length} ACTIVE · {storage.length} IN PC
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="label text-[9px]! text-dim">
+              {deck.length} ACTIVE · {storage.length} IN PC
+            </span>
+            {storage.length > 0 ? (
+              <Link
+                href="#jafars-pc"
+                className="label hidden rounded-full border border-[rgba(159,216,232,0.35)] px-2.5 py-1 text-[7px]! tracking-[0.2em]! text-comet/80 transition-colors hover:border-comet/70 hover:text-comet sm:inline-flex"
+              >
+                Open PC
+              </Link>
+            ) : null}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {deck.map((slug, i) => (
@@ -166,7 +176,7 @@ export default function EssayDeck() {
       </div>
 
       {/* ——— Jafar's PC · Pokemon-style storage ——— */}
-      <aside className="lg:sticky lg:top-24 lg:self-start">
+      <aside id="jafars-pc" className="scroll-mt-28 lg:sticky lg:top-24 lg:self-start">
         <div className="rounded-[8px] border-2 border-[rgba(80,120,160,0.5)] bg-[linear-gradient(160deg,#1a2a40,#0f1820)] p-3 shadow-[0_8px_24px_rgba(0,0,0,0.6)]">
           {/* PC header */}
           <div className="mb-2 flex items-center gap-2 border-b border-[rgba(80,120,160,0.3)] pb-2">

@@ -75,7 +75,11 @@ export default async function EssayPage({
       />
       <SiteHeader current="essays" />
       <ReadingProgress />
-      <main className={`mx-auto px-6 pb-28 pt-36 md:px-8 ${paperMode ? "max-w-4xl" : "max-w-3xl"}`}>
+      <main
+        className={`mx-auto px-6 pb-28 pt-36 md:px-8 ${
+          paperMode ? "paper-shell max-w-5xl" : "max-w-3xl"
+        }`}
+      >
         <Link
           href="/essays"
           className="label mb-10 inline-block text-[9px]! text-dim transition-colors hover:text-starlight"
@@ -114,11 +118,11 @@ export default async function EssayPage({
         </header>
 
         {meta && (
-          <figure className="mb-16">
+          <figure className={`mb-16 ${paperMode ? "paper-cover" : ""}`}>
             <div
               className={`relative overflow-hidden ${
                 paperMode
-                  ? "mx-auto aspect-3/4 max-w-xl"
+                  ? "paper-cover-frame mx-auto aspect-3/4 max-w-xl"
                   : meta.aspect === "portrait"
                   ? "mx-auto aspect-3/4 max-w-md"
                   : meta.aspect === "square"
@@ -134,7 +138,13 @@ export default async function EssayPage({
                 sizes="(max-width: 768px) 100vw, 768px"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-space/40 to-transparent" />
+              <div
+                className={`absolute inset-0 ${
+                  paperMode
+                    ? "paper-cover-wash"
+                    : "bg-linear-to-t from-space/40 to-transparent"
+                }`}
+              />
             </div>
             <figcaption className="label mt-4 text-center text-[8px]! tracking-[0.26em]! text-dim">
               {meta.alt.toUpperCase()}

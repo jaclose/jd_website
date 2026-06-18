@@ -485,6 +485,11 @@ function OrbitLine({ body }: { body: CelestialBody }) {
 }
 
 const TRAIL_N = 36;
+const GAS_GIANT_MOONS = [
+  { orbitR: 2.5, radius: 0.16, color: "#cfc4b4" },
+  { orbitR: 3.08, radius: 0.185, color: "#b9c2cf" },
+  { orbitR: 4.18, radius: 0.21, color: "#cfb9a9" },
+] as const;
 
 /** a fading arc behind the body along its orbit — reads as motion */
 function OrbitTrail({ body }: { body: CelestialBody }) {
@@ -755,7 +760,7 @@ function GasGiant({ body, index, count }: BodyProps) {
       if (!m) return;
       m.getWorldPosition(vWorld);
       const dist = vWorld.distanceTo(cam.position);
-      const worldR = (0.16 + i * 0.025) * group.current.scale.x;
+      const worldR = (GAS_GIANT_MOONS[i]?.radius ?? 0.16) * group.current.scale.x;
       const ndc = vWorld.project(cam);
       hero.screen.set(`${body.id}-moon-${i}`, {
         x: ((ndc.x + 1) / 2) * size.width,
@@ -786,13 +791,13 @@ function GasGiant({ body, index, count }: BodyProps) {
       </mesh>
       {/* three moons — the three most recent essays, each clickable */}
       <group ref={moons} rotation={[0.2, 0, 0]}>
-        {[2.5, 3.05, 3.6].map((r, i) => (
+        {GAS_GIANT_MOONS.map((moon, i) => (
           <group key={i}>
             <Moon
-              radius={0.16 + i * 0.025}
-              orbitR={r}
-              phase={(i / 3) * Math.PI * 2}
-              color={["#cfc4b4", "#b9c2cf", "#cfb9a9"][i]}
+              radius={moon.radius}
+              orbitR={moon.orbitR}
+              phase={(i / GAS_GIANT_MOONS.length) * Math.PI * 2}
+              color={moon.color}
               moonId={`${body.id}-moon-${i}`}
               href={body.links[i]?.href ?? body.href}
               registerRef={(g) => {
@@ -801,7 +806,7 @@ function GasGiant({ body, index, count }: BodyProps) {
             />
             {/* moon orbit hairline */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[r - 0.008, r + 0.008, 64]} />
+              <ringGeometry args={[moon.orbitR - 0.008, moon.orbitR + 0.008, 64]} />
               <meshBasicMaterial
                 color="#9aa4b8"
                 transparent

@@ -2,6 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { bodies } from "@/data/system";
 
+const MOBILE_LABELS: Record<string, string> = {
+  essays: "Ess",
+  "field-notes": "Notes",
+  garden: "San",
+  about: "Bio",
+};
+
 /**
  * Header for subpages — the DabbaghMed mark beside the name, then a quiet
  * echo of the docked system. Each section keeps its planetary color as a
@@ -11,7 +18,7 @@ export default function SiteHeader({ current }: { current?: string }) {
   const links = bodies.filter((b) => !b.href.startsWith("/#"));
   return (
     <header className="fixed inset-x-0 top-0 z-30 border-b border-[rgba(232,230,225,0.1)] bg-[rgba(5,6,10,0.78)] backdrop-blur-md">
-      <nav className="mx-auto flex h-15 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-10">
+      <nav className="mx-auto flex h-15 max-w-6xl items-center justify-between pl-3 pr-8 sm:px-6 md:px-10">
         <Link
           href="/"
           aria-label="Home"
@@ -26,13 +33,13 @@ export default function SiteHeader({ current }: { current?: string }) {
           />
           <span className="hidden sm:inline">DabbaghMed</span>
         </Link>
-        <div className="flex items-center gap-4 sm:gap-5 md:gap-8">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-5 md:gap-8">
           {links.map((b) => (
             <Link
               key={b.id}
               href={b.href}
-              className={`group items-center gap-2 ${
-                b.id === "achievements" || b.id === "vault" ? "hidden sm:flex" : "flex"
+              className={`group items-center gap-1.5 sm:gap-2 ${
+                b.id === "achievements" || b.id === "vault" || b.id === "about" ? "hidden sm:flex" : "flex"
               } ${
                 current === b.id ? "opacity-100" : "opacity-70"
               } transition-opacity hover:opacity-100`}
@@ -42,7 +49,10 @@ export default function SiteHeader({ current }: { current?: string }) {
                 className="h-1.5 w-1.5 rounded-full transition-transform duration-300 group-hover:scale-150"
                 style={{ background: b.color }}
               />
-              <span className="label text-[9px]!">{b.name}</span>
+              <span className="label whitespace-nowrap text-[7.5px]! tracking-[0.14em]! sm:hidden">
+                {MOBILE_LABELS[b.id] ?? b.name}
+              </span>
+              <span className="label hidden text-[9px]! sm:inline">{b.name}</span>
             </Link>
           ))}
         </div>

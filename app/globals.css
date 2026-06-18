@@ -347,6 +347,182 @@ body {
   color: var(--color-starlight);
 }
 
+.paper-shell {
+  position: relative;
+  isolation: isolate;
+}
+.paper-shell::before {
+  content: "";
+  position: absolute;
+  inset: 7rem -2rem 10rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(232, 230, 225, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 230, 225, 0.018) 1px, transparent 1px),
+    radial-gradient(70% 32% at 50% 0%, rgba(212, 184, 134, 0.12), transparent 70%),
+    radial-gradient(52% 28% at 50% 35%, rgba(159, 216, 232, 0.07), transparent 72%);
+  background-size: 34px 34px, 34px 34px, auto, auto;
+  mask-image: linear-gradient(to bottom, transparent, #000 8rem, #000 calc(100% - 8rem), transparent);
+}
+.paper-cover {
+  position: relative;
+  margin-bottom: clamp(3.5rem, 8vw, 6rem);
+}
+.paper-cover::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3.5rem;
+  z-index: -1;
+  width: min(760px, 90vw);
+  height: 12rem;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(212, 184, 134, 0.16), transparent 70%);
+  filter: blur(26px);
+  opacity: 0.75;
+}
+.paper-cover-frame {
+  border-radius: 10px;
+  box-shadow:
+    0 42px 120px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(212, 184, 134, 0.16) inset;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 58%, rgba(0, 0, 0, 0.9) 76%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 58%, rgba(0, 0, 0, 0.9) 76%, transparent 100%);
+}
+.paper-cover-wash {
+  background:
+    linear-gradient(to top, var(--color-space) 0%, transparent 20%, transparent 72%, rgba(6, 7, 11, 0.26) 100%),
+    radial-gradient(ellipse at center, transparent 54%, rgba(6, 7, 11, 0.72) 100%);
+}
+.scientific-paper {
+  position: relative;
+}
+.scientific-paper::before {
+  content: "JD-1184 b / personal study / discipline-attention-time";
+  display: block;
+  max-width: 68ch;
+  margin: -0.3rem auto 1.6rem;
+  border-bottom: 1px solid rgba(232, 230, 225, 0.09);
+  padding-bottom: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 230, 225, 0.42);
+}
+.scientific-paper .paper-abstract-card {
+  transform: translateZ(0);
+  transition:
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease;
+}
+.scientific-paper .paper-abstract-card:hover,
+.scientific-paper .paper-abstract-card[open] {
+  border-color: rgba(212, 184, 134, 0.48);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.45),
+    0 0 38px rgba(212, 184, 134, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset;
+}
+.scientific-paper .paper-abstract-card[open] .paper-abstract-body {
+  animation: abstract-rise 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes abstract-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.scientific-paper .paper-section {
+  scroll-margin-top: 6rem;
+}
+.scientific-paper .paper-section::before {
+  content: "";
+  display: block;
+  max-width: 68ch;
+  height: 1px;
+  margin: 0 auto 2.4rem;
+  background: linear-gradient(90deg, transparent, rgba(212, 184, 134, 0.24), transparent);
+}
+.scientific-paper .paper-section + .paper-section::before {
+  margin-top: -0.35rem;
+}
+.scientific-paper .paper-section + .paper-section {
+  border-top: 0;
+}
+.scientific-paper .paper-figure {
+  isolation: isolate;
+  margin-top: clamp(3.5rem, 7vw, 5.2rem);
+  margin-bottom: clamp(4rem, 8vw, 6rem);
+}
+.scientific-paper .paper-figure::before {
+  content: "";
+  position: absolute;
+  inset: -2rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(212, 184, 134, 0.14), transparent 64%),
+    radial-gradient(ellipse at 30% 20%, rgba(159, 216, 232, 0.08), transparent 52%);
+  filter: blur(18px);
+  opacity: 0.8;
+}
+.scientific-paper .paper-figure img {
+  border: 0;
+  border-radius: 10px;
+  box-shadow:
+    0 28px 95px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(212, 184, 134, 0.13) inset;
+  filter: saturate(0.96) contrast(1.04);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 62%, rgba(0, 0, 0, 0.92) 78%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 62%, rgba(0, 0, 0, 0.92) 78%, transparent 100%);
+}
+.scientific-paper .paper-figure figcaption {
+  border-left-color: rgba(212, 184, 134, 0.42);
+  background:
+    linear-gradient(90deg, rgba(212, 184, 134, 0.055), transparent 65%),
+    rgba(6, 7, 11, 0.24);
+  padding: 0.9rem 1rem;
+  backdrop-filter: blur(8px);
+}
+
+@media (min-width: 900px) {
+  .scientific-paper .paper-figure--landscape {
+    max-width: 980px;
+  }
+  .scientific-paper .paper-figure--portrait {
+    max-width: 660px;
+  }
+}
+
+@media (max-width: 640px) {
+  .scientific-paper .paper-abstract-card summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .scientific-paper .paper-abstract-action {
+    margin-left: 0;
+  }
+  .scientific-paper .paper-abstract-card summary::after {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+  }
+  .scientific-paper .paper-section h2 {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+  .scientific-paper .paper-figure figcaption {
+    font-size: 0.86rem;
+  }
+}
+
 /* first letter of an essay */
 .prose-space.dropcap > p:first-of-type::first-letter {
   font-family: var(--font-display);
