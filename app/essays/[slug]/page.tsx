@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import ReadingProgress from "@/components/ReadingProgress";
 import JsonLd from "@/components/JsonLd";
 import EssaySignup from "@/components/newsletter/EssaySignup";
+import EssayFigureGuard from "@/components/essays/EssayFigureGuard";
 import { essayJsonLd } from "@/lib/seo";
 
 export function generateStaticParams() {
@@ -156,6 +157,7 @@ export default async function EssayPage({
           className={`prose-space ${paperMode ? "scientific-paper" : "dropcap"}`}
           dangerouslySetInnerHTML={{ __html: essay.html }}
         />
+        {paperMode && <EssayFigureGuard />}
 
         <div className="mt-20">
           <EssaySignup slug={slug} type="essay" />
