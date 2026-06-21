@@ -7,6 +7,16 @@ import AchievementToast from "@/components/AchievementToast";
 import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
+const siteTitle = "Jafar Dabbagh | JD-1184";
+const siteDescription =
+  "Essays, field notes, and a living Sanctum on study, faith, discipline, medicine, and the work of becoming useful.";
+const previewImage = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Jafar Dabbagh — JD-1184, essays, field notes, and the Sanctum",
+};
+
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
@@ -34,9 +44,8 @@ const amiri = Amiri({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Jafar Dabbagh — the JD-1184 system",
-  description:
-    "Essays, field notes, and a Sanctum that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+  title: siteTitle,
+  description: siteDescription,
   authors: [{ name: "Jafar Dabbagh", url: SITE_URL }],
   creator: "Jafar Dabbagh",
   openGraph: {
@@ -44,15 +53,15 @@ export const metadata: Metadata = {
     siteName: "Jafar Dabbagh",
     url: SITE_URL,
     locale: "en_US",
-    title: "Jafar Dabbagh — the JD-1184 system",
-    description:
-      "Essays, field notes, and a Sanctum that terraforms its planet. Dispatches from study, faith, and the battle to stay present.",
+    title: siteTitle,
+    description: siteDescription,
+    images: [previewImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Jafar Dabbagh — the JD-1184 system",
-    description:
-      "Essays, field notes, and a Sanctum that terraforms its planet.",
+    title: siteTitle,
+    description: siteDescription,
+    images: [previewImage],
   },
 };
 
