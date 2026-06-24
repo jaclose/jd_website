@@ -26,6 +26,20 @@ pursuit is planted. Add an entry (a template lives at the top of
 `data/garden.ts`) and the rows, the homepage teaser, the achievements, and
 the hero planet all update on the next build.
 
+### The Sanctum (`/garden`)
+
+The full Garden route is **The Sanctum** — a guided, cinematic walk in three
+zones: the **Room of Entanglement** (a dim interior of dead screens and cable
+vines) → the **Threshold** (a doorway where vines cross and warm light leaks in)
+→ the **Living Sanctum** (a cultivated forest of real CC0 vegetation, with each
+life-chapter standing as a physical landmark). Built with R3F in
+[components/sanctum](components/sanctum); see that folder's structure for the
+camera rig, wind shaders, quality tiers, and zones. The walk reuses the existing
+[data/gardenPaths.ts](data/gardenPaths.ts) node graph and
+[data/gardenFeatures.ts](data/gardenFeatures.ts) plaque content. Real assets are
+CC0 (Poly Haven + ambientCG) under `public/sanctum/` — see
+`public/sanctum/CREDITS.md`. The homepage keeps the lighter original walk.
+
 ## Stack
 
 - **Next.js 15** (App Router, static output) + **TypeScript**

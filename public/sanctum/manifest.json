@@ -1,0 +1,83 @@
+{
+  "models": {
+    "tree_broadleaf": {
+      "file": "models/tree_broadleaf.glb",
+      "bytes": 6135088,
+      "source": "jacaranda_tree"
+    },
+    "sapling_conifer": {
+      "file": "models/sapling_conifer.glb",
+      "bytes": 1276788,
+      "source": "fir_sapling"
+    },
+    "fern": {
+      "file": "models/fern.glb",
+      "bytes": 159092,
+      "source": "fern_02"
+    },
+    "branch": {
+      "file": "models/branch.glb",
+      "bytes": 651256,
+      "source": "dry_branches_medium_01"
+    },
+    "deadwood": {
+      "file": "models/deadwood.glb",
+      "bytes": 526144,
+      "source": "dead_tree_trunk"
+    },
+    "rock": {
+      "file": "models/rock.glb",
+      "bytes": 978956,
+      "source": "boulder_01"
+    },
+    "plant": {
+      "file": "models/plant.glb",
+      "bytes": 192600,
+      "source": "calathea_orbifolia_01"
+    },
+    "apple": {
+      "file": "models/apple.glb",
+      "bytes": 170876,
+      "source": "food_apple_01"
+    }
+  },
+  "textures": {
+    "path": {
+      "color": "textures/path_color.webp",
+      "normal": "textures/path_normal.webp",
+      "rough": "textures/path_rough.webp",
+      "source": "Ground037"
+    },
+    "floor": {
+      "color": "textures/floor_color.webp",
+      "normal": "textures/floor_normal.webp",
+      "rough": "textures/floor_rough.webp",
+      "source": "Ground054"
+    },
+    "moss": {
+      "color": "textures/moss_color.webp",
+      "normal": "textures/moss_normal.webp",
+      "rough": "textures/moss_rough.webp",
+      "source": "Moss004"
+    },
+    "bark": {
+      "color": "textures/bark_color.webp",
+      "normal": "textures/bark_normal.webp",
+      "rough": "textures/bark_rough.webp",
+      "source": "Bark012"
+    },
+    "stone": {
+      "color": "textures/stone_color.webp",
+      "normal": "textures/stone_normal.webp",
+      "rough": "textures/stone_rough.webp",
+      "source": "Rock030"
+    }
+  },
+  "hdri": {
+    "env_forest": {
+      "file": "hdri/env_forest.hdr",
+      "bytes": 1911073,
+      "source": "forest_slope"
+    }
+  }
+}
