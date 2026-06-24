@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { gardenFeatureById } from "@/data/gardenFeatures";
+import SanctumBuildStamp from "./SanctumBuildStamp";
 import SanctumFallback from "./SanctumFallback";
 import SanctumInspector from "./SanctumInspector";
 import { useJourneyNav } from "./SanctumPathController";
@@ -81,10 +82,13 @@ export default function SanctumExperience() {
 
   if (fallback) {
     return (
-      <SanctumFallback
-        reducedMotion={caps.reducedMotion}
-        reason={caps.webgl ? "Reduced-motion mode · a still of the walk" : "WebGL unavailable · a still of the walk"}
-      />
+      <div className="relative">
+        <SanctumFallback
+          reducedMotion={caps.reducedMotion}
+          reason={caps.webgl ? "Reduced-motion mode · a still of the walk" : "WebGL unavailable · a still of the walk"}
+        />
+        <SanctumBuildStamp />
+      </div>
     );
   }
 
@@ -201,6 +205,7 @@ export default function SanctumExperience() {
       </AnimatePresence>
 
       <SanctumInspector feature={inspected} onClose={() => nav.inspect(null)} />
+      <SanctumBuildStamp />
     </section>
   );
 }

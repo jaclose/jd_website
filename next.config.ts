@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
+import { execSync } from "node:child_process";
+
+/** short commit SHA — Vercel provides it as an env var; locally read git. */
+function commitSha(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "local";
+  }
+}
 
 const nextConfig: NextConfig = {
+  // build identity, surfaced on /garden (always in dev, ?debug=1 in production)
+  env: {
+    NEXT_PUBLIC_COMMIT_SHA: commitSha(),
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    NEXT_PUBLIC_DEPLOY_ENV: process.env.VERCEL_ENV || "development",
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "jafardabbagh.wordpress.com" },
