@@ -1,5 +1,6 @@
 "use client";
 import { Suspense } from "react";
+import SanctumAudioSystem from "./SanctumAudioSystem";
 import SanctumCameraRig from "./SanctumCameraRig";
 import SanctumFog from "./SanctumFog";
 import SanctumLighting from "./SanctumLighting";
@@ -41,6 +42,7 @@ export default function SanctumScene({
   return (
     <>
       <SanctumWindSystem strength={config.windStrength} />
+      <SanctumAudioSystem />
       <SanctumLighting zone={zone} config={config} />
       <SanctumFog zone={zone} config={config} />
       <SanctumCameraRig targetNodeId={targetNodeId} onArrive={onArrive} />

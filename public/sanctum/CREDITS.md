@@ -17,3 +17,5 @@ required. Listed here as good practice and for provenance.
 - food_apple_01 (model) — Poly Haven, CC0 — https://polyhaven.com/a/food_apple_01
 - forest_slope (HDRI) — Poly Haven, CC0 — https://polyhaven.com/a/forest_slope
 - jacaranda_tree (model) — Poly Haven, CC0 — https://polyhaven.com/a/jacaranda_tree
+- flower_ursinia (model) — Poly Haven, CC0 — https://polyhaven.com/a/flower_ursinia
+- dead_tree_trunk_02 (model) — Poly Haven, CC0 — https://polyhaven.com/a/dead_tree_trunk_02

@@ -23,7 +23,9 @@ export type ModelKey =
   | "deadwood"
   | "rock"
   | "plant"
-  | "apple";
+  | "apple"
+  | "flower"
+  | "log";
 
 export const MODEL_URL: Record<ModelKey, string> = {
   tree_broadleaf: base + "models/tree_broadleaf.glb",
@@ -34,6 +36,8 @@ export const MODEL_URL: Record<ModelKey, string> = {
   rock: base + "models/rock.glb",
   plant: base + "models/plant.glb",
   apple: base + "models/apple.glb",
+  flower: base + "models/flower.glb",
+  log: base + "models/log.glb",
 };
 
 export type TerrainKey = "path" | "floor" | "moss" | "bark" | "stone";
@@ -52,7 +56,7 @@ export const HDRI_FOREST = base + "hdri/env_forest.hdr";
 export const ZONE_ASSETS: Record<"room" | "threshold" | "sanctum", ModelKey[]> = {
   room: ["deadwood", "plant"],
   threshold: ["plant", "fern", "branch"],
-  sanctum: ["tree_broadleaf", "sapling_conifer", "fern", "branch", "deadwood", "rock", "plant", "apple"],
+  sanctum: ["tree_broadleaf", "sapling_conifer", "fern", "branch", "deadwood", "rock", "plant", "apple", "flower", "log"],
 };
 
 /* ————— loading ————— */

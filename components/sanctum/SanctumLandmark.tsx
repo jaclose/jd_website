@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { GardenFeature } from "@/data/gardenFeatures";
 import InstancedModel from "./SanctumFoliage";
 import SanctumInteractionMarker from "./SanctumInteractionMarker";
+import { groundHeight } from "./lib/terrain";
 
 /**
  * A life-chapter rendered as a *place*, not a card. Each gardenFeature maps to a
@@ -52,7 +53,7 @@ export default function SanctumLandmark({
   const rot = feature.rotation?.[1] ?? 0;
 
   return (
-    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+    <group position={[x, groundHeight(x, z), z]} rotation={[0, rot, 0]}>
       <Archetype kind={archetype} accent={accent} lowFx={lowFx} />
       <SanctumInteractionMarker position={[0, 0, 1.3]} color={accent} onSelect={() => onSelect(feature.id)} />
     </group>

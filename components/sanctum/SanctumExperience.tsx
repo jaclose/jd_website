@@ -10,7 +10,7 @@ import { useJourneyNav } from "./SanctumPathController";
 import { detectQuality, resolveConfig } from "./SanctumQualityManager";
 import { branchLabel } from "./lib/journey";
 import { preloadZone } from "./lib/assets";
-import { pointerLook } from "./lib/store";
+import { pointerLook, sanctumAudio } from "./lib/store";
 
 const SanctumCanvas = dynamic(() => import("./SanctumCanvas"), { ssr: false });
 
@@ -63,6 +63,15 @@ export default function SanctumExperience() {
   const onPointerLeave = () => {
     pointerLook.x = 0;
     pointerLook.y = 0;
+  };
+
+  const [soundOn, setSoundOn] = useState(false);
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    sanctumAudio.on = next;
+    if (next) sanctumAudio.resume(); // resume within the click gesture (autoplay policy)
+    sanctumAudio.apply(next);
   };
 
   const inspected = gardenFeatureById(nav.inspectedFeatureId ?? undefined);
@@ -128,11 +137,21 @@ export default function SanctumExperience() {
       </div>
 
       <div className="pointer-events-none absolute right-5 top-24 z-20 hidden max-w-60 text-right md:block">
-        <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">Guided walk · move the cursor to look</p>
+        <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">Guided walk · cursor looks · WASD wanders</p>
         <p className="mt-2 font-mono text-[0.66rem] leading-relaxed text-faint">
-          Step toward the light, cross the threshold, and follow the trail. Click a glowing marker to read a plaque.
+          Step toward the light, cross the threshold, follow the trail. In the forest, WASD lets you wander a few steps; click a glowing marker to read a plaque.
         </p>
       </div>
+
+      {/* spatial ambience toggle (gesture-gated; off by default) */}
+      <button
+        type="button"
+        onClick={toggleSound}
+        className="absolute right-5 top-14 z-30 border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
+        aria-pressed={soundOn ? "true" : "false"}
+      >
+        {soundOn ? "Sound ◼" : "Sound ◻"}
+      </button>
 
       {/* framing corners */}
       {["left-4 top-20 border-l border-t", "right-4 top-20 border-r border-t", "left-4 bottom-4 border-l border-b", "right-4 bottom-4 border-r border-b"].map(

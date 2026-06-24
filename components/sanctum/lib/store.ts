@@ -10,3 +10,18 @@ export const pointerLook = { x: 0, y: 0, enabled: true };
 
 /** set by the rig; lets the overlay show a soft "arriving…" state if wanted. */
 export const cameraState = { arrived: true };
+
+/**
+ * Audio control bridge. The AudioContext lives inside the canvas (AudioSystem),
+ * but it must be resumed from a real user gesture (autoplay policy) — so the DOM
+ * toggle calls `resume()`/`apply()` which the AudioSystem registers here.
+ */
+export const sanctumAudio: {
+  on: boolean;
+  resume: () => void;
+  apply: (on: boolean) => void;
+} = {
+  on: false,
+  resume: () => {},
+  apply: () => {},
+};
