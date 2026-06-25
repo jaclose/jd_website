@@ -3,9 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
 import type { GardenFeature } from "@/data/gardenFeatures";
+import { useMemo } from "react";
 import InstancedModel from "./SanctumFoliage";
 import SanctumInteractionMarker from "./SanctumInteractionMarker";
 import { groundHeight } from "./lib/terrain";
+import { makeWaterMaterial } from "./shaders/water";
 
 /**
  * A life-chapter rendered as a *place*, not a card. Each gardenFeature maps to a
@@ -250,17 +252,25 @@ function TidePool({ lowFx }: { lowFx: boolean }) {
           </mesh>
         );
       })}
-      {/* water */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
-        <circleGeometry args={[1.45, 48]} />
-        {lowFx ? (
-          <meshStandardMaterial color="#21404a" roughness={0.1} metalness={0.5} transparent opacity={0.9} />
-        ) : (
-          <meshPhysicalMaterial color="#21404a" transmission={0.6} thickness={1} roughness={0.08} ior={1.33} metalness={0} transparent opacity={0.85} />
-        )}
-      </mesh>
+      {/* water — procedural ripple/fresnel surface (cheap standard fallback on low) */}
+      <Water lowFx={lowFx} />
       <pointLight position={[0, 0.6, 0]} color="#9fd8e8" intensity={1.2} distance={5} decay={2} />
     </group>
+  );
+}
+
+/** procedural water surface on capable tiers; a cheap reflective disc on low. */
+function Water({ lowFx }: { lowFx: boolean }) {
+  const mat = useMemo(() => (lowFx ? null : makeWaterMaterial()), [lowFx]);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+      <circleGeometry args={[1.45, 48]} />
+      {mat ? (
+        <primitive object={mat} attach="material" />
+      ) : (
+        <meshStandardMaterial color="#21404a" roughness={0.1} metalness={0.5} transparent opacity={0.9} />
+      )}
+    </mesh>
   );
 }
 

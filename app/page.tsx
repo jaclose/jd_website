@@ -4,7 +4,7 @@ import SectionSnap from "@/components/SectionSnap";
 import Statement from "@/components/sections/Statement";
 import EssaysGallery from "@/components/sections/EssaysGallery";
 import QuoteOfWeek from "@/components/sections/QuoteOfWeek";
-import ForestScene from "@/components/sections/ForestScene";
+import SanctumExperience from "@/components/sanctum/SanctumExperience";
 import FieldNotesSection from "@/components/sections/FieldNotesSection";
 import DeploymentsDeck from "@/components/sections/DeploymentsDeck";
 import WorksArchive from "@/components/sections/WorksArchive";
@@ -31,7 +31,7 @@ export default function Home() {
         <Statement />
         <EssaysGallery />
         <QuoteOfWeek />
-        <ForestScene />
+        <SanctumExperience id="garden" />
         <FieldNotesSection />
         <DeploymentsDeck />
         <WorksArchive />

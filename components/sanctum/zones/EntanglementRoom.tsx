@@ -28,12 +28,16 @@ export default function EntanglementRoom({ config }: { config: QualityConfig }) 
       <DeadPlant />
       <Cables />
       <DustMotes count={config.tier === "low" ? 60 : 160} />
+      {/* warm light leaking back through the doorway — the pull toward the exit */}
+      <pointLight position={[0, 1.6, DOORWAY.z + 0.5]} color="#f0c486" intensity={3.4} distance={15} decay={1.5} />
+      {/* a dim cool bounce filling the interior so the space reads as a room */}
+      <pointLight position={[0, DOORWAY.ceil - 0.3, 22]} color="#33445f" intensity={2.4} distance={24} decay={1.3} />
     </group>
   );
 }
 
 const wallMat = (
-  <meshStandardMaterial color="#0e1118" roughness={0.95} metalness={0} side={THREE.DoubleSide} />
+  <meshStandardMaterial color="#222a3a" roughness={0.92} metalness={0} side={THREE.DoubleSide} />
 );
 
 function Shell() {
@@ -46,7 +50,7 @@ function Shell() {
       {/* floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, midZ]} receiveShadow>
         <planeGeometry args={[halfX * 2, depth]} />
-        <meshStandardMaterial color="#0b0d12" roughness={1} />
+        <meshStandardMaterial color="#191e2a" roughness={1} />
       </mesh>
       {/* ceiling */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ceil, midZ]}>
@@ -92,22 +96,33 @@ function DeadScreens() {
   });
   return (
     <group position={[-3.2, 1.4, 22]} rotation={[0, 0.5, 0]}>
-      {/* monitor */}
+      {/* monitor bezel + screen */}
       <mesh castShadow>
-        <boxGeometry args={[1.6, 0.95, 0.08]} />
-        <meshStandardMaterial color="#05060a" emissive="#5d7fb0" emissiveIntensity={1.1} roughness={0.4} />
+        <boxGeometry args={[1.5, 0.9, 0.1]} />
+        <meshStandardMaterial color="#0a0b10" roughness={0.6} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0, 0.055]}>
+        <planeGeometry args={[1.32, 0.74]} />
+        <meshStandardMaterial color="#0b1420" emissive="#5d7fb0" emissiveIntensity={1.0} roughness={0.35} />
       </mesh>
       <mesh position={[0, -0.7, 0]}>
         <boxGeometry args={[0.2, 0.5, 0.2]} />
         <meshStandardMaterial color="#0a0c10" roughness={0.8} />
       </mesh>
+      {/* the screen casts cold light into the room — the practical that makes it read */}
+      <pointLight position={[0, 0.1, 0.5]} color="#6f93c8" intensity={5} distance={14} decay={1.3} />
       {/* a second toppled screen */}
-      <mesh position={[1.8, -0.9, 0.6]} rotation={[0.4, -0.7, 0.2]}>
-        <boxGeometry args={[1.1, 0.7, 0.06]} />
-        <meshStandardMaterial color="#05060a" emissive="#3a5a86" emissiveIntensity={0.7} roughness={0.5} />
+      <mesh position={[1.8, -0.9, 0.6]} rotation={[0.4, -0.7, 0.2]} castShadow>
+        <boxGeometry args={[1.0, 0.64, 0.08]} />
+        <meshStandardMaterial color="#0a0b10" roughness={0.6} metalness={0.2} />
       </mesh>
+      <mesh position={[1.8, -0.9, 0.64]} rotation={[0.4, -0.7, 0.2]}>
+        <planeGeometry args={[0.84, 0.5]} />
+        <meshStandardMaterial color="#0b1420" emissive="#3a5a86" emissiveIntensity={0.8} roughness={0.4} />
+      </mesh>
+      <pointLight position={[1.8, -0.6, 1.1]} color="#3a5a86" intensity={2.2} distance={9} decay={1.4} />
       {/* crimson warning LED */}
-      <mesh position={[0.7, 0.35, 0.06]}>
+      <mesh position={[0.66, 0.32, 0.06]}>
         <sphereGeometry args={[0.04, 8, 8]} />
         <meshStandardMaterial ref={red} color="#b0364a" emissive="#b0364a" emissiveIntensity={1.2} toneMapped={false} />
       </mesh>

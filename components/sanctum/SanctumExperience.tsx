@@ -31,13 +31,18 @@ function hasWebGL(): boolean {
  * doorway, choose a fork, inspect a plaque). Pointer/touch position is bridged to
  * the camera rig for clamped look-around.
  */
-export default function SanctumExperience() {
+export default function SanctumExperience({ id }: { id?: string } = {}) {
   const [ready, setReady] = useState(false);
   const [caps, setCaps] = useState<{ tier: ReturnType<typeof detectQuality>["tier"]; reducedMotion: boolean; webgl: boolean }>(
     { tier: "high", reducedMotion: false, webgl: true },
   );
   const stage = useRef<HTMLDivElement>(null);
   const nav = useJourneyNav();
+  // lazy-mount: the heavy canvas only spins up once the section nears the viewport
+  // (so it can live as a homepage section without taxing the landing paint), and
+  // the frame loop pauses while it's scrolled away.
+  const [near, setNear] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const q = detectQuality();
@@ -46,10 +51,27 @@ export default function SanctumExperience() {
     const tier = (["low", "medium", "high", "ultra"].includes(forced ?? "") ? forced : q.tier) as typeof q.tier;
     setCaps({ tier, reducedMotion: q.reducedMotion, webgl: hasWebGL() });
     setReady(true);
-    preloadZone("sanctum");
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     pointerLook.enabled = !coarse;
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const el = stage.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        setNear(e.isIntersecting);
+        if (e.isIntersecting && !mounted) {
+          setMounted(true);
+          preloadZone("sanctum");
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ready, mounted]);
 
   const config = useMemo(() => resolveConfig(caps.tier, caps.reducedMotion), [caps]);
   const fallback = caps.reducedMotion || !caps.webgl;
@@ -108,21 +130,24 @@ export default function SanctumExperience() {
   return (
     <section
       ref={stage}
+      id={id}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       className="relative h-svh w-full overflow-hidden bg-space-deep"
     >
       <div className="absolute inset-0">
-        <SanctumCanvas
-          config={config}
-          zone={nav.zone}
-          targetNodeId={nav.targetNodeId}
-          moving={nav.moving}
-          started={nav.started}
-          active
-          onArrive={nav.arrive}
-          onInspect={nav.inspect}
-        />
+        {mounted ? (
+          <SanctumCanvas
+            config={config}
+            zone={nav.zone}
+            targetNodeId={nav.targetNodeId}
+            moving={nav.moving}
+            started={nav.started}
+            active={near}
+            onArrive={nav.arrive}
+            onInspect={nav.inspect}
+          />
+        ) : null}
       </div>
 
       {/* title / location */}
@@ -148,7 +173,7 @@ export default function SanctumExperience() {
         type="button"
         onClick={toggleSound}
         className="absolute right-5 top-16 z-30 border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
-        aria-pressed={soundOn ? "true" : "false"}
+        aria-label={soundOn ? "Turn ambience off" : "Turn ambience on"}
       >
         {soundOn ? "Sound ◼" : "Sound ◻"}
       </button>

@@ -32,21 +32,21 @@ const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 export const MOODS: Record<Zone, Mood> = {
   room: {
-    keyColor: c("#5d7fb0"), // cold screen-blue practical
-    keyIntensity: 1.1,
-    keyPos: v(0, 6, 4),
-    fillColor: c("#b0364a"), // faint crimson warning accent
-    fillIntensity: 0.35,
-    hemiSky: c("#26303f"),
-    hemiGround: c("#070809"),
-    hemiIntensity: 0.4,
-    ambient: c("#10151d"),
-    ambientIntensity: 0.5,
-    fogColor: c("#0a0e15"),
-    fogNear: 2,
-    fogFar: 26,
-    envIntensity: 0.12,
-    background: c("#05070b"),
+    keyColor: c("#7796c4"), // cold screen-blue practical, leaking from the doorway
+    keyIntensity: 1.0,
+    keyPos: v(-3, 5, 20), // inside the room now, raking the interior
+    fillColor: c("#3f5c86"), // cool bounce so walls/desk read as a real space
+    fillIntensity: 0.6,
+    hemiSky: c("#3d4e66"),
+    hemiGround: c("#101319"),
+    hemiIntensity: 0.95,
+    ambient: c("#232c3c"),
+    ambientIntensity: 1.35,
+    fogColor: c("#0c1019"),
+    fogNear: 3,
+    fogFar: 30,
+    envIntensity: 0.14,
+    background: c("#070a11"),
   },
   threshold: {
     keyColor: c("#e8b878"), // warm light winning from outside

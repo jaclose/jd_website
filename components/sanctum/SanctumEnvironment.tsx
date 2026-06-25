@@ -1,4 +1,6 @@
 "use client";
+import { Sky } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useTerrain } from "./lib/assets";
@@ -26,7 +28,79 @@ export default function SanctumEnvironment({ config }: { config: QualityConfig }
       <Trail />
       <GrassField config={config} />
       <ImpostorForest config={config} />
+      <SunShafts config={config} />
       <SkyVista />
+    </group>
+  );
+}
+
+/* ————— volumetric god-ray shafts raking from the dawn sun ————— */
+function makeShaftTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 256;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, "rgba(255,236,190,0.55)");
+  g.addColorStop(0.55, "rgba(255,226,170,0.14)");
+  g.addColorStop(1, "rgba(255,226,170,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 256);
+  const side = ctx.createLinearGradient(0, 0, 64, 0);
+  side.addColorStop(0, "rgba(0,0,0,1)");
+  side.addColorStop(0.5, "rgba(0,0,0,0)");
+  side.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = side;
+  ctx.fillRect(0, 0, 64, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function SunShafts({ config }: { config: QualityConfig }) {
+  const ref = useRef<THREE.Group>(null!);
+  const tex = useMemo(() => makeShaftTexture(), []);
+  // shafts aim along the sun→ground direction so every beam reads as one light
+  const tilt = useMemo(() => {
+    const dir = SUN_POS.clone().normalize();
+    return Math.atan2(dir.x, dir.y); // lean off-vertical toward the sun azimuth
+  }, []);
+  const shafts = useMemo(() => {
+    if (config.tier === "low") return [];
+    const rnd = mulberry32(21);
+    const n = config.tier === "ultra" ? 16 : 10;
+    return Array.from({ length: n }, () => ({
+      x: (rnd() - 0.5) * 40,
+      y: 10 + rnd() * 6,
+      z: 6 - rnd() * 60,
+      w: 2 + rnd() * 4,
+      h: 20 + rnd() * 12,
+      yaw: -0.4 + rnd() * 0.3,
+      o: 0.05 + rnd() * 0.07,
+    }));
+  }, [config.tier]);
+  useFrame((s) => {
+    if (ref.current) ref.current.position.x = Math.sin(s.clock.elapsedTime * 0.04) * 1.2;
+  });
+  if (!shafts.length) return null;
+  return (
+    <group ref={ref}>
+      {shafts.map((sh, i) => (
+        <mesh key={i} position={[sh.x, sh.y, sh.z]} rotation={[0, sh.yaw, tilt]}>
+          <planeGeometry args={[sh.w, sh.h]} />
+          <meshBasicMaterial
+            map={tex}
+            color="#ffe6b0"
+            transparent
+            opacity={sh.o}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -186,24 +260,11 @@ function ImpostorForest({ config }: { config: QualityConfig }) {
   return <instancedMesh ref={ref} args={[geom, mat, count]} frustumCulled={false} castShadow />;
 }
 
-/* ————— graded sky + distant mountain ridge ————— */
-function SkyVista() {
-  const sky = useMemo(() => {
-    const g = new THREE.SphereGeometry(180, 32, 20);
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    const col = new Float32Array(pos.count * 3);
-    const top = new THREE.Color("#b9c6cf");
-    const horizon = new THREE.Color("#cdbfa0");
-    const tmp = new THREE.Color();
-    for (let i = 0; i < pos.count; i++) {
-      const k = THREE.MathUtils.clamp(pos.getY(i) / 180 + 0.1, 0, 1);
-      tmp.copy(horizon).lerp(top, Math.pow(k, 0.8));
-      col.set([tmp.r, tmp.g, tmp.b], i * 3);
-    }
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    return g;
-  }, []);
+/* ————— procedural atmospheric sky + distant mountain ridge ————— */
+// low, warm dawn sun matching the analytic key-light direction
+const SUN_POS = new THREE.Vector3(-60, 14, -120);
 
+function SkyVista() {
   const ridge = useMemo(() => {
     const g = new THREE.CylinderGeometry(140, 150, 56, 96, 1, true);
     g.translate(0, 14, -30);
@@ -223,9 +284,15 @@ function SkyVista() {
 
   return (
     <group>
-      <mesh geometry={sky} renderOrder={-2}>
-        <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
-      </mesh>
+      {/* Preetham atmospheric scattering — a real sky with a low, hazy dawn sun */}
+      <Sky
+        distance={2000}
+        sunPosition={[SUN_POS.x, SUN_POS.y, SUN_POS.z]}
+        turbidity={9}
+        rayleigh={2.4}
+        mieCoefficient={0.02}
+        mieDirectionalG={0.86}
+      />
       <mesh geometry={ridge} renderOrder={-1}>
         <meshBasicMaterial color="#5b6b78" side={THREE.BackSide} fog />
       </mesh>
