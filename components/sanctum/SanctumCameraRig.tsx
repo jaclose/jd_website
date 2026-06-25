@@ -20,6 +20,8 @@ const MAX_YAW = 0.42;
 const MAX_PITCH = 0.2;
 const MAX_WALK = 7; // metres a visitor may wander from a stop
 const WALK_SPEED = 3.4;
+const MAX_CAMERA_DT = 0.75;
+const MAX_WALK_DT = 0.05;
 
 export default function SanctumCameraRig({
   targetNodeId,
@@ -79,7 +81,8 @@ export default function SanctumCameraRig({
   useFrame((state, dt) => {
     if (paused) return;
     const node = journeyNodeById(targetNodeId);
-    const d = Math.min(dt, 0.05);
+    const d = Math.min(dt, MAX_CAMERA_DT);
+    const walkDt = Math.min(dt, MAX_WALK_DT);
     const t = state.clock.elapsedTime;
     const k = 1.7 * node.cameraSpeed;
     const lk = look.current!;
@@ -97,7 +100,7 @@ export default function SanctumCameraRig({
       if (keys.current.has("r")) moveDir.add(right);
       if (keys.current.has("l")) moveDir.sub(right);
       if (moveDir.lengthSq() > 1e-5) {
-        moveDir.normalize().multiplyScalar(WALK_SPEED * d);
+        moveDir.normalize().multiplyScalar(WALK_SPEED * walkDt);
         cand.copy(offset.current).add(moveDir);
         if (cand.length() > MAX_WALK) cand.setLength(MAX_WALK);
         if (!blocked(node.position[0] + cand.x, node.position[2] + cand.z, 0.5)) {

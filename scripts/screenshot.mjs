@@ -1,14 +1,33 @@
 // Visual smoke test: captures the hero, the docked nav bar, and the garden.
 // Usage: node scripts/screenshot.mjs [baseUrl]
 import { chromium } from "playwright-core";
+import { existsSync, readdirSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 const base = process.argv[2] ?? "http://localhost:3210";
-const exe = path.join(
-  os.homedir(),
-  "Library/Caches/ms-playwright/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
-);
+const exe = resolveChromiumExecutable();
+
+function resolveChromiumExecutable() {
+  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE) return process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
+
+  const cache = path.join(os.homedir(), "Library/Caches/ms-playwright");
+  const versions = readdirSync(cache, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith("chromium-"))
+    .map((entry) => entry.name)
+    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+  for (const version of versions) {
+    const dir = path.join(cache, version);
+    const platformDirs = readdirSync(dir, { withFileTypes: true }).filter((entry) => entry.isDirectory() && entry.name.startsWith("chrome-"));
+    for (const platform of platformDirs) {
+      const candidate = path.join(dir, platform.name, "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing");
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+
+  throw new Error("No Playwright Chromium executable found. Run Playwright browser install first.");
+}
 
 const browser = await chromium.launch({ executablePath: exe });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

@@ -147,7 +147,7 @@ export default function SanctumExperience() {
       <button
         type="button"
         onClick={toggleSound}
-        className="absolute right-5 top-14 z-30 border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
+        className="absolute right-5 top-16 z-30 border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
         aria-pressed={soundOn ? "true" : "false"}
       >
         {soundOn ? "Sound ◼" : "Sound ◻"}
