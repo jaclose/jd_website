@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import InstancedModel from "../SanctumFoliage";
+import LivingMonitor from "../LivingMonitor";
 import { mulberry32 } from "../lib/rng";
 import { makeCableMaterial } from "../shaders/cableVine";
 import type { QualityConfig } from "../SanctumQualityManager";
@@ -27,6 +28,7 @@ export default function EntanglementRoom({ config }: { config: QualityConfig }) 
       <BookPile />
       <DeadPlant />
       <Cables />
+      <RoomDetails />
       <DustMotes count={config.tier === "low" ? 60 : 160} />
       {/* warm light leaking back through the doorway — the pull toward the exit */}
       <pointLight position={[0, 1.6, DOORWAY.z + 0.5]} color="#f0c486" intensity={3.4} distance={15} decay={1.5} />
@@ -101,16 +103,14 @@ function DeadScreens() {
         <boxGeometry args={[1.5, 0.9, 0.1]} />
         <meshStandardMaterial color="#0a0b10" roughness={0.6} metalness={0.2} />
       </mesh>
-      <mesh position={[0, 0, 0.055]}>
-        <planeGeometry args={[1.32, 0.74]} />
-        <meshStandardMaterial color="#0b1420" emissive="#5d7fb0" emissiveIntensity={1.0} roughness={0.35} />
-      </mesh>
+      {/* the one screen still alive — the site itself, a window back to the world */}
+      <LivingMonitor position={[0, 0, 0.056]} width={1.32} height={0.74} />
       <mesh position={[0, -0.7, 0]}>
         <boxGeometry args={[0.2, 0.5, 0.2]} />
         <meshStandardMaterial color="#0a0c10" roughness={0.8} />
       </mesh>
-      {/* the screen casts cold light into the room — the practical that makes it read */}
-      <pointLight position={[0, 0.1, 0.5]} color="#6f93c8" intensity={5} distance={14} decay={1.3} />
+      {/* the live screen casts a warm gold glow into the cold room — the pull toward it */}
+      <pointLight position={[0, 0.1, 0.5]} color="#caa86a" intensity={4.2} distance={13} decay={1.4} />
       {/* a second toppled screen */}
       <mesh position={[1.8, -0.9, 0.6]} rotation={[0.4, -0.7, 0.2]} castShadow>
         <boxGeometry args={[1.0, 0.64, 0.08]} />
@@ -209,10 +209,12 @@ function DeadPlant() {
 function Cables() {
   const tubes = useMemo(() => {
     const mk = (pts: [number, number, number][]) =>
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p))), 40, 0.05, 6, false);
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p))), 40, 0.04, 6, false);
+    // routed to hug the desk/walls and the floor edges — kept out of the central
+    // walking corridor (x≈0) and away from the camera so they never clip the view.
     return [
-      mk([[3.0, 0.95, 23], [2.0, 0.5, 22], [0.5, 0.06, 20], [-1.5, 0.06, 18], [-2.0, 0.4, 15.5]]),
-      mk([[-3.2, 1.0, 22], [-2.5, 0.4, 21], [-1.0, 0.06, 19.5], [0.6, 0.06, 17], [0.4, 0.3, 14.6]]),
+      mk([[3.0, 0.95, 23], [2.4, 0.5, 22], [1.6, 0.06, 20], [1.4, 0.06, 17], [2.0, 0.4, 15.2]]),
+      mk([[-3.2, 1.0, 22], [-2.8, 0.4, 21], [-2.4, 0.06, 19], [-2.2, 0.06, 16.5], [-2.6, 0.3, 14.8]]),
       mk([[3.0, 0.95, 23.4], [2.6, 0.5, 24], [2.2, 0.06, 26], [3.5, 0.06, 27.5]]),
     ];
   }, []);
@@ -221,6 +223,99 @@ function Cables() {
     <group>
       {tubes.map((g, i) => (
         <mesh key={i} geometry={g} material={mat} castShadow />
+      ))}
+    </group>
+  );
+}
+
+/**
+ * Extra furnishing so the room reads as a lived-in space, not a box: a desk chair,
+ * a floor rug, a cluttered corkboard on the back wall, a warm desk lamp (the one
+ * warm note besides the live screen), a side window leaking cold night, a small
+ * shelf, and papers strewn on the floor. All boxy and honest, all off the central
+ * walking corridor so nothing crowds the camera.
+ */
+function RoomDetails() {
+  const dark = "#14171f";
+  return (
+    <group>
+      {/* floor rug, centred but low so you walk over it */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 22]} receiveShadow>
+        <planeGeometry args={[4.6, 5.2]} />
+        <meshStandardMaterial color="#241d22" roughness={1} />
+      </mesh>
+
+      {/* desk chair, pulled out from the desk */}
+      <group position={[2.0, 0, 21.6]} rotation={[0, 0.5, 0]}>
+        <mesh position={[0, 0.5, 0]} castShadow>
+          <boxGeometry args={[0.5, 0.08, 0.5]} />
+          <meshStandardMaterial color={dark} roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.85, -0.22]} castShadow>
+          <boxGeometry args={[0.5, 0.7, 0.07]} />
+          <meshStandardMaterial color={dark} roughness={0.9} />
+        </mesh>
+        {[[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].map(([x, z], i) => (
+          <mesh key={i} position={[x, 0.25, z]}>
+            <boxGeometry args={[0.05, 0.5, 0.05]} />
+            <meshStandardMaterial color="#0c0e13" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* corkboard of pinned notes on the back wall */}
+      <group position={[2.4, 2.3, 29.85]}>
+        <mesh>
+          <planeGeometry args={[2.4, 1.4]} />
+          <meshStandardMaterial color="#2c2418" roughness={1} />
+        </mesh>
+        {[[-0.8, 0.35, "#3a4356"], [0.1, 0.4, "#473a30"], [0.85, 0.2, "#34403a"], [-0.5, -0.35, "#43363f"], [0.6, -0.4, "#3a4356"]].map(
+          ([x, y, c], i) => (
+            <mesh key={i} position={[x as number, y as number, 0.02]} rotation={[0, 0, (i - 2) * 0.06]}>
+              <planeGeometry args={[0.6, 0.42]} />
+              <meshStandardMaterial color={c as string} emissive="#10131a" emissiveIntensity={0.3} roughness={0.9} />
+            </mesh>
+          ),
+        )}
+      </group>
+
+      {/* warm desk lamp — the second warm note in a cold room */}
+      <group position={[4.0, 0, 22.4]}>
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 1.0, 6]} />
+          <meshStandardMaterial color="#0c0e13" roughness={0.8} metalness={0.3} />
+        </mesh>
+        <mesh position={[0.18, 0.98, 0]} rotation={[0, 0, -0.7]}>
+          <coneGeometry args={[0.16, 0.24, 12, 1, true]} />
+          <meshStandardMaterial color="#1a1c22" side={THREE.DoubleSide} roughness={0.7} emissive="#caa86a" emissiveIntensity={0.5} />
+        </mesh>
+        <pointLight position={[0.28, 0.92, 0.1]} color="#e8b878" intensity={2.2} distance={5} decay={1.8} />
+      </group>
+
+      {/* cold side window leaking night light */}
+      <group position={[-5.18, 2.0, 22]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh>
+          <planeGeometry args={[3.0, 1.8]} />
+          <meshStandardMaterial color="#0b1422" emissive="#2a3c5a" emissiveIntensity={0.7} roughness={0.4} />
+        </mesh>
+        {/* mullions */}
+        <mesh position={[0, 0, 0.02]}>
+          <boxGeometry args={[3.0, 0.05, 0.05]} />
+          <meshStandardMaterial color="#0a0c10" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0, 0.02]}>
+          <boxGeometry args={[0.05, 1.8, 0.05]} />
+          <meshStandardMaterial color="#0a0c10" roughness={0.9} />
+        </mesh>
+      </group>
+      <pointLight position={[-4.8, 2.0, 22]} color="#3a5a86" intensity={1.6} distance={9} decay={1.6} />
+
+      {/* papers strewn near the desk */}
+      {[[1.2, 20.4, 0.3], [1.6, 21.2, -0.5], [2.6, 20.0, 1.1], [0.9, 22.4, 2.2]].map(([x, z, r], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, r]} position={[x, 0.02, z]}>
+          <planeGeometry args={[0.3, 0.4]} />
+          <meshStandardMaterial color="#9a958a" roughness={1} side={THREE.DoubleSide} />
+        </mesh>
       ))}
     </group>
   );

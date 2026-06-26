@@ -1,6 +1,6 @@
 # 02 — Living monitor (the site, live, in the scene)
 
-Status: 🟡 Planned · Pri: P2 · Effort: M · Area: Sanctum (Room zone)
+Status: 🟢 Shipped (2026-06-26) · Pri: P2 · Effort: M · Area: Sanctum (Room zone) — `LivingMonitor.tsx` CanvasTexture on the Room screen; iframe/RenderTexture variants remain optional ultra polish.
 Tracks: "they're trying to generate a computer at first, and I want my website
 to be displayed on the screen monitor as a live image just to show what it is to
 be in my POV. I kind of want this reward."

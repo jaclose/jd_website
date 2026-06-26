@@ -48,11 +48,18 @@ export function distanceToTrail(x: number, z: number): number {
   return Math.sqrt(min);
 }
 
-/** subtle rolling elevation — kept near-flat on the trail so footing reads true. */
+/** rolling elevation — layered octaves for an open, Skellige-ish landform: gentle
+ *  broad swells with mound + surface detail, kept flat on the trail so footing
+ *  reads true (and the cobble path never tilts underfoot). The flatten band is
+ *  wide so banks rise *gradually* away from the path — rolling country, not a
+ *  trench. */
 export function groundHeight(x: number, z: number): number {
-  const roll = Math.sin(x * 0.06) * Math.cos(z * 0.05) * 0.9 + Math.sin(z * 0.13 + 1.0) * 0.4;
+  const broad = Math.sin(x * 0.018 + 1.3) * Math.cos(z * 0.016) * 1.25; // gentle large swells
+  const mid = Math.sin(x * 0.05) * Math.cos(z * 0.045) * 0.5 + Math.sin(z * 0.11 + 1.0) * 0.28; // mounds
+  const fine = Math.sin(x * 0.2 + z * 0.16) * 0.1; // small surface bumps
+  const roll = broad + mid + fine;
   const trail = distanceToTrail(x, z);
-  const flatten = THREE.MathUtils.smoothstep(trail, 0.0, 4.0); // 0 on trail → 1 away
+  const flatten = THREE.MathUtils.smoothstep(trail, 0.0, 9.0); // gradual rise over 9m → open banks
   return roll * flatten;
 }
 

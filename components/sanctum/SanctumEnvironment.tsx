@@ -128,13 +128,90 @@ function Ground() {
   );
 }
 
-/* ————— worn dirt trail ————— */
+/* ————— cobblestone path ————— */
+// procedural cobbles: a jittered grid of rounded stones with baked rounding
+// (radial light→dark per stone) over dark mortar, so it reads as laid stone under
+// any light without needing a normal map. Tiled along the trail ribbon.
+function makeCobblestone(): { map: THREE.CanvasTexture; bump: THREE.CanvasTexture } {
+  const S = 256;
+  const c = document.createElement("canvas");
+  c.width = c.height = S;
+  const ctx = c.getContext("2d")!;
+  const bc = document.createElement("canvas");
+  bc.width = bc.height = S;
+  const bctx = bc.getContext("2d")!;
+  const rnd = mulberry32(9183);
+  // dark mortar base (high contrast against the pale stones)
+  ctx.fillStyle = "#15120d";
+  ctx.fillRect(0, 0, S, S);
+  bctx.fillStyle = "#0a0a0a";
+  bctx.fillRect(0, 0, S, S);
+  const N = 4; // fewer, larger cobbles so they read clearly at walking distance
+  const cell = S / N;
+  const grey = ["#a39e93", "#938d80", "#aaa498", "#867f72", "#b4afa3"];
+  for (let gy = -1; gy < N + 1; gy++) {
+    for (let gx = -1; gx < N + 1; gx++) {
+      const jx = (rnd() - 0.5) * cell * 0.32;
+      const jy = (rnd() - 0.5) * cell * 0.32;
+      const x = gx * cell + cell / 2 + jx + (gy % 2 ? cell * 0.5 : 0);
+      const y = gy * cell + cell / 2 + jy;
+      const rx = cell * (0.42 + rnd() * 0.05);
+      const ry = cell * (0.4 + rnd() * 0.05);
+      const ang = (rnd() - 0.5) * 0.5;
+      const base = grey[Math.floor(rnd() * grey.length)];
+      // crisp dark mortar outline first, then the domed stone face on top
+      ctx.fillStyle = "#0e0b07";
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx + 2.5, ry + 2.5, ang, 0, Math.PI * 2);
+      ctx.fill();
+      const g = ctx.createRadialGradient(x - rx * 0.35, y - ry * 0.4, 1, x, y, Math.max(rx, ry));
+      g.addColorStop(0, shade(base, 1.22)); // lit crown
+      g.addColorStop(0.55, base);
+      g.addColorStop(1, shade(base, 0.62)); // shaded skirt
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, ang, 0, Math.PI * 2);
+      ctx.fill();
+      // tiny specular nick top-left so each stone catches the eye
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath();
+      ctx.ellipse(x - rx * 0.35, y - ry * 0.4, rx * 0.22, ry * 0.16, ang, 0, Math.PI * 2);
+      ctx.fill();
+      // bump: domed stone (bright crown → dark mortar) for real relief
+      const bg = bctx.createRadialGradient(x, y, 1, x, y, Math.max(rx, ry) + 2);
+      bg.addColorStop(0, "#e6e6e6");
+      bg.addColorStop(0.7, "#9a9a9a");
+      bg.addColorStop(1, "#101010");
+      bctx.fillStyle = bg;
+      bctx.beginPath();
+      bctx.ellipse(x, y, rx + 2, ry + 2, ang, 0, Math.PI * 2);
+      bctx.fill();
+    }
+  }
+  const map = new THREE.CanvasTexture(c);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(1.0, 1.0); // ~big cobbles; the ribbon UV already tiles along length
+  const bump = new THREE.CanvasTexture(bc);
+  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  bump.repeat.set(1.0, 1.0);
+  return { map, bump };
+}
+
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 255) * f));
+  const g = Math.min(255, Math.round(((n >> 8) & 255) * f));
+  const b = Math.min(255, Math.round((n & 255) * f));
+  return `rgb(${r},${g},${b})`;
+}
+
 function Trail() {
-  const { map, normalMap, roughnessMap } = useTerrain("path", 1);
-  const geom = useMemo(() => buildTrailRibbon(2.8), []);
+  const { map, bump } = useMemo(() => makeCobblestone(), []);
+  const geom = useMemo(() => buildTrailRibbon(3.0), []);
   return (
     <mesh geometry={geom} receiveShadow>
-      <meshStandardMaterial map={map} normalMap={normalMap} roughnessMap={roughnessMap} color="#a08a6e" polygonOffset polygonOffsetFactor={-1} />
+      <meshStandardMaterial map={map} bumpMap={bump} bumpScale={1.0} roughness={0.9} color="#cfc9bc" polygonOffset polygonOffsetFactor={-1} />
     </mesh>
   );
 }

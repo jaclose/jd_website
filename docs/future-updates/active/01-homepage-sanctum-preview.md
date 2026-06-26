@@ -1,6 +1,6 @@
 # 01 — Homepage Sanctum preview & snap
 
-Status: 🟡 Planned · Pri: P0 · Effort: M · Area: Homepage
+Status: 🟢 Shipped (2026-06-26) · Pri: P0 · Effort: M · Area: Homepage — DONE: snap root cause fixed (stable `<section id>` wrapper across loading/fallback/live so SectionSnap can register the garden target); "Walk here" pauses lenis for inline control (Esc/Exit returns); touch+mouse look. Follow-up: confirm dock feel on real device + tune mount pre-warm.
 Tracks: "on the dashboard we added it there however it won't snap to it so I
 can't preview it and do it on the dashboard … allow it to be viewed in the
 dashboard and move through there."
