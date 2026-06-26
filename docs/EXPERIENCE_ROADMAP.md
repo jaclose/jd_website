@@ -5,6 +5,11 @@ a vertical rhythm of cinematic, explorable scenes interleaved with calm,
 conventional reading. This file captures the direction so the ideas live in the
 repo, not just in chat. It is a working plan, not a contract.
 
+> **Active backlog & granular specs live in [future-updates/](future-updates/)**
+> — the control room (master to-do, per-feature wireframes, tools catalog, and
+> normal + deferred changelogs). This roadmap stays the high-level direction;
+> `future-updates/active/` is what to pick up next.
+
 ## North-star page flow
 
 Alternate **immersive scene → quiet theme → immersive scene → quiet theme …**
