@@ -1,6 +1,6 @@
 # 05 — Movement + walk feel (free-roam, staircase, natural walk)
 
-Status: 🟡 Planned · Pri: P1 · Effort: L · Area: Sanctum (camera/controls)
+Status: 🔵 Partial (2026-06-26) · Pri: P1 · Effort: L · Area: Sanctum (camera/controls) — DONE: free-roam bounded by SANCTUM_BOUNDS+collisions, wider look cone, footstep head-bob/sway, footstep audio, touch drag-look. TODO: authored staircase step-up, full 360° turning, on-screen mobile move control.
 Tracks: "I want at some point that you can move using the arrow keys … they can
 move with the staircase … the walking animation … you feel like you are walking
 through it, not just a flyby … a natural walk … on mobile or desktop you can move

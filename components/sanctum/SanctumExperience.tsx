@@ -10,7 +10,7 @@ import { useJourneyNav } from "./SanctumPathController";
 import { detectQuality, resolveConfig } from "./SanctumQualityManager";
 import { branchLabel } from "./lib/journey";
 import { preloadZone } from "./lib/assets";
-import { pointerLook, sanctumAudio } from "./lib/store";
+import { pointerLook, sanctumAudio, sanctumControl } from "./lib/store";
 
 const SanctumCanvas = dynamic(() => import("./SanctumCanvas"), { ssr: false });
 
@@ -51,8 +51,8 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     const tier = (["low", "medium", "high", "ultra"].includes(forced ?? "") ? forced : q.tier) as typeof q.tier;
     setCaps({ tier, reducedMotion: q.reducedMotion, webgl: hasWebGL() });
     setReady(true);
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    pointerLook.enabled = !coarse;
+    // look-around is on for everyone now: mouse drives it by hover, touch by drag.
+    pointerLook.enabled = true;
   }, []);
 
   useEffect(() => {
@@ -76,16 +76,67 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
   const config = useMemo(() => resolveConfig(caps.tier, caps.reducedMotion), [caps]);
   const fallback = caps.reducedMotion || !caps.webgl;
 
+  // mouse looks by hover position; touch/pen looks by drag delta (accumulated).
+  const drag = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
   const onPointerMove = (e: React.PointerEvent) => {
     if (!pointerLook.enabled || !stage.current) return;
     const r = stage.current.getBoundingClientRect();
-    pointerLook.x = ((e.clientX - r.left) / r.width - 0.5) * 2;
-    pointerLook.y = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    if (e.pointerType === "mouse") {
+      pointerLook.x = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      pointerLook.y = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    } else if (drag.current.active) {
+      pointerLook.x = Math.max(-1, Math.min(1, pointerLook.x + ((e.clientX - drag.current.x) / r.width) * 2.4));
+      pointerLook.y = Math.max(-1, Math.min(1, pointerLook.y + ((e.clientY - drag.current.y) / r.height) * 2.4));
+      drag.current.x = e.clientX;
+      drag.current.y = e.clientY;
+    }
   };
-  const onPointerLeave = () => {
-    pointerLook.x = 0;
-    pointerLook.y = 0;
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") drag.current = { active: true, x: e.clientX, y: e.clientY };
   };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") drag.current.active = false;
+  };
+  const onPointerLeave = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse") {
+      pointerLook.x = 0; // recentre on mouse-out; touch keeps where you turned
+      pointerLook.y = 0;
+    }
+    drag.current.active = false;
+  };
+
+  // "Walk here" takes inline control: free-roam on + page scroll/snap paused so
+  // arrow keys and drag drive the scene, not the pager. Esc / "Exit walk" returns.
+  const [walking, setWalking] = useState(false);
+  const enterWalk = () => {
+    setWalking(true);
+    sanctumControl.freeRoam = true;
+    sanctumControl.focused = true;
+    window.__lenis?.stop();
+  };
+  const exitWalk = () => {
+    setWalking(false);
+    sanctumControl.freeRoam = false;
+    sanctumControl.focused = false;
+    window.__lenis?.start();
+  };
+  useEffect(() => {
+    if (!walking) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") exitWalk();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [walking]);
+  // release control if the section scrolls fully away (homepage) or unmounts
+  useEffect(() => {
+    if (walking && !near) exitWalk();
+  }, [walking, near]);
+  useEffect(() => () => {
+    sanctumControl.freeRoam = false;
+    sanctumControl.focused = false;
+    window.__lenis?.start();
+  }, []);
 
   const [soundOn, setSoundOn] = useState(false);
   const toggleSound = () => {
@@ -132,8 +183,10 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
       ref={stage}
       id={id}
       onPointerMove={onPointerMove}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}
-      className="relative h-svh w-full overflow-hidden bg-space-deep"
+      className="relative h-svh w-full touch-none overflow-hidden bg-space-deep"
     >
       <div className="absolute inset-0">
         {mounted ? (
@@ -162,21 +215,41 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
       </div>
 
       <div className="pointer-events-none absolute right-5 top-24 z-20 hidden max-w-60 text-right md:block">
-        <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">Guided walk · cursor looks · WASD wanders</p>
+        <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">
+          {walking ? "Free walk · WASD / arrows move · drag looks · Esc to exit" : "Guided walk · cursor looks · WASD wanders"}
+        </p>
         <p className="mt-2 font-mono text-[0.66rem] leading-relaxed text-faint">
-          Step toward the light, cross the threshold, follow the trail. In the forest, WASD lets you wander a few steps; click a glowing marker to read a plaque.
+          {walking
+            ? "Roam the clearing freely with WASD or the arrow keys; on touch, drag to look. Click a glowing marker to read a plaque. Press Esc or Exit walk to rejoin the page."
+            : "Step toward the light, cross the threshold, follow the trail. In the forest, choose Walk here to roam freely; click a glowing marker to read a plaque."}
         </p>
       </div>
 
-      {/* spatial ambience toggle (gesture-gated; off by default) */}
-      <button
-        type="button"
-        onClick={toggleSound}
-        className="absolute right-5 top-16 z-30 border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
-        aria-label={soundOn ? "Turn ambience off" : "Turn ambience on"}
-      >
-        {soundOn ? "Sound ◼" : "Sound ◻"}
-      </button>
+      {/* top-right control cluster: walk handoff + spatial ambience toggle */}
+      <div className="absolute right-5 top-16 z-30 flex items-center gap-2">
+        {nav.zone === "sanctum" ? (
+          <button
+            type="button"
+            onClick={walking ? exitWalk : enterWalk}
+            className={`border px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] backdrop-blur-md transition-colors ${
+              walking
+                ? "border-leaf/55 bg-leaf/15 text-ink"
+                : "border-hairline bg-[rgba(5,10,7,0.6)] text-leaf/85 hover:border-leaf/50 hover:text-ink"
+            }`}
+            aria-label={walking ? "Exit free walk" : "Walk here freely"}
+          >
+            {walking ? "Exit walk" : "Walk here"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={toggleSound}
+          className="border border-hairline bg-[rgba(5,10,7,0.6)] px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-leaf/85 backdrop-blur-md transition-colors hover:border-leaf/50 hover:text-ink"
+          aria-label={soundOn ? "Turn ambience off" : "Turn ambience on"}
+        >
+          {soundOn ? "Sound ◼" : "Sound ◻"}
+        </button>
+      </div>
 
       {/* framing corners */}
       {["left-4 top-20 border-l border-t", "right-4 top-20 border-r border-t", "left-4 bottom-4 border-l border-b", "right-4 bottom-4 border-r border-b"].map(

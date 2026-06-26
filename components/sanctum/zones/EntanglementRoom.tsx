@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import InstancedModel from "../SanctumFoliage";
+import LivingMonitor from "../LivingMonitor";
 import { mulberry32 } from "../lib/rng";
 import { makeCableMaterial } from "../shaders/cableVine";
 import type { QualityConfig } from "../SanctumQualityManager";
@@ -101,16 +102,14 @@ function DeadScreens() {
         <boxGeometry args={[1.5, 0.9, 0.1]} />
         <meshStandardMaterial color="#0a0b10" roughness={0.6} metalness={0.2} />
       </mesh>
-      <mesh position={[0, 0, 0.055]}>
-        <planeGeometry args={[1.32, 0.74]} />
-        <meshStandardMaterial color="#0b1420" emissive="#5d7fb0" emissiveIntensity={1.0} roughness={0.35} />
-      </mesh>
+      {/* the one screen still alive — the site itself, a window back to the world */}
+      <LivingMonitor position={[0, 0, 0.056]} width={1.32} height={0.74} />
       <mesh position={[0, -0.7, 0]}>
         <boxGeometry args={[0.2, 0.5, 0.2]} />
         <meshStandardMaterial color="#0a0c10" roughness={0.8} />
       </mesh>
-      {/* the screen casts cold light into the room — the practical that makes it read */}
-      <pointLight position={[0, 0.1, 0.5]} color="#6f93c8" intensity={5} distance={14} decay={1.3} />
+      {/* the live screen casts a warm gold glow into the cold room — the pull toward it */}
+      <pointLight position={[0, 0.1, 0.5]} color="#caa86a" intensity={4.2} distance={13} decay={1.4} />
       {/* a second toppled screen */}
       <mesh position={[1.8, -0.9, 0.6]} rotation={[0.4, -0.7, 0.2]} castShadow>
         <boxGeometry args={[1.0, 0.64, 0.08]} />

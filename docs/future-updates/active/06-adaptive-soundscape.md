@@ -1,6 +1,10 @@
 # 06 — Adaptive soundscape (per-checkpoint, crossfading, nature)
 
-Status: 🟡 Planned · Pri: P1 · Effort: L · Area: Sanctum (audio)
+Status: 🟢 Shipped (2026-06-26) · Pri: P1 · Effort: L · Area: Sanctum (audio)
+> Shipped: `lib/audioMoods.ts` + layered procedural beds (wind, leaves, room hum,
+> insects, scheduled birdsong, positional stream, footsteps) crossfading per zone
+> via `setTargetAtTime`; footfalls fired from the camera rig. Future polish:
+> optional CC0 stems, surface-aware footstep timbre.
 Tracks: "The sound is cool, but it doesn't sound like a nature scene. Make it
 that within each checkpoint the soundscape will effortlessly and smoothly change
 to what is required. I want a beautiful soundscape."

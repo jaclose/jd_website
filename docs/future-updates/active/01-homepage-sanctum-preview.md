@@ -1,6 +1,6 @@
 # 01 — Homepage Sanctum preview & snap
 
-Status: 🟡 Planned · Pri: P0 · Effort: M · Area: Homepage
+Status: 🔵 Partial (2026-06-26) · Pri: P0 · Effort: M · Area: Homepage — DONE: "Walk here" pauses lenis scroll/snap for inline control (Esc/Exit returns); touch+mouse look. TODO: audit/repair the snap-root measurement so the section reliably docks.
 Tracks: "on the dashboard we added it there however it won't snap to it so I
 can't preview it and do it on the dashboard … allow it to be viewed in the
 dashboard and move through there."

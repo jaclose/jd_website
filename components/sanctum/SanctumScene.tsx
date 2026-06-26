@@ -1,5 +1,6 @@
 "use client";
 import { Suspense } from "react";
+import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from "@react-three/drei";
 import SanctumAudioSystem from "./SanctumAudioSystem";
 import SanctumCameraRig from "./SanctumCameraRig";
 import SanctumFog from "./SanctumFog";
@@ -41,8 +42,15 @@ export default function SanctumScene({
   const lowFx = config.tier === "low";
   return (
     <>
+      {/* keep the frame smooth: PerformanceMonitor watches fps and drives the
+          r3f performance flag; AdaptiveDpr drops resolution under sustained load
+          (and during regress), AdaptiveEvents sheds raycasts while regressed. */}
+      <PerformanceMonitor />
+      <AdaptiveDpr pixelated={false} />
+      <AdaptiveEvents />
+
       <SanctumWindSystem strength={config.windStrength} />
-      <SanctumAudioSystem />
+      <SanctumAudioSystem zone={zone} />
       <SanctumLighting zone={zone} config={config} />
       <SanctumFog zone={zone} config={config} />
       <SanctumCameraRig targetNodeId={targetNodeId} onArrive={onArrive} />
