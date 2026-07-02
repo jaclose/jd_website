@@ -6,6 +6,7 @@ import type { FieldNoteRecord } from "@/data/fieldNotes";
 import FieldNoteEnvelope from "@/components/field-notes/FieldNoteEnvelope";
 import FieldNoteOpenSequence from "@/components/field-notes/FieldNoteOpenSequence";
 import { useLetterPhysics } from "@/components/field-notes/useLetterPhysics";
+import "./fieldNotesTable.css";
 
 interface OpenRequest {
   note: FieldNoteRecord;
@@ -33,7 +34,7 @@ export default function FieldNotesTable() {
   );
 
   return (
-    <main className="field-notes-table-page" data-reader-open={openRequest ? true : undefined}>
+    <div className="field-notes-table-page" data-reader-open={openRequest ? true : undefined}>
       <section className="field-notes-room" aria-labelledby="field-notes-table-title">
         <div className="field-notes-room__darkness" aria-hidden />
         <div className="field-notes-room__lamp" aria-hidden />
@@ -86,6 +87,6 @@ export default function FieldNotesTable() {
           onClosed={() => setOpenRequest(null)}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

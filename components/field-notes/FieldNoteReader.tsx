@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { dispatchDate, readingTime } from "@/lib/content";
 import { fieldNoteCollectionThemes } from "@/data/fieldNotesThemes";
 import type { FieldNoteRecord } from "@/data/fieldNotes";
+import "./fieldNoteReader.css";
 
 interface FieldNoteReaderProps {
   note: FieldNoteRecord;

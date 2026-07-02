@@ -8,6 +8,28 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02c — Essay Archive + Field Notes table
+
+- 2026-07-02 — [essays] **Essay Archive experience**: /essays rebuilt as a
+  private reading room — atmospheric hero (grain/dust/constellations, slow
+  parallax, "ARCHIVE STATUS: 07 WORKS PRESERVED"), a featured centerpiece, and
+  the collection shelved in three standings (Archive Entry / Relic Essay /
+  Immersive Record) across five theme collections (Return, Sanctum, Blackout,
+  Legacy, Field Study — CSS variables in `data/essayThemes.ts`). Artifacts open
+  through a cinematic reader (artwork expands from the shelf rect → title →
+  meta → body), Escape + focus return, reduced-motion fades. Driven entirely by
+  `data/essays.ts` joined with the real migrated content; /essays/[slug]
+  permanent pages untouched.
+- 2026-07-02 — [field-notes] **The table, finished**: the orphaned physics
+  table (matter-js components/hooks/data existed with no CSS and no page) got
+  its full visual layer (`fieldNotesTable.css`, `fieldNoteReader.css`) — wood
+  desk from gradients + SVG grain, lamplight, dust, eight letter variants with
+  seals/ribbons/photographs, hover lift, drag/throw shadows, and the
+  envelope→seal→flap→sheet→reader opening sequence with a settle-back close.
+  /field-notes now renders the table full-screen with the server-rendered
+  dispatch log kept beneath for SEO + signup. Verified headless: drag + throw
+  displaces neighbours, letter opens to the paper reader, Escape returns.
+
 ### 2026-07-02b — Merge-to-main + mobile walk + perf stepping
 
 - 2026-07-02 — [repo] **Everything merged to main + pushed** so Vercel deploys:

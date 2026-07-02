@@ -1,0 +1,951 @@
+/*
+ * Field Notes — the table scene. A candlelit study desk seen from ~35° above:
+ * warm wood built from layered gradients (no image assets), a lamp pool from
+ * one side, dust motes, and the letters themselves — eight physical variants
+ * that read as paper, wax, ribbon and thread. The physics hook owns each
+ * letter's outer transform (position/rotation), so ALL visual motion here
+ * (hover lift, nearby nudge, drag shadow) lives on the inner
+ * .field-note-letter-object — the two never fight.
+ */
+
+/* ————— the room ————— */
+
+.field-notes-table-page {
+  position: relative;
+  min-height: 100svh;
+  background: #050608;
+  color: #e8e6e1;
+}
+
+.field-notes-room {
+  position: relative;
+  height: 100svh;
+  min-height: 640px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 5.5rem; /* clear the fixed site header so the plaque shows */
+}
+
+/* nighttime room falling away at the edges */
+.field-notes-room__darkness {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 42%, transparent 30%, rgba(2, 3, 5, 0.72) 74%, #020305 100%),
+    linear-gradient(180deg, #07080b 0%, #0a0908 45%, #060505 100%);
+  pointer-events: none;
+}
+
+/* one warm lamp from the upper left */
+.field-notes-room__lamp {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(58% 46% at 30% 20%, rgba(255, 196, 120, 0.16), transparent 62%),
+    radial-gradient(80% 60% at 34% 34%, rgba(255, 178, 102, 0.09), transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* dust drifting through the lamplight */
+.field-notes-room__dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.field-notes-room__dust span {
+  position: absolute;
+  left: calc(6% + (var(--dust-index) * 4.7%));
+  top: calc(8% + ((var(--dust-index) * 37) % 70) * 1%);
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 214, 160, 0.5);
+  opacity: 0;
+  animation: field-note-dust 14s linear infinite;
+  animation-delay: calc(var(--dust-index) * -0.9s);
+}
+
+@keyframes field-note-dust {
+  0% {
+    transform: translate3d(0, 8px, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.5;
+  }
+  55% {
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate3d(26px, -46px, 0);
+    opacity: 0;
+  }
+}
+
+/* ————— the desk ————— */
+
+.field-notes-table-shell {
+  position: relative;
+  width: min(1240px, 94vw);
+  height: min(68svh, 640px);
+  perspective: 1400px;
+}
+
+.field-notes-table-plaque {
+  position: absolute;
+  top: -0.25rem;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+  padding-bottom: 1.1rem;
+}
+
+.field-notes-table-plaque p {
+  font-family: var(--font-fraunces), serif;
+  font-size: clamp(1.9rem, 4vw, 2.9rem);
+  font-weight: 300;
+  line-height: 1;
+  color: #e8e6e1;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+
+.field-notes-table-plaque span {
+  display: block;
+  margin-top: 0.55rem;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(216, 181, 109, 0.75);
+}
+
+/* the wood surface, tilted slightly away from the viewer */
+.field-notes-table-surface {
+  position: absolute;
+  inset: 0;
+  transform: rotateX(7deg);
+  transform-style: preserve-3d;
+  border: 1px solid rgba(24, 15, 8, 0.9);
+  background:
+    radial-gradient(90% 70% at 32% 24%, rgba(255, 190, 110, 0.13), transparent 60%),
+    repeating-linear-gradient(93deg,
+      rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.14) 7px, rgba(0, 0, 0, 0) 13px,
+      rgba(255, 220, 170, 0.03) 21px, rgba(0, 0, 0, 0.1) 34px, rgba(0, 0, 0, 0) 41px),
+    linear-gradient(102deg, #3a2716 0%, #4a331d 30%, #2f1f11 62%, #241809 100%);
+  background-color: #382514;
+  box-shadow:
+    0 40px 90px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 214, 160, 0.08),
+    inset 0 -18px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* knots + fine grain, drawn with SVG turbulence */
+.field-notes-table-surface__grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011 0.055' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.16'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.field-notes-table-surface__edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14px;
+  pointer-events: none;
+}
+
+.field-notes-table-surface__edge--top {
+  top: 0;
+  background: linear-gradient(180deg, rgba(255, 220, 170, 0.09), transparent);
+}
+
+.field-notes-table-surface__edge--bottom {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.55), transparent);
+}
+
+/* ————— a letter on the table ————— */
+
+.field-note-envelope {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.field-note-envelope:active {
+  cursor: grabbing;
+}
+
+.field-note-envelope:focus-visible {
+  outline: none;
+}
+
+.field-note-envelope:focus-visible .field-note-letter-object {
+  outline: 1px solid rgba(216, 181, 109, 0.85);
+  outline-offset: 3px;
+}
+
+/* the visible paper object — all lift/shadow motion happens here */
+.field-note-letter-object {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--note-paper, #ddceab);
+  color: var(--note-ink, #241a10);
+  border: 1px solid rgba(30, 20, 10, 0.35);
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.35),
+    0 10px 22px rgba(0, 0, 0, 0.38);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 0.9, 0.3, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 0.9, 0.3, 1),
+    filter 0.4s ease,
+    opacity 0.4s ease;
+  overflow: hidden;
+}
+
+.field-note-envelope:hover .field-note-letter-object,
+.field-note-envelope:focus-visible .field-note-letter-object {
+  transform: translateY(-6px);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.35),
+    0 22px 38px rgba(0, 0, 0, 0.5);
+}
+
+.field-note-envelope[data-nearby] .field-note-letter-object {
+  transform: translateY(-1px) translateX(1px);
+}
+
+.field-note-envelope[data-dragging] {
+  cursor: grabbing;
+}
+
+.field-note-envelope[data-dragging] .field-note-letter-object {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.4),
+    0 34px 54px rgba(0, 0, 0, 0.55);
+}
+
+.field-note-envelope[data-dimmed] {
+  pointer-events: none;
+}
+
+.field-note-envelope[data-dimmed] .field-note-letter-object {
+  filter: blur(2px) brightness(0.55);
+}
+
+/* paper tooth */
+.field-note-paper-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='11'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)' opacity='0.1'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* envelope flap shading */
+.field-note-fold {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.field-note-fold--top {
+  top: 0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 85%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.field-note-fold--bottom {
+  bottom: 0;
+  height: 26%;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.12), transparent);
+}
+
+/* small printed metadata row */
+.field-note-object-meta {
+  position: absolute;
+  top: 9px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.66;
+  pointer-events: none;
+}
+
+.field-note-title-line {
+  position: absolute;
+  left: 12px;
+  right: 44px;
+  top: 42%;
+  transform: translateY(-50%);
+  font-family: var(--font-cormorant), serif;
+  font-size: 1.02rem;
+  line-height: 1.15;
+  font-style: italic;
+  pointer-events: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.field-note-category-line {
+  position: absolute;
+  left: 12px;
+  bottom: 26px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.field-note-condition-line {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 9px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  opacity: 0.42;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* ————— seals ————— */
+
+.field-note-seal {
+  position: absolute;
+  pointer-events: none;
+}
+
+.field-note-seal--wax {
+  right: 16px;
+  bottom: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.28), transparent 42%),
+    radial-gradient(circle at 50% 50%, #8e2f26 0%, #6c1f18 62%, #571711 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 0 3px rgba(60, 14, 9, 0.55);
+}
+
+.field-note-seal--wax::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 210, 190, 0.35);
+}
+
+.field-note-seal--silver-stamp {
+  right: 12px;
+  top: 12px;
+  width: 26px;
+  height: 32px;
+  background: linear-gradient(160deg, #cfd6dd 0%, #97a2ac 55%, #b9c2ca 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  clip-path: polygon(
+    0% 4%, 8% 0%, 16% 4%, 24% 0%, 32% 4%, 40% 0%, 48% 4%, 56% 0%, 64% 4%, 72% 0%, 80% 4%, 88% 0%, 96% 4%, 100% 8%,
+    100% 92%, 92% 96%, 84% 92%, 76% 96%, 68% 92%, 60% 96%, 52% 92%, 44% 96%, 36% 92%, 28% 96%, 20% 92%, 12% 96%, 4% 92%, 0% 88%
+  );
+}
+
+.field-note-seal--ribbon {
+  left: 0;
+  right: 0;
+  top: 54%;
+  height: 9px;
+  background: linear-gradient(180deg, var(--note-thread, #657d55), color-mix(in srgb, var(--note-thread, #657d55) 60%, black));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.field-note-seal--ribbon::after {
+  content: "";
+  position: absolute;
+  left: 58%;
+  top: -7px;
+  width: 20px;
+  height: 22px;
+  background: var(--note-thread, #657d55);
+  clip-path: polygon(50% 0, 100% 35%, 78% 100%, 50% 66%, 22% 100%, 0 35%);
+  filter: brightness(1.12);
+}
+
+.field-note-seal--paperclip {
+  left: 14px;
+  top: -6px;
+  width: 12px;
+  height: 34px;
+  border: 2px solid #6d747c;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1.5px var(--note-paper, #e6e8e1);
+}
+
+.field-note-seal--typed-label {
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%) rotate(-1deg);
+  width: 70%;
+  height: 26px;
+  background: #efe6d0;
+  border: 1px solid rgba(60, 45, 25, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.field-note-seal--thread {
+  inset: 0;
+}
+
+.field-note-seal--thread::before,
+.field-note-seal--thread::after {
+  content: "";
+  position: absolute;
+  background: #a0392f;
+}
+
+.field-note-seal--thread::before {
+  left: calc(50% - 1px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.field-note-seal--thread::after {
+  left: 50%;
+  top: 52%;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #a0392f;
+  background: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.field-note-seal--pressed-leaf {
+  right: 18px;
+  top: 20px;
+  width: 26px;
+  height: 38px;
+  background: linear-gradient(160deg, #6f7f4e 0%, #4c5a34 70%, #3b472a 100%);
+  clip-path: polygon(50% 0%, 86% 22%, 100% 58%, 72% 92%, 50% 100%, 28% 92%, 0% 58%, 14% 22%);
+  opacity: 0.9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.field-note-seal--pressed-leaf::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 0.5px);
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  background: rgba(20, 28, 12, 0.55);
+}
+
+.field-note-seal--torn-seal {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  background: var(--note-paper, #0f1720);
+  clip-path: polygon(
+    0% 100%, 0% 30%, 6% 65%, 13% 25%, 20% 70%, 28% 30%, 35% 75%, 43% 28%, 50% 68%, 58% 22%, 66% 70%, 74% 32%, 82% 72%, 90% 26%, 96% 60%, 100% 30%, 100% 100%
+  );
+  filter: brightness(1.6);
+}
+
+/* ————— attached objects ————— */
+
+.field-note-attachment {
+  position: absolute;
+  pointer-events: none;
+}
+
+.field-note-attachment--photo {
+  right: 10px;
+  top: 30px;
+  width: 64px;
+  height: 52px;
+  background: #f2efe6;
+  padding: 4px 4px 10px;
+  transform: rotate(6deg);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.field-note-attachment--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.25) contrast(0.95);
+  display: block;
+}
+
+.field-note-attachment--ribbon {
+  left: -4px;
+  bottom: 22px;
+  width: 42px;
+  height: 8px;
+  background: var(--note-thread, #657d55);
+  transform: rotate(-14deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.field-note-attachment--red-thread {
+  right: 14px;
+  bottom: 12px;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #a0392f;
+  border-radius: 50% 46% 52% 48%;
+  transform: rotate(12deg);
+  opacity: 0.85;
+}
+
+.field-note-attachment--paperclip {
+  right: 34px;
+  top: -5px;
+  width: 10px;
+  height: 26px;
+  border: 2px solid #7b828a;
+  border-radius: 6px;
+  transform: rotate(8deg);
+}
+
+.field-note-attachment--pressed-leaf {
+  left: 16px;
+  bottom: 30px;
+  width: 18px;
+  height: 26px;
+  background: #5a6a3e;
+  clip-path: polygon(50% 0%, 90% 30%, 100% 62%, 64% 94%, 50% 100%, 36% 94%, 0% 62%, 10% 30%);
+  opacity: 0.7;
+  transform: rotate(-24deg);
+}
+
+.field-note-attachment--wax-seal,
+.field-note-attachment--silver-stamp {
+  display: none; /* these read through the seal itself */
+}
+
+/* ————— the opening sequence ————— */
+/* table → envelope lifts + travels to centre → seal breaks → flap opens →
+   sheet slides out → reader fades in. data-closing reverses the journey. */
+
+.field-note-open-sequence {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.field-note-open-sequence__shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 4, 6, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: field-note-shade-in 0.5s ease forwards;
+}
+
+@keyframes field-note-shade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.field-note-open-sequence__envelope-wrap {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--source-width);
+  height: var(--source-height);
+  transform: translate(
+      calc(var(--source-x) - var(--source-width) / 2),
+      calc(var(--source-y) - var(--source-height) / 2)
+    )
+    rotate(var(--source-rotate));
+  animation: field-note-travel 0.85s cubic-bezier(0.22, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes field-note-travel {
+  30% {
+    transform: translate(
+        calc(var(--source-x) - var(--source-width) / 2),
+        calc(var(--source-y) - var(--source-height) / 2 - 26px)
+      )
+      rotate(var(--source-rotate));
+  }
+  100% {
+    transform: translate(
+        calc(50vw - var(--source-width) / 2),
+        calc(40vh - var(--source-height) / 2)
+      )
+      rotate(0deg)
+      scale(1.5);
+  }
+}
+
+.field-note-open-sequence__envelope {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--note-paper, #ddceab);
+  border: 1px solid rgba(30, 20, 10, 0.4);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+  animation: field-note-envelope-fade 0.45s ease 1.75s forwards;
+}
+
+@keyframes field-note-envelope-fade {
+  to {
+    opacity: 0;
+    transform: translateY(26px) scale(0.94);
+  }
+}
+
+/* flap opens upward once the envelope has arrived */
+.field-note-open-sequence__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 52%;
+  background: color-mix(in srgb, var(--note-paper, #ddceab) 88%, black);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  animation: field-note-flap 0.5s ease 1.05s forwards;
+  z-index: 2;
+}
+
+@keyframes field-note-flap {
+  to {
+    transform: rotateX(148deg);
+  }
+}
+
+/* the seal breaks first */
+.field-note-open-sequence__seal {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  animation: field-note-seal-break 0.4s ease 0.85s forwards;
+}
+
+@keyframes field-note-seal-break {
+  55% {
+    transform: translate(-50%, -50%) scale(1.12) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -46%) scale(0.7) rotate(14deg);
+    opacity: 0;
+  }
+}
+
+.field-note-open-sequence__seal--wax {
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.28), transparent 42%),
+    radial-gradient(circle at 50% 50%, #8e2f26 0%, #6c1f18 62%, #571711 100%);
+  box-shadow: inset 0 0 0 3px rgba(60, 14, 9, 0.55);
+}
+
+.field-note-open-sequence__seal--silver-stamp {
+  background: linear-gradient(160deg, #cfd6dd, #97a2ac);
+}
+
+.field-note-open-sequence__seal--ribbon,
+.field-note-open-sequence__seal--thread {
+  width: 120%;
+  height: 8px;
+  border-radius: 0;
+  background: var(--note-thread, #657d55);
+}
+
+.field-note-open-sequence__seal--typed-label {
+  width: 70%;
+  height: 22px;
+  background: #efe6d0;
+  border: 1px solid rgba(60, 45, 25, 0.4);
+}
+
+.field-note-open-sequence__seal--paperclip {
+  width: 12px;
+  height: 30px;
+  border: 2px solid #6d747c;
+  border-radius: 6px;
+  background: none;
+}
+
+.field-note-open-sequence__seal--pressed-leaf {
+  background: linear-gradient(160deg, #6f7f4e, #4c5a34);
+  clip-path: polygon(50% 0%, 86% 22%, 100% 58%, 72% 92%, 50% 100%, 28% 92%, 0% 58%, 14% 22%);
+}
+
+.field-note-open-sequence__seal--torn-seal {
+  width: 100%;
+  height: 10px;
+  background: color-mix(in srgb, var(--note-paper, #0f1720) 70%, white);
+}
+
+/* the folded sheet sliding up out of the envelope */
+.field-note-open-sequence__sheet {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 10%;
+  bottom: 12%;
+  background: color-mix(in srgb, var(--note-paper, #ddceab) 82%, white);
+  border: 1px solid rgba(30, 20, 10, 0.25);
+  transform: translateY(12%);
+  opacity: 0;
+  animation: field-note-sheet 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) 1.35s forwards;
+  z-index: 1;
+}
+
+@keyframes field-note-sheet {
+  from {
+    transform: translateY(12%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-34%);
+    opacity: 1;
+  }
+}
+
+/* the reader itself arrives once the sheet is out (class in fieldNoteReader.css) */
+.field-note-open-sequence .field-note-reader {
+  opacity: 0;
+  animation: field-note-reader-in 0.6s ease 1.9s forwards;
+}
+
+@keyframes field-note-reader-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ————— closing: everything settles back ————— */
+
+.field-note-open-sequence[data-closing] .field-note-reader {
+  animation: field-note-reader-out 0.3s ease forwards;
+}
+
+@keyframes field-note-reader-out {
+  to {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.field-note-open-sequence[data-closing] .field-note-open-sequence__envelope {
+  animation: field-note-envelope-return-fade 0.3s ease 0.25s forwards;
+  opacity: 0;
+}
+
+@keyframes field-note-envelope-return-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.field-note-open-sequence[data-closing] .field-note-open-sequence__envelope-wrap {
+  animation: field-note-travel-back 0.44s cubic-bezier(0.4, 0.1, 0.6, 1) 0.26s forwards;
+  transform: translate(calc(50vw - var(--source-width) / 2), calc(40vh - var(--source-height) / 2)) rotate(0deg)
+    scale(1.5);
+}
+
+@keyframes field-note-travel-back {
+  to {
+    transform: translate(
+        calc(var(--source-x) - var(--source-width) / 2),
+        calc(var(--source-y) - var(--source-height) / 2)
+      )
+      rotate(var(--source-rotate))
+      scale(1);
+  }
+}
+
+.field-note-open-sequence[data-closing] .field-note-open-sequence__shade {
+  animation: field-note-shade-out 0.4s ease 0.3s forwards;
+}
+
+@keyframes field-note-shade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ————— letter style variants ————— */
+
+.letter-style-navy-silver .field-note-letter-object {
+  background: linear-gradient(155deg, #1a2333 0%, #131a28 70%, #10151f 100%);
+  color: #cdd7e2;
+  border-color: rgba(160, 180, 205, 0.22);
+}
+
+.letter-style-ribbon-page .field-note-letter-object {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 26px, rgba(70, 60, 40, 0.14) 26px 27px),
+    var(--note-paper, #d7c49b);
+}
+
+.letter-style-ribbon-page .field-note-fold--top {
+  display: none;
+}
+
+.letter-style-medical-photo .field-note-letter-object {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 24px, rgba(82, 104, 118, 0.16) 24px 25px),
+    #eef0ea;
+}
+
+.letter-style-medical-photo .field-note-fold--top {
+  display: none;
+}
+
+.letter-style-typed-archive .field-note-letter-object {
+  background:
+    radial-gradient(90% 60% at 70% 20%, rgba(90, 70, 40, 0.12), transparent 60%),
+    #cbb98f;
+}
+
+.letter-style-typed-archive .field-note-title-line {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 2;
+  text-align: center;
+  left: 18%;
+  right: 18%;
+  top: 47%;
+}
+
+.letter-style-red-thread .field-note-letter-object {
+  background: #e3d5b5;
+}
+
+.letter-style-red-thread .field-note-fold--top {
+  display: none;
+}
+
+.letter-style-botanical-letter .field-note-letter-object {
+  background:
+    radial-gradient(60% 40% at 24% 76%, rgba(90, 106, 62, 0.14), transparent 70%),
+    #d9c9a2;
+}
+
+.letter-style-botanical-letter .field-note-fold--top {
+  display: none;
+}
+
+.letter-style-blackout-torn .field-note-letter-object {
+  background: linear-gradient(165deg, #121a24 0%, #0d141d 60%, #0a1017 100%);
+  color: #d9eef7;
+  border-color: rgba(117, 180, 221, 0.28);
+}
+
+.letter-style-blackout-torn .field-note-fold--top {
+  background: linear-gradient(180deg, rgba(117, 180, 221, 0.08), transparent 85%);
+}
+
+/* ————— responsive ————— */
+
+@media (max-width: 760px) {
+  .field-notes-table-shell {
+    height: min(72svh, 640px);
+  }
+
+  .field-note-envelope .field-note-letter-object {
+    /* physics sizes shrink via getScale(); keep type readable */
+    font-size: 0.9rem;
+  }
+
+  .field-note-title-line {
+    font-size: 0.9rem;
+  }
+}
+
+/* ————— reduced motion: still a table, no theatre ————— */
+
+@media (prefers-reduced-motion: reduce) {
+  .field-notes-room__dust span {
+    animation: none;
+    opacity: 0;
+  }
+
+  .field-note-letter-object {
+    transition: none;
+  }
+
+  .field-note-open-sequence__shade,
+  .field-note-open-sequence__envelope-wrap,
+  .field-note-open-sequence__envelope,
+  .field-note-open-sequence__flap,
+  .field-note-open-sequence__seal,
+  .field-note-open-sequence__sheet {
+    animation: none !important;
+  }
+
+  .field-note-open-sequence__envelope-wrap {
+    display: none;
+  }
+
+  .field-note-open-sequence__shade {
+    opacity: 1;
+  }
+
+  .field-note-open-sequence .field-note-reader {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
