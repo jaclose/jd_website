@@ -21,6 +21,7 @@ export default function SanctumCanvas({
   active,
   onArrive,
   onInspect,
+  onPerfDecline,
 }: {
   config: QualityConfig;
   zone: Zone;
@@ -30,6 +31,8 @@ export default function SanctumCanvas({
   active: boolean;
   onArrive: (id: string) => void;
   onInspect: (id: string) => void;
+  /** sustained low fps → the experience steps the quality tier down one notch. */
+  onPerfDecline?: () => void;
 }) {
   // initial camera sits at whatever node we start on (room by default, or a
   // ?sanctumStart deep-link node); the rig takes over movement after mount.
@@ -61,6 +64,7 @@ export default function SanctumCanvas({
         started={started}
         onArrive={onArrive}
         onInspect={onInspect}
+        onPerfDecline={onPerfDecline}
       />
     </Canvas>
   );

@@ -6,6 +6,7 @@ import { gardenFeatureById } from "@/data/gardenFeatures";
 import SanctumBuildStamp from "./SanctumBuildStamp";
 import SanctumFallback from "./SanctumFallback";
 import SanctumInspector from "./SanctumInspector";
+import SanctumJoystick from "./SanctumJoystick";
 import SanctumQuestTracker from "./SanctumQuestTracker";
 import SanctumToasts from "./SanctumToasts";
 import { useJourneyNav } from "./SanctumPathController";
@@ -78,7 +79,13 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     return () => io.disconnect();
   }, [ready, mounted]);
 
-  const config = useMemo(() => resolveConfig(caps.tier, caps.reducedMotion), [caps]);
+  // fps→tier auto-stepping (spec 07): sustained decline steps the tier down one
+  // notch at a time (never back up, so it can't oscillate) until "low".
+  const TIERS = ["low", "medium", "high", "ultra"] as const;
+  const [tierDrop, setTierDrop] = useState(0);
+  const effectiveTier = TIERS[Math.max(0, TIERS.indexOf(caps.tier) - tierDrop)];
+  const onPerfDecline = () => setTierDrop((d) => Math.min(d + 1, TIERS.indexOf(caps.tier)));
+  const config = useMemo(() => resolveConfig(effectiveTier, caps.reducedMotion), [effectiveTier, caps.reducedMotion]);
   const fallback = caps.reducedMotion || !caps.webgl;
 
   // mouse looks by hover position; dragging (mouse or touch) turns. In free-roam
@@ -220,6 +227,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
             active={near}
             onArrive={nav.arrive}
             onInspect={nav.inspect}
+            onPerfDecline={onPerfDecline}
           />
         ) : null}
       </div>
@@ -338,9 +346,10 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
         </motion.div>
       </AnimatePresence>
 
-      {/* the game layer: quest log + achievement toasts */}
+      {/* the game layer: quest log + achievement toasts + touch walk stick */}
       <SanctumQuestTracker visible={nav.zone === "sanctum"} />
       <SanctumToasts />
+      <SanctumJoystick visible={nav.zone === "sanctum"} />
 
       <SanctumInspector feature={inspected} onClose={() => nav.inspect(null)} />
       <SanctumBuildStamp />

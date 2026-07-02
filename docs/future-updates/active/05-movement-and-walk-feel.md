@@ -1,6 +1,6 @@
 # 05 — Movement + walk feel (free-roam, staircase, natural walk)
 
-Status: 🟢 Core shipped (2026-07-02) · Pri: P1 · Effort: L · Area: Sanctum (camera/controls) — DONE: WASD auto-enters free-roam, true 360° heading (drag / screen-edge / ←→ Q E turn), Shift sprint + FOV kick, velocity accel/decel, axis-separated collision sliding, bounded by SANCTUM_BOUNDS, footstep head-bob/sway + audio, touch drag-look, walked-metres achievement. REMAINING (polish): authored staircase step-up, on-screen mobile move joystick.
+Status: 🟢 Core shipped (2026-07-02) · Pri: P1 · Effort: L · Area: Sanctum (camera/controls) — DONE: WASD auto-enters free-roam, true 360° heading (drag / screen-edge / ←→ Q E turn), Shift sprint + FOV kick, velocity accel/decel, axis-separated collision sliding, bounded by SANCTUM_BOUNDS, footstep head-bob/sway + audio, touch drag-look, walked-metres achievement, on-screen analog walk joystick for coarse pointers (SanctumJoystick → touchMove bridge). REMAINING (polish): authored staircase step-up.
 Tracks: "I want at some point that you can move using the arrow keys … they can
 move with the staircase … the walking animation … you feel like you are walking
 through it, not just a flyby … a natural walk … on mobile or desktop you can move

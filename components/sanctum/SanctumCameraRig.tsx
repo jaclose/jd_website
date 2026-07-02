@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { EYE_HEIGHT, journeyNodeById } from "./lib/journey";
-import { pointerLook, cameraState, sanctumControl, sanctumAudio, playerState } from "./lib/store";
+import { pointerLook, cameraState, sanctumControl, sanctumAudio, playerState, touchMove } from "./lib/store";
 import { blocked, collidersReady, sampleGround } from "./lib/colliders";
 import { groundHeight, SANCTUM_BOUNDS } from "./lib/terrain";
 import { useProgress } from "./lib/progress";
@@ -128,7 +128,8 @@ export default function SanctumCameraRig({
     const cam = state.camera as THREE.PerspectiveCamera;
 
     const moveKey =
-      keys.current.has("f") || keys.current.has("b") || keys.current.has("l") || keys.current.has("r");
+      keys.current.has("f") || keys.current.has("b") || keys.current.has("l") || keys.current.has("r") ||
+      touchMove.active;
 
     // walking in the Living Sanctum just *is* free-roam — no toggle hunting.
     if (sanctum && arrived.current && moveKey && !sanctumControl.freeRoam && pointerLook.enabled) {
@@ -173,9 +174,16 @@ export default function SanctumCameraRig({
       if (keys.current.has("b")) moveDir.sub(fwd);
       if (keys.current.has("r")) moveDir.add(right);
       if (keys.current.has("l")) moveDir.sub(right);
+      // analog joystick contribution (stick up = walk forward)
+      if (touchMove.active) {
+        moveDir.addScaledVector(fwd, -touchMove.y);
+        moveDir.addScaledVector(right, touchMove.x);
+      }
       const sprinting = keys.current.has("sprint") && moveDir.lengthSq() > 0;
       const speed = sprinting ? SPRINT_SPEED : WALK_SPEED;
-      if (moveDir.lengthSq() > 1e-5) moveDir.normalize().multiplyScalar(speed);
+      const intent = moveDir.length();
+      if (intent > 1) moveDir.divideScalar(intent); // clamp, but keep analog magnitude
+      if (intent > 1e-3) moveDir.multiplyScalar(speed);
       vel.current.lerp(moveDir, 1 - Math.exp(-ACCEL * d));
       if (vel.current.lengthSq() > 1e-6) {
         let nx = ft.x + vel.current.x * walkDt;

@@ -8,6 +8,23 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02b — Merge-to-main + mobile walk + perf stepping
+
+- 2026-07-02 — [repo] **Everything merged to main + pushed** so Vercel deploys:
+  sanctum/build-stamp (game layer et al.) fast-forwarded into main; Vercel Web
+  Analytics + Speed Insights branches merged (`<Analytics/>` + `<SpeedInsights/>`
+  in the root layout). Stale branches deliberately *not* merged: the two
+  duel-field agent branches are already ancestors of main; the "refactor" +
+  codex-backup branches touch deleted pre-Sanctum files (would resurrect dead
+  code); the wordpress-migration branch is the pre-redesign site.
+- 2026-07-02 — [sanctum] **Mobile walk joystick (spec 05 → fully walkable on
+  touch)**: `SanctumJoystick` (coarse pointers only, Living Sanctum only) writes
+  an analog vector into the `touchMove` bridge; the rig blends it with the keys,
+  keeps analog magnitude, and entering the stick auto-starts free-roam like WASD.
+- 2026-07-02 — [sanctum] **fps→tier auto-stepping (spec 07)**: sustained decline
+  from `PerformanceMonitor` now steps the resolved quality tier down one notch
+  at a time (down-only, so it can never oscillate) until "low".
+
 ### 2026-07-02 — Game layer + first-person pass (spec 05 core ✅; 03/04 partial; 10 wireframed)
 
 - 2026-07-02 — [sanctum] **Quests, secrets, achievements**: data-driven quest

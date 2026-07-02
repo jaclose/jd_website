@@ -16,6 +16,14 @@ export const pointerLook = { x: 0, y: 0, dragDX: 0, dragDY: 0, enabled: true };
 export const cameraState = { arrived: true };
 
 /**
+ * On-screen joystick bridge (touch walking). The DOM joystick writes a
+ * normalized analog vector (x strafe, y forward-negative, each −1..1) plus
+ * `active`; the camera rig reads it every frame alongside the keys. Walking
+ * with the stick auto-enters free-roam exactly like WASD does.
+ */
+export const touchMove = { x: 0, y: 0, active: false };
+
+/**
  * Written by the camera rig every frame: the visitor's feet position and facing.
  * The quest sensor and the DOM tracker read it (never through React state).
  */

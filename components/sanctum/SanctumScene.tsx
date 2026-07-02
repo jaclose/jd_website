@@ -29,6 +29,7 @@ export default function SanctumScene({
   started,
   onArrive,
   onInspect,
+  onPerfDecline,
 }: {
   config: QualityConfig;
   zone: Zone;
@@ -38,15 +39,18 @@ export default function SanctumScene({
   started: boolean;
   onArrive: (id: string) => void;
   onInspect: (id: string) => void;
+  /** sustained low fps → the experience steps the quality tier down one notch. */
+  onPerfDecline?: () => void;
 }) {
   useResetWind();
   const lowFx = config.tier === "low";
   return (
     <>
       {/* keep the frame smooth: PerformanceMonitor watches fps and drives the
-          r3f performance flag; AdaptiveDpr drops resolution under sustained load
-          (and during regress), AdaptiveEvents sheds raycasts while regressed. */}
-      <PerformanceMonitor />
+          r3f performance flag (and steps the whole quality tier down on
+          sustained decline — down only, so it can never oscillate); AdaptiveDpr
+          drops resolution under load, AdaptiveEvents sheds raycasts. */}
+      <PerformanceMonitor onDecline={onPerfDecline} />
       <AdaptiveDpr pixelated={false} />
       <AdaptiveEvents />
 

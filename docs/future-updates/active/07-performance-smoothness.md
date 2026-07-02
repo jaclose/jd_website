@@ -1,6 +1,6 @@
 # 07 — Performance & smoothness (kill the choppiness)
 
-Status: 🔵 Partial (2026-06-26) · Pri: P1 · Effort: L · Area: Sanctum (perf) — DONE: drei PerformanceMonitor + AdaptiveDpr + AdaptiveEvents. TODO: fps→tier auto-stepping, instancing/LOD audit, r3f-perf baseline, KTX2 textures.
+Status: 🔵 Partial (2026-07-02) · Pri: P1 · Effort: L · Area: Sanctum (perf) — DONE: drei PerformanceMonitor + AdaptiveDpr + AdaptiveEvents; fps→tier auto-stepping (sustained decline steps the quality tier down one notch at a time, down-only so it never oscillates). TODO: instancing/LOD audit, r3f-perf baseline, KTX2 textures.
 Tracks: "right now it is very choppy. I want it to be a very smooth experience …
 this needs to feel like a game scene … a triple-A game studio."
 
