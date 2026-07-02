@@ -58,6 +58,11 @@ await page.screenshot({ path: "/tmp/ea-reader-body.png" });
 await page.keyboard.press("Escape");
 await page.waitForTimeout(900);
 
+// ——— homepage essays section ———
+await page.goto(base + "/#essays", { waitUntil: "networkidle" });
+await page.waitForTimeout(2500);
+await page.screenshot({ path: "/tmp/home-essays.png" });
+
 // ——— field notes table ———
 await page.goto(base + "/field-notes", { waitUntil: "networkidle" });
 await page.waitForTimeout(1800);
@@ -76,10 +81,15 @@ if (box) {
 }
 
 // open a letter (click without moving)
-const env2 = page.locator(".field-note-envelope").nth(1);
+const env2 = page.locator(".field-note-envelope").nth(0); // longest letter
 await env2.click();
 await page.waitForTimeout(2400);
 await page.screenshot({ path: "/tmp/fn-reader.png" });
+const dims = await page.evaluate(() => {
+  const r = document.querySelector(".field-note-reader");
+  return { scrollH: r?.scrollHeight ?? 0, clientH: r?.clientHeight ?? 0 };
+});
+console.log("reader overflow:", dims.scrollH, ">", dims.clientH, "=", dims.scrollH > dims.clientH);
 const before = await page.evaluate(() => ({
   page: window.scrollY,
   reader: document.querySelector(".field-note-reader")?.scrollTop ?? -1,

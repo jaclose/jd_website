@@ -8,6 +8,37 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02e — Email automation + desk environment + premium cards
+
+- 2026-07-02 — [email] **Auto-broadcast pipeline**: deployments (duel field)
+  join essays + field notes in the dispatch queue (`deployedAt` on
+  `data/deployments.ts`, deployment template copy, optional
+  SEGMENT_DEPLOYMENTS_ID riding the essays segment by default); new
+  `--test-to=<email>` mode emails ONE address the latest item with the real
+  template (no broadcast, no log); `.github/workflows/broadcast.yml` sends on
+  every push to main touching content/deployments and commits the dispatch
+  log (no-ops until RESEND secrets are added). Test path verified via
+  DRY_RUN render. Actual test send pending env access (see README command).
+- 2026-07-02 — [field-notes] **Letter scroll truly fixed**: `data-lenis-prevent`
+  on both reader scroll columns — Lenis eats window wheel events even while
+  stopped, which is why the first fix wasn't enough. Verified: reader 0→295px
+  while page stayed at 0.
+- 2026-07-02 — [field-notes] **The desk is the environment**: full-bleed plank
+  wood (seams, knots, tonal drift), room vignette/lamp/dust lifted above the
+  surface, visible "filed <date>" line on every letter, envelope-throat V
+  seams, first-visit hint chip ("pick the letters up…") that dismisses on
+  first grab, glideier collisions (friction .32, air .055, restitution .14).
+- 2026-07-02 — [essays] **Premium pass on the cards** (they read cheap):
+  foil ring desaturated + slowed (26s), machined dark rim + inner bevels,
+  aged-bone chips/plaques, burnished banner gold, calmer sparkles/dots.
+- 2026-07-02 — [homepage] **Dashboard essays section rebuilt**: the crossfade
+  panel is now a working corner of the archive — three collector cards that
+  unseal into the cinematic reader in place + "Enter the archive" CTA.
+- 2026-07-02 — [docs] **Solar System Hero 2.0 wireframed (spec 12)** — sun
+  corona/key-light, planet materials, living orbit arcs, dock-as-state-change,
+  idle theatre. No hero code touched, per request.
+
+
 ### 2026-07-02d — Holo card pass + letter-scroll fix
 
 - 2026-07-02 — [essays] **Collector-holo card restyle** (per TCG Pocket

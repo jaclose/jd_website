@@ -186,11 +186,13 @@ export function useLetterPhysics(notes: FieldNoteRecord[]) {
         size.width,
         size.height,
         {
-          chamfer: { radius: 8 },
+          // paper on waxed wood: low surface friction so throws glide, gentle
+          // air drag for a natural settle, a touch of bounce off neighbours
+          chamfer: { radius: 10 },
           density: 0.0028,
-          friction: 0.88,
-          frictionAir: 0.105,
-          restitution: 0.06,
+          friction: 0.32,
+          frictionAir: 0.055,
+          restitution: 0.14,
           label: note.id,
         },
       );

@@ -1,0 +1,61 @@
+# Auto-broadcast: whenever new writing or a new deployment lands on main,
+# email the list about anything not yet dispatched (the committed dispatch log
+# is the forever-dedupe), then commit the updated log back.
+#
+# Requires repo secrets: RESEND_API_KEY, RESEND_FROM_EMAIL, SEGMENT_ESSAYS_ID,
+# SEGMENT_FIELDNOTES_ID (optional: SEGMENT_DEPLOYMENTS_ID, RESEND_TOPIC_ID).
+# Until those are set, the job exits quietly without sending anything.
+name: broadcast-new-publications
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "data/deployments.ts"
+      - "data/email-dispatch-log.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: broadcast
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Dispatch broadcasts for new publications
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          RESEND_FROM_NAME: "Jafar Dabbagh"
+          SEGMENT_ESSAYS_ID: ${{ secrets.SEGMENT_ESSAYS_ID }}
+          SEGMENT_FIELDNOTES_ID: ${{ secrets.SEGMENT_FIELDNOTES_ID }}
+          SEGMENT_DEPLOYMENTS_ID: ${{ secrets.SEGMENT_DEPLOYMENTS_ID }}
+          RESEND_TOPIC_ID: ${{ secrets.RESEND_TOPIC_ID }}
+          NEXT_PUBLIC_SITE_URL: "https://www.jafardabbagh.com"
+        run: |
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "RESEND_API_KEY secret not set — skipping broadcast."
+            exit 0
+          fi
+          npm run email:dispatch -- --send
+      - name: Commit updated dispatch log
+        run: |
+          if git diff --quiet data/email-dispatch-log.json; then
+            echo "No new dispatches."
+            exit 0
+          fi
+          git config user.name "broadcast-bot"
+          git config user.email "actions@github.com"
+          git add data/email-dispatch-log.json
+          git commit -m "chore: record email dispatches [skip ci]"
+          git push

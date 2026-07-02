@@ -17,6 +17,8 @@ export interface Deployment {
   webUrl?: string; // primary deployment/web link
   downloadUrl?: string; // app download, if available
   rarity: "common" | "foil" | "legendary";
+  /** ISO date the build shipped — drives the email broadcast queue. */
+  deployedAt?: string;
 }
 
 export const deployments: Deployment[] = [
@@ -34,5 +36,6 @@ export const deployments: Deployment[] = [
     webUrl: "https://noctyrium-app.vercel.app",
     downloadUrl: undefined, // Coming soon — desktop app in progress
     rarity: "foil",
+    deployedAt: "2026-06-16",
   },
 ];

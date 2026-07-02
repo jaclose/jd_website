@@ -1,7 +1,7 @@
 import { SITE_ORIGIN } from "@/lib/resend/client";
 
 export interface PublicationPayload {
-  type: "essay" | "field_note";
+  type: "essay" | "field_note" | "deployment";
   title: string;
   slug?: string;
   excerpt?: string;
@@ -28,27 +28,31 @@ function esc(s: string): string {
 
 function kind(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Field Note";
+  if (type === "deployment") return "Deployment";
   return "Essay";
 }
 
 export function publicationSubject(p: PublicationPayload): string {
   if (p.type === "field_note") return `New Field Note: ${p.title}`;
+  if (p.type === "deployment") return `New Deployment: ${p.title}`;
   return `New Essay: ${p.title}`;
 }
 
 function ctaLabel(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Read the field note";
+  if (type === "deployment") return "See it on the duel field";
   return "Read the full essay";
 }
 
 export function publicationPreviewText(p: PublicationPayload): string {
-  return p.type === "field_note"
-    ? "A new field note has been logged."
-    : "A new essay has been published.";
+  if (p.type === "field_note") return "A new field note has been logged.";
+  if (p.type === "deployment") return "A new build has been summoned to the duel field.";
+  return "A new essay has been published.";
 }
 
 function publicationUrl(p: PublicationPayload): string {
   if (p.url) return p.url;
+  if (p.type === "deployment") return `${SITE_ORIGIN}/#deployments`;
   if (!p.slug) return SITE_ORIGIN;
   return p.type === "field_note" ? `${SITE_ORIGIN}/field-notes#${p.slug}` : `${SITE_ORIGIN}/essays/${p.slug}`;
 }

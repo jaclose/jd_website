@@ -85,6 +85,7 @@ export default function FieldNoteEnvelope({
         </span>
 
         <span className="field-note-title-line">{note.title}</span>
+        <span className="field-note-date-line">filed {dispatchDate(note.date)}</span>
         <span className="field-note-category-line">{note.category}</span>
 
         <span className={`field-note-seal field-note-seal--${note.sealType}`} aria-hidden />

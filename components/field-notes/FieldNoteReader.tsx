@@ -26,6 +26,7 @@ export default function FieldNoteReader({ note, onClose }: FieldNoteReaderProps)
       className={`field-note-reader ${collectionTheme.className}`}
       style={collectionTheme.style}
       aria-labelledby={`field-note-reader-title-${note.id}`}
+      data-lenis-prevent
     >
       <button type="button" className="field-note-reader__return" onClick={onClose}>
         Return to Table

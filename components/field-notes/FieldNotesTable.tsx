@@ -27,6 +27,8 @@ function isNearby(note: FieldNoteRecord, hovered: FieldNoteRecord | undefined) {
 export default function FieldNotesTable() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [openRequest, setOpenRequest] = useState<OpenRequest | null>(null);
+  // the "you can touch this" hint — shown until the visitor first grabs a letter
+  const [hintDismissed, setHintDismissed] = useState(false);
   const { tableRef, states, controls } = useLetterPhysics(fieldNotes);
   const hoveredNote = useMemo(
     () => fieldNotes.find((note) => note.id === hoveredId),
@@ -50,7 +52,12 @@ export default function FieldNotesTable() {
             <span>{String(fieldNotes.length).padStart(2, "0")} letters on the table</span>
           </div>
 
-          <div ref={tableRef} className="field-notes-table-surface" aria-label="Field notes table">
+          <div
+            ref={tableRef}
+            className="field-notes-table-surface"
+            aria-label="Field notes table"
+            onPointerDownCapture={() => setHintDismissed(true)}
+          >
             <div className="field-notes-table-surface__grain" aria-hidden />
             <div className="field-notes-table-surface__edge field-notes-table-surface__edge--top" aria-hidden />
             <div className="field-notes-table-surface__edge field-notes-table-surface__edge--bottom" aria-hidden />
@@ -77,6 +84,11 @@ export default function FieldNotesTable() {
               );
             })}
           </div>
+
+          {/* CSS visibility on data-dismissed also drops it from the a11y tree */}
+          <p className="field-notes-hint" data-dismissed={hintDismissed || undefined}>
+            <span aria-hidden>✋</span> pick the letters up — drag to move · flick to toss · click to open
+          </p>
         </div>
       </section>
 

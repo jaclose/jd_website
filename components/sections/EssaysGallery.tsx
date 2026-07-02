@@ -1,132 +1,50 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { essays, dispatchDate, readingTime } from "@/lib/content";
-import { essayMeta, essayHighlights } from "@/data/meta";
-import FallbackCover from "@/components/FallbackCover";
+import { essayArtifacts } from "@/data/essays";
+import EssayArtifact from "@/components/essay-archive/EssayArtifact";
+import EssayReaderModal from "@/components/essay-archive/EssayReaderModal";
+import { useEssayTransition } from "@/components/essay-archive/useEssayTransition";
+import "@/components/essay-archive/essayArchive.css";
 
 /**
- * The essays as a full-viewport scene: the left half of the screen is a
- * living cover panel that crossfades to whichever essay the index is
- * touching; the right half is the reading-room index. Warm observatory
- * light — this biome is the library.
+ * The essays as a full-viewport scene — a working corner of the Essay
+ * Archive on the dashboard. The three leading works sit on the shelf as
+ * collector artifacts (same holo cards as /essays) and unseal into the
+ * cinematic reader right here; the CTA walks you into the full archive.
  */
 export default function EssaysGallery() {
-  const [active, setActive] = useState(essays[0].slug);
-  const current = essays.find((e) => e.slug === active) ?? essays[0];
-  const currentMeta = essayMeta[current.slug];
-  const highlight = currentMeta?.highlight ?? essayHighlights[current.slug];
+  const { state, open, close } = useEssayTransition();
+  const shelf = essayArtifacts.slice(0, 3);
 
   return (
     <section
       id="essays"
-      className="biome-essays relative flex min-h-svh flex-col overflow-hidden md:flex-row"
+      className="biome-essays relative flex min-h-svh flex-col justify-center overflow-hidden px-6 py-24 md:px-10"
     >
-      {/* ——— the cover panel ——— */}
-      <div className="relative h-[36svh] w-full overflow-hidden md:h-auto md:min-h-svh md:w-[48%]">
-        {essays.map((e) => {
-          const m = essayMeta[e.slug];
-          return (
-            <motion.div
-              key={e.slug}
-              className="absolute inset-0"
-              initial={false}
-              animate={{ opacity: active === e.slug ? 1 : 0, scale: active === e.slug ? 1 : 1.04 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {m ? (
-                <Image
-                  src={m.cover}
-                  alt={m.alt}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 48vw"
-                  className="object-cover"
-                  priority={e.slug === essays[0].slug}
-                />
-              ) : (
-                <FallbackCover title={e.title} />
-              )}
-            </motion.div>
-          );
-        })}
-        {/* feathered edge into space */}
-        <div className="absolute inset-0 bg-linear-to-t from-space/85 via-transparent to-space/35 md:bg-linear-to-r md:from-transparent md:via-transparent md:to-space" />
-        <div className="absolute inset-0 hidden bg-linear-to-t from-space/70 via-transparent to-transparent md:block" />
-
-        {/* the pull-quote, living on the artwork */}
-        {highlight && (
-          <motion.blockquote
-            key={`q-${current.slug}`}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15 }}
-            className="absolute bottom-6 left-6 right-6 hidden border-l border-starlight/60 pl-4 font-serif text-[1.15rem] italic leading-relaxed text-[rgba(232,230,225,0.92)] [text-shadow:0_1px_18px_rgba(3,4,8,0.95)] md:bottom-12 md:left-10 md:right-16 md:block md:text-[1.3rem]"
-          >
-            “{highlight}”
-          </motion.blockquote>
-        )}
-      </div>
-
-      {/* ——— the index ——— */}
-      <div className="relative flex w-full flex-col justify-center px-6 py-12 md:min-h-svh md:w-[52%] md:px-14 md:py-24">
-        <div className="mb-8 flex items-end justify-between border-b border-hairline pb-5">
-          <div>
-            <p className="label mb-3 text-starlight/70">JD-1184 b · GAS GIANT · THE READING ROOM</p>
-            <h2 className="font-display text-[clamp(1.9rem,4vw,3.2rem)] font-light leading-none text-ink">
-              Essays
-            </h2>
-          </div>
-          <span className="label hidden text-[10px]! text-dim sm:block">01</span>
-        </div>
-
-        <ol onMouseLeave={() => setActive(essays[0].slug)}>
-          {essays.map((e, i) => {
-            const isActive = active === e.slug;
-            return (
-              <li key={e.slug}>
-                <Link
-                  href={`/essays/${e.slug}`}
-                  onMouseEnter={() => setActive(e.slug)}
-                  onFocus={() => setActive(e.slug)}
-                  className={`group flex items-baseline gap-5 border-b border-[rgba(232,230,225,0.07)] py-4 transition-all duration-300 md:py-[1.15rem] ${
-                    isActive ? "md:translate-x-2" : ""
-                  }`}
-                >
-                  <span
-                    className={`label w-7 shrink-0 text-[10px]! transition-colors ${
-                      isActive ? "text-starlight" : "text-dim"
-                    }`}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span
-                    className={`font-display text-[clamp(1.15rem,2vw,1.7rem)] font-light leading-tight transition-colors duration-300 ${
-                      isActive ? "text-starlight" : "text-ink"
-                    }`}
-                  >
-                    {e.title}
-                  </span>
-                  <span className="label ml-auto hidden shrink-0 text-[9px]! text-dim sm:block">
-                    {dispatchDate(e.date)} · {readingTime(e.words)}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-
-        <p className="label mt-8 flex items-center justify-between text-[10px]! text-dim">
-          <span>{essays.length} TRANSMISSIONS · THREE NEWEST ORBIT AS MOONS</span>
+      <div className="mx-auto w-full max-w-6xl">
+        <p className="label mb-4 text-starlight/70">
+          JD-1184 b · THE ESSAY ARCHIVE · {String(essayArtifacts.length).padStart(2, "0")} WORKS PRESERVED
+        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="font-display text-[clamp(2.2rem,5vw,3.6rem)] font-light leading-none text-ink">
+            Essays
+          </h2>
           <Link
             href="/essays"
-            className="link-reveal text-starlight/80 transition-colors hover:text-starlight"
+            className="border border-hairline px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.2em] text-starlight/85 transition-colors hover:border-starlight/60 hover:text-ink"
           >
-            FULL INDEX ⟶
+            Enter the archive ⟶
           </Link>
-        </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {shelf.map((artifact) => (
+            <EssayArtifact key={artifact.id} artifact={artifact} onOpen={open} />
+          ))}
+        </div>
       </div>
+
+      {state ? <EssayReaderModal state={state} onClose={close} /> : null}
     </section>
   );
 }

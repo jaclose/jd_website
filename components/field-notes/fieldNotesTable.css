@@ -22,26 +22,23 @@
   height: 100svh;
   min-height: 640px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 5.5rem; /* clear the fixed site header so the plaque shows */
 }
 
-/* nighttime room falling away at the edges */
+/* nighttime room falling away at the edges — sits OVER the desk so the
+   scene's borders dissolve into the dark of the study */
 .field-notes-room__darkness {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(120% 90% at 50% 42%, transparent 30%, rgba(2, 3, 5, 0.72) 74%, #020305 100%),
-    linear-gradient(180deg, #07080b 0%, #0a0908 45%, #060505 100%);
+  z-index: 3;
+  background: radial-gradient(115% 88% at 50% 44%, transparent 34%, rgba(2, 3, 5, 0.66) 76%, #020305 100%);
   pointer-events: none;
 }
 
-/* one warm lamp from the upper left */
+/* one warm lamp from the upper left, cast across desk and letters alike */
 .field-notes-room__lamp {
   position: absolute;
   inset: 0;
+  z-index: 2;
   background:
     radial-gradient(58% 46% at 30% 20%, rgba(255, 196, 120, 0.16), transparent 62%),
     radial-gradient(80% 60% at 34% 34%, rgba(255, 178, 102, 0.09), transparent 70%);
@@ -49,10 +46,11 @@
   pointer-events: none;
 }
 
-/* dust drifting through the lamplight */
+/* dust drifting through the lamplight, above everything on the desk */
 .field-notes-room__dust {
   position: absolute;
   inset: 0;
+  z-index: 4;
   pointer-events: none;
   overflow: hidden;
 }
@@ -89,22 +87,20 @@
 
 /* ————— the desk ————— */
 
+/* the desk IS the environment — it runs to every edge of the viewport */
 .field-notes-table-shell {
-  position: relative;
-  width: min(1240px, 94vw);
-  height: min(68svh, 640px);
-  perspective: 1400px;
+  position: absolute;
+  inset: 0;
 }
 
 .field-notes-table-plaque {
   position: absolute;
-  top: -0.25rem;
+  top: 4.6rem;
   left: 50%;
-  transform: translate(-50%, -100%);
+  transform: translateX(-50%);
   text-align: center;
   z-index: 5;
   pointer-events: none;
-  padding-bottom: 1.1rem;
 }
 
 .field-notes-table-plaque p {
@@ -126,24 +122,33 @@
   color: rgba(216, 181, 109, 0.75);
 }
 
-/* the wood surface, tilted slightly away from the viewer */
+/* the wood surface, seen from directly above — planks, knots, lamplight */
 .field-notes-table-surface {
   position: absolute;
   inset: 0;
-  transform: rotateX(7deg);
-  transform-style: preserve-3d;
-  border: 1px solid rgba(24, 15, 8, 0.9);
   background:
-    radial-gradient(90% 70% at 32% 24%, rgba(255, 190, 110, 0.13), transparent 60%),
-    repeating-linear-gradient(93deg,
-      rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.14) 7px, rgba(0, 0, 0, 0) 13px,
-      rgba(255, 220, 170, 0.03) 21px, rgba(0, 0, 0, 0.1) 34px, rgba(0, 0, 0, 0) 41px),
-    linear-gradient(102deg, #3a2716 0%, #4a331d 30%, #2f1f11 62%, #241809 100%);
+    /* lamp pool from the upper left */
+    radial-gradient(75% 60% at 30% 22%, rgba(255, 194, 116, 0.16), transparent 62%),
+    /* knots */
+    radial-gradient(26px 15px at 22% 64%, rgba(16, 9, 4, 0.5), rgba(58, 37, 18, 0.22) 55%, transparent 72%),
+    radial-gradient(20px 12px at 71% 31%, rgba(16, 9, 4, 0.45), rgba(58, 37, 18, 0.2) 55%, transparent 72%),
+    radial-gradient(30px 16px at 87% 78%, rgba(16, 9, 4, 0.42), rgba(58, 37, 18, 0.18) 55%, transparent 72%),
+    /* fine long grain streaks */
+    repeating-linear-gradient(88deg,
+      rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.1) 2px, rgba(0, 0, 0, 0) 5px,
+      rgba(255, 214, 160, 0.025) 9px, rgba(0, 0, 0, 0.07) 14px, rgba(0, 0, 0, 0) 19px),
+    /* plank gaps — dark seams every ~11% with a light catch-edge */
+    repeating-linear-gradient(90deg,
+      rgba(255, 220, 175, 0.05) 0px, rgba(0, 0, 0, 0) 3px,
+      rgba(0, 0, 0, 0) calc(11.11% - 3px), rgba(12, 6, 2, 0.75) calc(11.11% - 1px), rgba(12, 6, 2, 0.75) 11.11%),
+    /* per-plank tonal drift (offset period so planks don't repeat evenly) */
+    repeating-linear-gradient(90deg,
+      #3c2917 0%, #46301b 6%, #392514 13%, #4a331d 21%, #33210f 29%, #432d19 33.33%),
+    linear-gradient(118deg, #3a2716 0%, #2f1f11 100%);
   background-color: #382514;
   box-shadow:
-    0 40px 90px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 214, 160, 0.08),
-    inset 0 -18px 40px rgba(0, 0, 0, 0.5);
+    inset 0 0 190px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 214, 160, 0.07);
   overflow: hidden;
 }
 
@@ -351,14 +356,14 @@
   filter: drop-shadow(0 1.5px 1px rgba(30, 18, 8, 0.3));
 }
 
-/* back-of-envelope seams: two diagonals meeting at the throat */
+/* envelope-throat seams: a V rising from the bottom corners only */
 .field-note-fold--bottom {
   bottom: 0;
-  height: 100%;
+  height: 44%;
   background:
-    linear-gradient(to top left, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
-    linear-gradient(to top right, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.1), transparent 30%);
+    linear-gradient(to top left, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.18) calc(50% - 0.5px), rgba(30, 18, 8, 0.18) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to top right, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.18) calc(50% - 0.5px), rgba(30, 18, 8, 0.18) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.1), transparent 70%);
 }
 
 /* small printed metadata row */
@@ -392,6 +397,20 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* the filed date, written plainly on the face of the letter */
+.field-note-date-line {
+  position: absolute;
+  left: 12px;
+  right: 44px;
+  top: 60%;
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  opacity: 0.78;
+  pointer-events: none;
 }
 
 .field-note-category-line {
@@ -977,9 +996,48 @@
 
 /* ————— responsive ————— */
 
+/* first-visit affordance: you can pick these up */
+.field-notes-hint {
+  position: absolute;
+  bottom: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(232, 230, 225, 0.18);
+  background: rgba(5, 6, 8, 0.62);
+  color: rgba(232, 230, 225, 0.85);
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: field-notes-hint-float 3.2s ease-in-out infinite;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.field-notes-hint[data-dismissed] {
+  opacity: 0;
+  visibility: hidden;
+}
+
+@keyframes field-notes-hint-float {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
 @media (max-width: 760px) {
-  .field-notes-table-shell {
-    height: min(72svh, 640px);
+  .field-notes-hint {
+    font-size: 0.52rem;
   }
 
   .field-note-envelope .field-note-letter-object {

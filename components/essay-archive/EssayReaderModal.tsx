@@ -63,7 +63,7 @@ export default function EssayReaderModal({
         ) : null}
       </div>
 
-      <div className="ea-reader__scroll">
+      <div className="ea-reader__scroll" data-lenis-prevent>
         <header className="ea-reader__header">
           {artifact.image ? (
             /* eslint-disable-next-line @next/next/no-img-element */

@@ -20,6 +20,8 @@ export const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND
 
 export const SEGMENT_ESSAYS_ID = process.env.SEGMENT_ESSAYS_ID || "";
 export const SEGMENT_FIELDNOTES_ID = process.env.SEGMENT_FIELDNOTES_ID || "";
+/** deployments go to their own segment when configured, else ride with essays. */
+export const SEGMENT_DEPLOYMENTS_ID = process.env.SEGMENT_DEPLOYMENTS_ID || process.env.SEGMENT_ESSAYS_ID || "";
 export const RESEND_TOPIC_ID = process.env.RESEND_TOPIC_ID || "";
 
 export const NEWSLETTER_SEGMENTS = {
@@ -39,11 +41,12 @@ export function canSubscribe(): boolean {
   return !!resend && !!SEGMENT_ESSAYS_ID && !!SEGMENT_FIELDNOTES_ID;
 }
 
-export function segmentIdForPublication(type: "essay" | "field_note"): string {
+export function segmentIdForPublication(type: "essay" | "field_note" | "deployment"): string {
+  if (type === "deployment") return SEGMENT_DEPLOYMENTS_ID;
   return type === "essay" ? SEGMENT_ESSAYS_ID : SEGMENT_FIELDNOTES_ID;
 }
 
-export function canBroadcast(type: "essay" | "field_note"): boolean {
+export function canBroadcast(type: "essay" | "field_note" | "deployment"): boolean {
   return !!resend && !!RESEND_FROM && !!segmentIdForPublication(type);
 }
 

@@ -102,6 +102,7 @@ Legend — Effort: S(<½d) M(~1d) L(2-4d) XL(>1wk) · Pri: P0 blocking → P3 po
 | 08 | [Email list buildout](active/08-email-list-buildout.md) | Email | P1 | 🟡 |
 | 09 | [Site admin dashboard](active/09-site-admin-dashboard.md) | Infra | P2 | 🟡 |
 | 10 | [Walkable audio essays](active/10-walkable-audio-essays.md) | Sanctum+Essays | P2 | 🟡 wireframed |
+| 12 | [Solar System Hero 2.0](active/12-solar-system-hero-2.md) | Homepage | P1 | 🟡 wireframed |
 | D01 | [NPC essay walk](deferred/D01-npc-essay-walk.md) | Sanctum | — | ⏸️ |
 | D02 | [Realtime GPU fluid sim](deferred/D02-realtime-fluid-sim.md) | Sanctum | — | ⏸️ |
 | D03 | [Authored hero assets (Blender/UE5)](deferred/D03-authored-assets.md) | Sanctum | — | ⏸️ |
