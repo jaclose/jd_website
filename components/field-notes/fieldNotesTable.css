@@ -202,6 +202,31 @@
   outline-offset: 3px;
 }
 
+/* contact shadow on the wood — grows and softens as the letter lifts */
+.field-note-envelope::before {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -7px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(50% 60% at 50% 50%, rgba(0, 0, 0, 0.42), transparent 75%);
+  transition: transform 0.28s ease, opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.field-note-envelope:hover::before,
+.field-note-envelope:focus-visible::before {
+  transform: scale(1.08, 1.35);
+  opacity: 0.75;
+}
+
+.field-note-envelope[data-dragging]::before {
+  transform: scale(1.16, 1.7);
+  opacity: 0.55;
+}
+
 /* the visible paper object — all lift/shadow motion happens here */
 .field-note-letter-object {
   position: relative;
@@ -213,7 +238,8 @@
   border: 1px solid rgba(30, 20, 10, 0.35);
   box-shadow:
     0 2px 3px rgba(0, 0, 0, 0.35),
-    0 10px 22px rgba(0, 0, 0, 0.38);
+    0 10px 22px rgba(0, 0, 0, 0.38),
+    inset 0 0 24px rgba(92, 62, 30, 0.14); /* aged edge vignette */
   transition:
     transform 0.28s cubic-bezier(0.22, 0.9, 0.3, 1),
     box-shadow 0.28s cubic-bezier(0.22, 0.9, 0.3, 1),
@@ -222,12 +248,57 @@
   overflow: hidden;
 }
 
+/* postage corner: a small perforated stamp + a faint postmark ring */
+.field-note-letter-object::before {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  width: 26px;
+  height: 32px;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--note-accent, #d8b56d) 40%, var(--note-paper, #ddceab)), color-mix(in srgb, var(--note-accent, #d8b56d) 18%, var(--note-paper, #ddceab)));
+  border: 1px dashed color-mix(in srgb, var(--note-ink, #241a10) 42%, transparent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.field-note-letter-object::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  top: 16px;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid color-mix(in srgb, var(--note-ink, #241a10) 34%, transparent);
+  border-radius: 50%;
+  transform: rotate(-12deg);
+  clip-path: polygon(0 0, 78% 0, 78% 100%, 0 100%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* folded pages + torn notes don't carry postage */
+.letter-style-ribbon-page .field-note-letter-object::before,
+.letter-style-ribbon-page .field-note-letter-object::after,
+.letter-style-medical-photo .field-note-letter-object::before,
+.letter-style-medical-photo .field-note-letter-object::after,
+.letter-style-red-thread .field-note-letter-object::before,
+.letter-style-red-thread .field-note-letter-object::after,
+.letter-style-botanical-letter .field-note-letter-object::before,
+.letter-style-botanical-letter .field-note-letter-object::after,
+.letter-style-blackout-torn .field-note-letter-object::before,
+.letter-style-blackout-torn .field-note-letter-object::after {
+  display: none;
+}
+
 .field-note-envelope:hover .field-note-letter-object,
 .field-note-envelope:focus-visible .field-note-letter-object {
   transform: translateY(-6px);
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.35),
-    0 22px 38px rgba(0, 0, 0, 0.5);
+    0 22px 38px rgba(0, 0, 0, 0.5),
+    inset 0 0 24px rgba(92, 62, 30, 0.14);
 }
 
 .field-note-envelope[data-nearby] .field-note-letter-object {
@@ -239,10 +310,11 @@
 }
 
 .field-note-envelope[data-dragging] .field-note-letter-object {
-  transform: translateY(-10px) scale(1.02);
+  transform: translateY(-10px) scale(1.02) rotate(0.6deg);
   box-shadow:
     0 6px 10px rgba(0, 0, 0, 0.4),
-    0 34px 54px rgba(0, 0, 0, 0.55);
+    0 34px 54px rgba(0, 0, 0, 0.55),
+    inset 0 0 24px rgba(92, 62, 30, 0.14);
 }
 
 .field-note-envelope[data-dimmed] {
@@ -273,14 +345,20 @@
 .field-note-fold--top {
   top: 0;
   height: 46%;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 85%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--note-paper, #ddceab) 90%, black), color-mix(in srgb, var(--note-paper, #ddceab) 97%, black) 92%);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
+  filter: drop-shadow(0 1.5px 1px rgba(30, 18, 8, 0.3));
 }
 
+/* back-of-envelope seams: two diagonals meeting at the throat */
 .field-note-fold--bottom {
   bottom: 0;
-  height: 26%;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.12), transparent);
+  height: 100%;
+  background:
+    linear-gradient(to top left, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to top right, transparent calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% - 0.5px), rgba(30, 18, 8, 0.16) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.1), transparent 30%);
 }
 
 /* small printed metadata row */

@@ -24,6 +24,10 @@ export default function FieldNoteOpenSequence({ note, sourceRect, onClosed }: Fi
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Lenis drives page scroll from window-level wheel events, so it keeps
+    // scrolling the page behind the letter unless stopped — the letter's own
+    // overflow column then scrolls natively.
+    window.__lenis?.stop();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
@@ -33,6 +37,7 @@ export default function FieldNoteOpenSequence({ note, sourceRect, onClosed }: Fi
 
     return () => {
       document.body.style.overflow = previous;
+      window.__lenis?.start();
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [close]);

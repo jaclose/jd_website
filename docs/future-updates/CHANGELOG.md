@@ -8,6 +8,28 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02d — Holo card pass + letter-scroll fix
+
+- 2026-07-02 — [essays] **Collector-holo card restyle** (per TCG Pocket
+  reference shots, translated into archive vocabulary): rotating rainbow foil
+  ring tinted per collection, chip + name + reading-metric header with a
+  collection sigil disc, sparkle fields over the art, holo-dot sheet, thesis
+  rail pill, twin foot plaques (filed/length), rarity marks (✦/✦✦/rainbow ✦✦✦)
+  and the gold diagonal collection banner. `useCardTilt` adds a ≤5° pointer
+  tilt + tracked glare (fine pointers only; reduced-motion off). Rounded
+  corners are deliberate here — the card is its own object.
+- 2026-07-02 — [field-notes] **Letter scroll fixed**: Lenis hijacks wheel at
+  window level, so the page scrolled behind the opened letter — both readers
+  now stop/start Lenis and contain overscroll; the letter column scrolls
+  natively.
+- 2026-07-02 — [field-notes] **Fidelity pass**: contact shadows that grow as a
+  letter lifts, real flap shading + back-of-envelope seams, perforated stamp +
+  postmark ring on envelope styles, aged-edge vignettes, fold creases at
+  thirds on the opened sheet.
+- 2026-07-02 — [field-notes] **Physics throughput**: matter engine sleeping
+  enabled + the rAF loop skips React commits entirely when every letter is at
+  rest — idle table costs ~zero renders; grabbing wakes the body explicitly.
+
 ### 2026-07-02c — Essay Archive + Field Notes table
 
 - 2026-07-02 — [essays] **Essay Archive experience**: /essays rebuilt as a

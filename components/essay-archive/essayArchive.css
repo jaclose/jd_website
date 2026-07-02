@@ -789,6 +789,8 @@
   position: absolute;
   inset: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   opacity: 0;
   animation: ea-scroll-in 0.4s ease 0.5s forwards;
 }
@@ -998,8 +1000,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ea-hero__constellation,
-  .ea-artifact__foil {
+  .ea-card__foil,
+  .ea-card__sparkles {
     animation: none;
+  }
+
+  .ea-card__sparkles {
+    opacity: 0.3;
   }
 
   .ea-hero__dust span {
@@ -1007,11 +1014,13 @@
     opacity: 0;
   }
 
-  .ea-featured,
-  .ea-artifact,
-  .ea-featured__art img,
-  .ea-artifact__art img {
+  .ea-card,
+  .ea-card__art img {
     transition: none;
+  }
+
+  .ea-card {
+    transform: none;
   }
 
   .ea-reader__traveler {
@@ -1045,11 +1054,19 @@
     padding-top: 7.5rem;
   }
 
-  .ea-featured__art {
-    height: 58vh;
+  .ea-card__art--hero {
+    height: 54vh;
   }
 
-  .ea-artifact {
-    min-height: 380px;
+  .ea-card__inner {
+    min-height: 440px;
+  }
+
+  .ea-card__banner {
+    font-size: 0.68rem;
+  }
+
+  .ea-card__plaque {
+    font-size: 0.48rem;
   }
 }

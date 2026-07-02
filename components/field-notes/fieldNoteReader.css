@@ -11,9 +11,16 @@
   position: absolute;
   inset: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   display: flex;
   justify-content: center;
   padding: clamp(4.5rem, 9vh, 7rem) 1.25rem 4rem;
+}
+
+/* a flex row with a tall child must be allowed to overflow downward */
+.field-note-reader > .field-note-reader__paper {
+  align-self: flex-start;
 }
 
 .field-note-reader:focus {
@@ -54,8 +61,29 @@
   border: 1px solid rgba(30, 20, 10, 0.35);
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.4),
-    0 40px 90px rgba(0, 0, 0, 0.55);
+    0 40px 90px rgba(0, 0, 0, 0.55),
+    inset 0 0 40px rgba(92, 62, 30, 0.1);
   padding: clamp(2rem, 5vw, 3.5rem) clamp(1.4rem, 5vw, 3.75rem) clamp(2.5rem, 6vw, 4rem);
+}
+
+/* the letter remembers being folded in thirds */
+.field-note-reader__paper::before,
+.field-note-reader__paper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(30, 18, 8, 0.07), rgba(255, 255, 255, 0.12) 55%, rgba(30, 18, 8, 0.05));
+}
+
+.field-note-reader__paper::before {
+  top: 33%;
+}
+
+.field-note-reader__paper::after {
+  top: 66%;
 }
 
 /* blackout sheets stay dark; ink comes from the collection vars */

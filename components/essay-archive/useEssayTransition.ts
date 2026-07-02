@@ -41,17 +41,22 @@ export function useEssayTransition() {
     }, CLOSE_MS);
   }, []);
 
-  // scroll freeze + Escape while the reader is up
+  // scroll freeze + Escape while the reader is up. Lenis (the site's smooth
+  // scroller) hijacks wheel events at window level, so body overflow alone
+  // does NOT stop the page scrolling behind the reader — it must be stopped
+  // explicitly, then the reader's own overflow column scrolls natively.
   useEffect(() => {
     if (!state) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    window.__lenis?.stop();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
+      window.__lenis?.start();
       window.removeEventListener("keydown", onKey);
     };
   }, [state, close]);

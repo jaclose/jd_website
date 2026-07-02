@@ -39,6 +39,8 @@ await page.waitForTimeout(1500);
 await page.screenshot({ path: "/tmp/ea-hero.png" });
 await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 0.9 }));
 await page.waitForTimeout(900);
+await page.mouse.move(980, 420, { steps: 6 });
+await page.waitForTimeout(500);
 await page.screenshot({ path: "/tmp/ea-featured.png" });
 await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 2.1 }));
 await page.waitForTimeout(900);
@@ -47,7 +49,7 @@ await page.screenshot({ path: "/tmp/ea-shelf.png" });
 // open the featured essay reader
 await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 0.9 }));
 await page.waitForTimeout(600);
-await page.locator(".ea-featured").click();
+await page.locator(".ea-card--featured").click();
 await page.waitForTimeout(1800);
 await page.screenshot({ path: "/tmp/ea-reader.png" });
 await page.evaluate(() => document.querySelector(".ea-reader__scroll")?.scrollTo({ top: 900 }));
@@ -78,6 +80,19 @@ const env2 = page.locator(".field-note-envelope").nth(1);
 await env2.click();
 await page.waitForTimeout(2400);
 await page.screenshot({ path: "/tmp/fn-reader.png" });
+const before = await page.evaluate(() => ({
+  page: window.scrollY,
+  reader: document.querySelector(".field-note-reader")?.scrollTop ?? -1,
+}));
+await page.mouse.move(720, 500);
+await page.mouse.wheel(0, 600);
+await page.waitForTimeout(700);
+const after = await page.evaluate(() => ({
+  page: window.scrollY,
+  reader: document.querySelector(".field-note-reader")?.scrollTop ?? -1,
+}));
+console.log("scroll check — page:", before.page, "→", after.page, "| reader:", before.reader, "→", after.reader);
+await page.screenshot({ path: "/tmp/fn-reader-scrolled.png" });
 await page.keyboard.press("Escape");
 await page.waitForTimeout(1000);
 await page.screenshot({ path: "/tmp/fn-closed.png" });

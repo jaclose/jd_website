@@ -156,7 +156,10 @@ export function useLetterPhysics(notes: FieldNoteRecord[]) {
   useEffect(() => {
     if (reducedMotion || tableSize.width <= 0 || tableSize.height <= 0) return;
 
-    const engine = Matter.Engine.create({ gravity: { x: 0, y: 0, scale: 0 } });
+    const engine = Matter.Engine.create({
+      gravity: { x: 0, y: 0, scale: 0 },
+      enableSleeping: true, // settled letters cost nothing
+    });
     const world = engine.world;
     const bodies = new Map<string, Matter.Body>();
     const wallPad = 220;
@@ -203,6 +206,7 @@ export function useLetterPhysics(notes: FieldNoteRecord[]) {
     const update = () => {
       Matter.Engine.update(engine, 1000 / 60);
 
+      let awake = false;
       bodies.forEach((body) => {
         if (Math.abs(body.velocity.x) > MAX_THROW || Math.abs(body.velocity.y) > MAX_THROW) {
           Matter.Body.setVelocity(body, {
@@ -214,7 +218,15 @@ export function useLetterPhysics(notes: FieldNoteRecord[]) {
         if (Math.abs(body.angularVelocity) > 0.18) {
           Matter.Body.setAngularVelocity(body, clamp(body.angularVelocity, -0.18, 0.18));
         }
+
+        if (!body.isSleeping) awake = true;
       });
+
+      // whole table at rest and nothing held → skip the React commit entirely
+      if (!awake && !activeDragIdRef.current) {
+        rafRef.current = window.requestAnimationFrame(update);
+        return;
+      }
 
       setStates((current) => {
         const next: Record<string, LetterPhysicsState> = { ...current };
@@ -269,6 +281,7 @@ export function useLetterPhysics(notes: FieldNoteRecord[]) {
       setActiveDragId(id);
 
       if (body) {
+        Matter.Sleeping.set(body, false); // grabbing always wakes the letter
         Matter.Body.setVelocity(body, { x: 0, y: 0 });
         Matter.Body.setAngularVelocity(body, 0);
       }
