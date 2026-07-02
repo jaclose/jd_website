@@ -1,6 +1,6 @@
 # 12 — Solar System Hero 2.0 (the opening of the site)
 
-Status: 🟡 Wireframed (2026-07-02) · Pri: P1 · Effort: XL · Area: Homepage hero + nav
+Status: 🔵 In progress (2026-07-02) · Pri: P1 · Effort: XL · Area: Homepage hero + nav — DONE: F1 flame corona (in-shader radial teeth, billboarded, dock-fades) + prominence arcs; F3a hover orbit focus (hovered path lights in its accent, others recede, damped); F5a zodiacal light wedge. Meteors + camera parallax + atmospheres pre-existed. NEXT: F2 terminator/night-lights, F3 leading arcs, F4 dock choreography, F5 constellation egg.
 Tracks: "start wireframing a much better solar system into the nav bar
 experience — this is the opening of the page — make it fantastic." **No code
 changes yet — planning surface only.**
@@ -82,11 +82,11 @@ docking itself* — one continuous camera thought from cosmos → instrument.
   suite unchanged except intended visuals.
 
 ## To-do (frames)
-- [ ] F1 sun corona + key-light patch (biggest single win)
+- [x] F1 flame corona + prominences (key light already present; wrap-lighting deferred)
 - [ ] F2 planet material patch (rim/terminator/glint/night lights)
-- [ ] F3 orbit arcs + hover focus + pointer parallax
+- [x] F3a hover focus (parallax pre-existed; leading arcs still open)
 - [ ] F4 dock-as-state-change choreography
-- [ ] F5 idle theatre (meteor, constellation, zodiacal wedge)
+- [~] F5 partial: meteors pre-existed, zodiacal wedge shipped; constellation egg open
 
 ## Dependencies / risks
 - Touches the hero store contract (slots/pill) — F4 must not change its shape.

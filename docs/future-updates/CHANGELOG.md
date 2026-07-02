@@ -8,6 +8,22 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02f — Solar System Hero 2.0, first light (spec 12 partial)
+
+- 2026-07-02 — [hero] **Flame corona**: the flat corona sprite replaced by an
+  in-shader ring of radial flame teeth (fbm streaks crawling outward, gaps
+  between licks, hot limb → ember tips), billboarded to the camera and fading
+  as the star docks; two slow prominence arcs wheel around the limb.
+- 2026-07-02 — [hero] **Hover orbit focus**: the hovered body's orbit path
+  lights up in its own accent colour while every other path recedes (damped,
+  never snaps) — the system reads as an instrument under the cursor.
+- 2026-07-02 — [hero] **Zodiacal light**: a faint warm dust wedge along the
+  ecliptic behind the system; fades out during the dock collapse.
+- 2026-07-02 — [docs] Spec 12 flipped to 🔵 in progress; survey found meteors,
+  camera parallax and fresnel atmospheres already shipped in earlier passes —
+  remaining: planet terminator/night lights, leading orbit arcs, dock
+  choreography, constellation idle egg.
+
 ### 2026-07-02e — Email automation + desk environment + premium cards
 
 - 2026-07-02 — [email] **Auto-broadcast pipeline**: deployments (duel field)

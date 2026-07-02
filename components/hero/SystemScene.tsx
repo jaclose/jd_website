@@ -35,6 +35,7 @@ import {
   rockyTexture,
 } from "./textures";
 import { makeSunMaterial } from "./sunMaterial";
+import { makeCoronaMaterial } from "./coronaMaterial";
 
 const DOCK_DIST = 13; // how far in front of the camera the pill plane sits
 
@@ -237,6 +238,29 @@ function Meteors() {
   });
 
   return <primitive object={obj} />;
+}
+
+/* ————— zodiacal light: the faint dust wedge along the ecliptic ————— */
+
+function ZodiacalLight() {
+  const sprite = useRef<THREE.Sprite>(null!);
+  const glow = useMemo(() => glowTexture(), []);
+  useFrame(() => {
+    const m = sprite.current.material as THREE.SpriteMaterial;
+    m.opacity = 0.055 * (1 - smoothstep(hero.pS, 0.1, 0.6)) * hero.intro;
+  });
+  return (
+    <sprite ref={sprite} position={[0, 0.3, -44]} scale={[64, 7.5, 1]}>
+      <spriteMaterial
+        map={glow}
+        color="#c8b490"
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </sprite>
+  );
 }
 
 /* ————— deep sky: starfield, the galactic band, nebulae ————— */
@@ -499,6 +523,9 @@ function OrbitLine({ body }: { body: CelestialBody }) {
   const mat = useRef<THREE.LineBasicMaterial>(null!);
   const loop = useRef<THREE.LineLoop>(null!);
   const { size } = useThree();
+  const focus = useRef(1); // damped hover emphasis
+  const baseColor = useMemo(() => new THREE.Color("#9aa4b8"), []);
+  const accentColor = useMemo(() => new THREE.Color(body.accent), [body.accent]);
   const geom = useMemo(() => {
     const pts: THREE.Vector3[] = [];
     const v = new THREE.Vector3();
@@ -508,9 +535,17 @@ function OrbitLine({ body }: { body: CelestialBody }) {
     return new THREE.BufferGeometry().setFromPoints(pts);
   }, [body]);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
+    // hover focus: the hovered body's path lights up in its own colour,
+    // every other path recedes — the system becomes an instrument you read
+    const hovered = hero.hovered;
+    const mine = hovered === body.id || !!hovered?.startsWith(`${body.id}-`);
+    const target = hovered ? (mine ? 3.2 : 0.45) : 1;
+    focus.current = damp(focus.current, target, 6, Math.min(dt, 0.05));
+    const lift = THREE.MathUtils.clamp((focus.current - 1) / 2.2, 0, 1);
+    mat.current.color.copy(baseColor).lerp(accentColor, lift);
     mat.current.opacity =
-      0.12 * (1 - smoothstep(hero.pS, 0.05, 0.5)) * smoothstep(hero.intro, 0.2, 1);
+      0.12 * focus.current * (1 - smoothstep(hero.pS, 0.05, 0.5)) * smoothstep(hero.intro, 0.2, 1);
     loop.current.scale.setScalar(orbitScale(size.width / size.height));
   });
 
@@ -1361,13 +1396,16 @@ function Sun({ count }: { count: number }) {
   const group = useRef<THREE.Group>(null!);
   const surface = useRef<THREE.Mesh>(null!);
   const halo = useRef<THREE.Sprite>(null!);
-  const corona = useRef<THREE.Sprite>(null!);
+  const coronaRing = useRef<THREE.Mesh>(null!);
+  const prom1 = useRef<THREE.Mesh>(null!);
+  const prom2 = useRef<THREE.Mesh>(null!);
   const flare = useRef<THREE.Sprite>(null!);
   const streak = useRef<THREE.Sprite>(null!);
   const light = useRef<THREE.PointLight>(null!);
   const update = useGenie(null, 0, count);
   const glow = useMemo(() => glowTexture(), []);
   const sunMat = useMemo(() => makeSunMaterial(), []);
+  const coronaMat = useMemo(() => makeCoronaMaterial(), []);
   const streakMap = useMemo(() => streakTexture(), []);
 
   useFrame((state, dt) => {
@@ -1379,8 +1417,19 @@ function Sun({ count }: { count: number }) {
     // halos collapse harder into the pill so the docked star reads crisp
     halo.current.scale.setScalar(6.5 * breathe * (1 - e * 0.35));
     (halo.current.material as THREE.SpriteMaterial).opacity = (0.8 - e * 0.74) * hero.intro;
-    corona.current.scale.setScalar(12 * (reduced ? 1 : 1 + Math.sin(t * 0.5 + 2) * 0.05));
-    (corona.current.material as THREE.SpriteMaterial).opacity = 0.26 * (1 - e) * hero.intro;
+    // the flame corona: billboarded to the camera, alive in-shader, and
+    // standing down as the star docks into the pill
+    coronaMat.uniforms.uTime.value = reduced ? 12.4 : t;
+    coronaMat.uniforms.uFade.value = (1 - e) * hero.intro;
+    coronaRing.current.quaternion.copy(state.camera.quaternion);
+    // prominences: two slow plasma arcs wheeling around the limb
+    if (!reduced) {
+      prom1.current.rotation.z = t * 0.05;
+      prom2.current.rotation.z = -t * 0.037 + 2.1;
+    }
+    const promFade = (1 - e) * hero.intro;
+    (prom1.current.material as THREE.MeshBasicMaterial).opacity = 0.34 * promFade * (0.8 + Math.sin(t * 0.9) * 0.2);
+    (prom2.current.material as THREE.MeshBasicMaterial).opacity = 0.26 * promFade * (0.8 + Math.cos(t * 0.7) * 0.2);
     flare.current.scale.setScalar(19);
     (flare.current.material as THREE.SpriteMaterial).opacity = 0.1 * (1 - e) * hero.intro;
     streak.current.scale.set(24 * (reduced ? 1 : 1 + Math.sin(t * 0.7) * 0.08), 1.2, 1);
@@ -1403,15 +1452,20 @@ function Sun({ count }: { count: number }) {
           blending={THREE.AdditiveBlending}
         />
       </sprite>
-      <sprite ref={corona}>
-        <spriteMaterial
-          map={glow}
-          color="#d89a4e"
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </sprite>
+      {/* living corona — radial flame teeth drawn in-shader; the plane is
+          sized so the photosphere lands at r=0.5 of its UV space */}
+      <mesh ref={coronaRing} material={coronaMat}>
+        <planeGeometry args={[6.4, 6.4]} />
+      </mesh>
+      {/* prominence arcs riding just off the photosphere */}
+      <mesh ref={prom1} rotation={[0.35, 0, 0]}>
+        <torusGeometry args={[1.86, 0.028, 6, 48, 1.15]} />
+        <meshBasicMaterial color="#ff9a4d" transparent opacity={0.3} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      <mesh ref={prom2} rotation={[-0.5, 0.2, 0]}>
+        <torusGeometry args={[1.98, 0.02, 6, 48, 0.85]} />
+        <meshBasicMaterial color="#ffb668" transparent opacity={0.22} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
       <sprite ref={flare}>
         <spriteMaterial
           map={glow}
@@ -1469,6 +1523,7 @@ export default function SystemScene() {
       <hemisphereLight intensity={0.22} color="#bcc8e0" groundColor="#1a1410" />
       <DockFill />
       <DeepSky />
+      <ZodiacalLight />
       <Starfield />
       <Meteors />
       <Belt />
