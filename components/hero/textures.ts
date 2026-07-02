@@ -80,6 +80,40 @@ export function starTexture(): THREE.Texture {
   return toTexture(c);
 }
 
+/** a bright star with four diffraction spikes — for the sparse hero layer */
+export function spikedStarTexture(): THREE.Texture {
+  const c = canvas(128, 128);
+  const ctx = c.getContext("2d")!;
+  const core = ctx.createRadialGradient(64, 64, 0, 64, 64, 22);
+  core.addColorStop(0, "rgba(255,255,255,1)");
+  core.addColorStop(0.25, "rgba(255,255,255,0.85)");
+  core.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = core;
+  ctx.fillRect(0, 0, 128, 128);
+  // tapered crossed spikes (long cardinal, short diagonal)
+  const spike = (rot: number, len: number, w: number) => {
+    ctx.save();
+    ctx.translate(64, 64);
+    ctx.rotate(rot);
+    const g = ctx.createLinearGradient(-len, 0, len, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0.5, "rgba(255,255,255,0.7)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(-len, 0);
+    ctx.quadraticCurveTo(0, -w, len, 0);
+    ctx.quadraticCurveTo(0, w, -len, 0);
+    ctx.fill();
+    ctx.restore();
+  };
+  spike(0, 60, 3.4);
+  spike(Math.PI / 2, 60, 3.4);
+  spike(Math.PI / 4, 34, 1.8);
+  spike(-Math.PI / 4, 34, 1.8);
+  return toTexture(c);
+}
+
 /** anamorphic lens streak for the sun */
 export function streakTexture(): THREE.Texture {
   const c = canvas(256, 32);

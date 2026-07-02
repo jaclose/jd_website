@@ -1,6 +1,6 @@
 # 03 — World terrain + stream/water (Witcher 3 · Skellige)
 
-Status: 🟡 Planned · Pri: P2 · Effort: XL · Area: Sanctum (Living Sanctum)
+Status: 🔵 Partial (2026-07-02) · Pri: P2 · Effort: XL · Area: Sanctum (Living Sanctum) — DONE: domain-warped FBM heightfield + bank lift, worn dirt trail w/ ragged edges, stepping stones + border stones. REMAINING: stream/water, splat-blended materials, ridgeline/fjord backdrop.
 Tracks: "I really like the trees … build out the terrain … use shaders,
 procedurally generated tools for nature … fluid mechanics since I want some type
 of stream … a very beautiful background … like a Witcher 3 scene in Skellige."
@@ -23,7 +23,7 @@ terrain + water + backdrop are what turn it from a demo into a world.
 - [components/sanctum/SanctumEnvironment.tsx](../../../components/sanctum/SanctumEnvironment.tsx)
   / `SanctumFog` / `SanctumLighting` — sky, fog, light rig (mood-driven).
 - [components/sanctum/SanctumColliders.tsx](../../../components/sanctum/SanctumColliders.tsx)
-  + `lib/colliders.ts` — BVH ground sampling the camera already rides.
+  and `lib/colliders.ts` — BVH ground sampling the camera already rides.
 
 ## Wireframe (Skellige vista, layered)
 ```

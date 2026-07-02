@@ -10,6 +10,7 @@ import {
   groundHeight,
   SANCTUM_BOUNDS,
   scatter,
+  trailLineScatter,
 } from "./lib/terrain";
 import { applyGrassWind } from "./shaders/grassWind";
 import { applyLeafWind } from "./shaders/leafWind";
@@ -26,6 +27,7 @@ export default function SanctumEnvironment({ config }: { config: QualityConfig }
     <group>
       <Ground />
       <Trail />
+      <SteppingStones />
       <GrassField config={config} />
       <ImpostorForest config={config} />
       <SunShafts config={config} />
@@ -128,11 +130,12 @@ function Ground() {
   );
 }
 
-/* ————— cobblestone path ————— */
-// procedural cobbles: a jittered grid of rounded stones with baked rounding
-// (radial light→dark per stone) over dark mortar, so it reads as laid stone under
-// any light without needing a normal map. Tiled along the trail ribbon.
-function makeCobblestone(): { map: THREE.CanvasTexture; bump: THREE.CanvasTexture } {
+/* ————— worn dirt trail ————— */
+// packed earth, not pavement: a warm trodden band with speckle grit, faint
+// root/rut streaks along the direction of travel, a few embedded pebbles, and
+// an alpha fringe so the path dissolves into the meadow instead of ending at a
+// hard machine edge. The ribbon UV runs u across the width, v along the length.
+function makeDirtPath(): { map: THREE.CanvasTexture; bump: THREE.CanvasTexture; alpha: THREE.CanvasTexture } {
   const S = 256;
   const c = document.createElement("canvas");
   c.width = c.height = S;
@@ -140,109 +143,216 @@ function makeCobblestone(): { map: THREE.CanvasTexture; bump: THREE.CanvasTextur
   const bc = document.createElement("canvas");
   bc.width = bc.height = S;
   const bctx = bc.getContext("2d")!;
-  const rnd = mulberry32(9183);
-  // dark mortar base (high contrast against the pale stones)
-  ctx.fillStyle = "#15120d";
+  const rnd = mulberry32(4127);
+
+  // base earth, lighter where feet wear the centre
+  const base = ctx.createLinearGradient(0, 0, S, 0);
+  base.addColorStop(0, "#33291c");
+  base.addColorStop(0.32, "#4a3b26");
+  base.addColorStop(0.5, "#57462c");
+  base.addColorStop(0.68, "#4a3b26");
+  base.addColorStop(1, "#33291c");
+  ctx.fillStyle = base;
   ctx.fillRect(0, 0, S, S);
-  bctx.fillStyle = "#0a0a0a";
+  bctx.fillStyle = "#808080";
   bctx.fillRect(0, 0, S, S);
-  const N = 4; // fewer, larger cobbles so they read clearly at walking distance
-  const cell = S / N;
-  const grey = ["#a39e93", "#938d80", "#aaa498", "#867f72", "#b4afa3"];
-  for (let gy = -1; gy < N + 1; gy++) {
-    for (let gx = -1; gx < N + 1; gx++) {
-      const jx = (rnd() - 0.5) * cell * 0.32;
-      const jy = (rnd() - 0.5) * cell * 0.32;
-      const x = gx * cell + cell / 2 + jx + (gy % 2 ? cell * 0.5 : 0);
-      const y = gy * cell + cell / 2 + jy;
-      const rx = cell * (0.42 + rnd() * 0.05);
-      const ry = cell * (0.4 + rnd() * 0.05);
-      const ang = (rnd() - 0.5) * 0.5;
-      const base = grey[Math.floor(rnd() * grey.length)];
-      // crisp dark mortar outline first, then the domed stone face on top
-      ctx.fillStyle = "#0e0b07";
-      ctx.beginPath();
-      ctx.ellipse(x, y, rx + 2.5, ry + 2.5, ang, 0, Math.PI * 2);
-      ctx.fill();
-      const g = ctx.createRadialGradient(x - rx * 0.35, y - ry * 0.4, 1, x, y, Math.max(rx, ry));
-      g.addColorStop(0, shade(base, 1.22)); // lit crown
-      g.addColorStop(0.55, base);
-      g.addColorStop(1, shade(base, 0.62)); // shaded skirt
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(x, y, rx, ry, ang, 0, Math.PI * 2);
-      ctx.fill();
-      // tiny specular nick top-left so each stone catches the eye
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      ctx.beginPath();
-      ctx.ellipse(x - rx * 0.35, y - ry * 0.4, rx * 0.22, ry * 0.16, ang, 0, Math.PI * 2);
-      ctx.fill();
-      // bump: domed stone (bright crown → dark mortar) for real relief
-      const bg = bctx.createRadialGradient(x, y, 1, x, y, Math.max(rx, ry) + 2);
-      bg.addColorStop(0, "#e6e6e6");
-      bg.addColorStop(0.7, "#9a9a9a");
-      bg.addColorStop(1, "#101010");
-      bctx.fillStyle = bg;
-      bctx.beginPath();
-      bctx.ellipse(x, y, rx + 2, ry + 2, ang, 0, Math.PI * 2);
-      bctx.fill();
-    }
+
+  // grit speckle
+  for (let i = 0; i < 2600; i++) {
+    const x = rnd() * S;
+    const y = rnd() * S;
+    const l = 0.35 + rnd() * 0.5;
+    ctx.fillStyle = `rgba(${Math.round(90 * l + 40)}, ${Math.round(74 * l + 30)}, ${Math.round(52 * l + 18)}, ${0.25 + rnd() * 0.4})`;
+    ctx.fillRect(x, y, 1 + rnd() * 1.6, 1 + rnd() * 1.6);
+    bctx.fillStyle = `rgba(${rnd() > 0.5 ? 200 : 60},${rnd() > 0.5 ? 200 : 60},${rnd() > 0.5 ? 200 : 60},0.25)`;
+    bctx.fillRect(x, y, 1.5, 1.5);
   }
+  // faint ruts along travel (v axis = canvas y)
+  for (let i = 0; i < 14; i++) {
+    const x = S * (0.18 + rnd() * 0.64);
+    ctx.strokeStyle = `rgba(20,14,8,${0.1 + rnd() * 0.12})`;
+    ctx.lineWidth = 1.5 + rnd() * 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x, -10);
+    ctx.bezierCurveTo(x + (rnd() - 0.5) * 18, S * 0.33, x + (rnd() - 0.5) * 18, S * 0.66, x + (rnd() - 0.5) * 10, S + 10);
+    ctx.stroke();
+  }
+  // embedded pebbles
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * S;
+    const y = rnd() * S;
+    const r = 1.5 + rnd() * 3.5;
+    const l = 0.55 + rnd() * 0.4;
+    ctx.fillStyle = `rgba(${Math.round(120 * l)}, ${Math.round(114 * l)}, ${Math.round(102 * l)}, 0.9)`;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r * (0.6 + rnd() * 0.4), rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+    const bg = bctx.createRadialGradient(x, y, 0.5, x, y, r + 1);
+    bg.addColorStop(0, "#d8d8d8");
+    bg.addColorStop(1, "#707070");
+    bctx.fillStyle = bg;
+    bctx.beginPath();
+    bctx.arc(x, y, r + 0.5, 0, Math.PI * 2);
+    bctx.fill();
+  }
+
+  // alpha: opaque centre, ragged dissolve at the edges (u axis = canvas x)
+  const ac = document.createElement("canvas");
+  ac.width = ac.height = S;
+  const actx = ac.getContext("2d")!;
+  const ag = actx.createLinearGradient(0, 0, S, 0);
+  ag.addColorStop(0, "rgba(255,255,255,0)");
+  ag.addColorStop(0.16, "rgba(255,255,255,1)");
+  ag.addColorStop(0.84, "rgba(255,255,255,1)");
+  ag.addColorStop(1, "rgba(255,255,255,0)");
+  actx.fillStyle = ag;
+  actx.fillRect(0, 0, S, S);
+  // noisy bites out of the fringe so the edge never reads ruler-straight
+  actx.globalCompositeOperation = "destination-out";
+  for (let i = 0; i < 160; i++) {
+    const edge = rnd() > 0.5;
+    const x = edge ? S * (0.86 + rnd() * 0.14) : S * (0.14 - rnd() * 0.14);
+    const y = rnd() * S;
+    const r = 3 + rnd() * 12;
+    const g = actx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, "rgba(0,0,0,0.9)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    actx.fillStyle = g;
+    actx.beginPath();
+    actx.arc(x, y, r, 0, Math.PI * 2);
+    actx.fill();
+  }
+
   const map = new THREE.CanvasTexture(c);
   map.colorSpace = THREE.SRGBColorSpace;
-  map.wrapS = map.wrapT = THREE.RepeatWrapping;
-  map.repeat.set(1.0, 1.0); // ~big cobbles; the ribbon UV already tiles along length
+  map.wrapS = THREE.ClampToEdgeWrapping;
+  map.wrapT = THREE.RepeatWrapping;
   const bump = new THREE.CanvasTexture(bc);
-  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
-  bump.repeat.set(1.0, 1.0);
-  return { map, bump };
-}
-
-function shade(hex: string, f: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.min(255, Math.round(((n >> 16) & 255) * f));
-  const g = Math.min(255, Math.round(((n >> 8) & 255) * f));
-  const b = Math.min(255, Math.round((n & 255) * f));
-  return `rgb(${r},${g},${b})`;
+  bump.wrapS = THREE.ClampToEdgeWrapping;
+  bump.wrapT = THREE.RepeatWrapping;
+  const alpha = new THREE.CanvasTexture(ac);
+  alpha.wrapS = THREE.ClampToEdgeWrapping;
+  alpha.wrapT = THREE.RepeatWrapping;
+  return { map, bump, alpha };
 }
 
 function Trail() {
-  const { map, bump } = useMemo(() => makeCobblestone(), []);
-  const geom = useMemo(() => buildTrailRibbon(3.0), []);
+  const { map, bump, alpha } = useMemo(() => makeDirtPath(), []);
+  const geom = useMemo(() => buildTrailRibbon(3.4), []);
   return (
     <mesh geometry={geom} receiveShadow>
-      <meshStandardMaterial map={map} bumpMap={bump} bumpScale={1.0} roughness={0.9} color="#cfc9bc" polygonOffset polygonOffsetFactor={-1} />
+      <meshStandardMaterial
+        map={map}
+        bumpMap={bump}
+        bumpScale={0.6}
+        alphaMap={alpha}
+        transparent
+        depthWrite
+        roughness={1}
+        color="#b9a888"
+        polygonOffset
+        polygonOffsetFactor={-1}
+      />
     </mesh>
   );
 }
 
-/* ————— instanced wind grass ————— */
-function GrassField({ config }: { config: QualityConfig }) {
+/* ————— stepping stones set into the dirt ————— */
+// real geometry (not texture): flattened stone slabs strung down the centre of
+// the path, catching light and casting shadow — the thing that makes the trail
+// read as *laid* by someone rather than painted on.
+function SteppingStones() {
   const ref = useRef<THREE.InstancedMesh>(null!);
-  const HEIGHT = 0.5;
-  const count = config.grassCount;
-
+  const placements = useMemo(() => trailLineScatter(2.1, 0, 6011, 0.55), []);
   const geom = useMemo(() => {
-    const g = new THREE.PlaneGeometry(0.07, HEIGHT, 1, 4);
-    g.translate(0, HEIGHT / 2, 0);
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    const col = new Float32Array(pos.count * 3);
-    const base = new THREE.Color("#2c3a22");
-    const tip = new THREE.Color("#6f9a52");
-    const tmp = new THREE.Color();
-    for (let i = 0; i < pos.count; i++) {
-      const k = pos.getY(i) / HEIGHT;
-      pos.setX(i, pos.getX(i) * (1 - k * 0.78));
-      tmp.copy(base).lerp(tip, k * k);
-      col.set([tmp.r, tmp.g, tmp.b], i * 3);
-    }
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    const g = new THREE.DodecahedronGeometry(0.42, 0);
+    g.scale(1, 0.22, 0.8);
     return g;
   }, []);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8d887c", roughness: 0.95 }), []);
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const rnd = mulberry32(88);
+    const col = new THREE.Color();
+    placements.forEach((p, i) => {
+      const s = 0.75 + rnd() * 0.55;
+      q.setFromAxisAngle(up, rnd() * Math.PI * 2);
+      m.compose(new THREE.Vector3(p.x, groundHeight(p.x, p.z) + 0.015, p.z), q, new THREE.Vector3(s, 1, s * (0.8 + rnd() * 0.4)));
+      ref.current.setMatrixAt(i, m);
+      col.setHSL(0.09, 0.06 + rnd() * 0.05, 0.5 + rnd() * 0.16);
+      ref.current.setColorAt(i, col);
+    });
+    ref.current.count = placements.length;
+    ref.current.instanceMatrix.needsUpdate = true;
+    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
+  }, [placements, geom]);
+  return <instancedMesh ref={ref} args={[geom, mat, placements.length]} receiveShadow castShadow frustumCulled={false} />;
+}
+
+/* ————— instanced wind grass — bowed 3-blade tufts ————— */
+const GRASS_HEIGHT = 0.55;
+
+/** hand-built tuft: three tapered blades fanned around the root, each bowing
+ *  outward toward the tip, with a root→tip colour ramp baked into vertex
+ *  colours. One instance = one tuft = one believable clump instead of a flat
+ *  card, and the silhouette reads from every angle. */
+function buildGrassTuft(): THREE.BufferGeometry {
+  const ROWS = 4; // segments up the blade
+  const BLADES = 3;
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const col: number[] = [];
+  const idx: number[] = [];
+  const base = new THREE.Color("#2c3a22");
+  const tip = new THREE.Color("#7ba55a");
+  const tmp = new THREE.Color();
+  let vo = 0;
+  for (let b = 0; b < BLADES; b++) {
+    const ang = (b / BLADES) * Math.PI * 2 + b * 0.7;
+    const ca = Math.cos(ang);
+    const sa = Math.sin(ang);
+    const lean = 0.16 + b * 0.05; // each blade bows outward a little differently
+    for (let r = 0; r <= ROWS; r++) {
+      const t = r / ROWS;
+      const halfW = 0.05 * (1 - t * 0.82);
+      const y = t * GRASS_HEIGHT;
+      const bow = t * t * lean; // quadratic bow toward the tip
+      // blade-local x is perpendicular to the fan direction
+      const lx = -sa * halfW;
+      const lz = ca * halfW;
+      const ox = ca * bow;
+      const oz = sa * bow;
+      pos.push(-lx + ox, y, -lz + oz, lx + ox, y, lz + oz);
+      uv.push(0, t, 1, t);
+      tmp.copy(base).lerp(tip, t * t);
+      col.push(tmp.r, tmp.g, tmp.b, tmp.r, tmp.g, tmp.b);
+      if (r < ROWS) {
+        const o = vo + r * 2;
+        idx.push(o, o + 1, o + 2, o + 1, o + 3, o + 2);
+      }
+    }
+    vo += (ROWS + 1) * 2;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+function GrassField({ config }: { config: QualityConfig }) {
+  const ref = useRef<THREE.InstancedMesh>(null!);
+  const count = config.grassCount;
+
+  const geom = useMemo(() => buildGrassTuft(), []);
 
   const mat = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 1 });
-    applyGrassWind(m, HEIGHT);
+    applyGrassWind(m, GRASS_HEIGHT);
     return m;
   }, []);
 
@@ -252,14 +362,20 @@ function GrassField({ config }: { config: QualityConfig }) {
     const q = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
     const rnd = mulberry32(13);
+    const c = new THREE.Color();
     for (let i = 0; i < count; i++) {
       const p = pts[i] ?? { x: 0, z: 0, y: 0 };
       const s = 0.7 + rnd() * 0.9;
       q.setFromAxisAngle(up, rnd() * Math.PI * 2);
       m.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(s, s + rnd() * 0.6, s));
       ref.current.setMatrixAt(i, m);
+      // meadow variation: drier gold tufts among the green, subtle lightness spread
+      const dry = rnd();
+      c.setHSL(0.22 - dry * 0.07, 0.3 - dry * 0.1, 0.82 + rnd() * 0.22);
+      ref.current.setColorAt(i, c);
     }
     ref.current.instanceMatrix.needsUpdate = true;
+    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
   }, [count, geom]);
 
   return <instancedMesh ref={ref} args={[geom, mat, count]} frustumCulled={false} />;

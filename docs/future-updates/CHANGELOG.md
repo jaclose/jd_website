@@ -8,6 +8,50 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02 — Game layer + first-person pass (spec 05 core ✅; 03/04 partial; 10 wireframed)
+
+- 2026-07-02 — [sanctum] **Quests, secrets, achievements**: data-driven quest
+  layer (`lib/quests.ts`) + persistent progress store (`lib/progress.ts`,
+  zustand + localStorage, explicit post-mount hydration). Top-right quest
+  tracker with live distance-to-objective; achievement toasts; 12 achievements
+  (5 secret, masked as ???); four hidden secret landmarks (`SanctumSecrets`:
+  listening stone, stone fox, mushroom ring, first seed); proximity tripwires
+  (`SanctumQuestSensor`) — everything completes by *walking there*, not clicking.
+- 2026-07-02 — [sanctum] **Guide beacon** (`SanctumGuide`): the tracked quest
+  renders a soft light column + pulsing ring at its next objective and a chevron
+  that swims ~3m ahead of the walker; all of it fades out inside ~7m so arrival
+  belongs to the world. The secret quest deliberately gets no guide.
+- 2026-07-02 — [sanctum] **First-person walk (spec 05 core ✅)**: pressing WASD
+  in the Living Sanctum *enters* free-roam (no toggle hunting); true 360°
+  heading with drag-turn + screen-edge turn + ←→/Q/E keys; Shift sprint with a
+  subtle FOV kick; velocity ease-in/out; axis-separated collision sliding along
+  trunks; walked metres feed the Wanderer achievement. Overlay and rig sync
+  through a `sanctumControl.setFreeRoam` pub/sub.
+- 2026-07-02 — [sanctum] **Nature rehaul (specs 03/04 partial)**: `groundHeight`
+  rebuilt on domain-warped value-noise FBM (kills the sine-grid look) + gentle
+  bank lift so the trail sits cradled; cobbles replaced by a worn packed-dirt
+  ribbon with ragged alpha edges; instanced stepping-stone slabs down the
+  centreline; border stones strung along both shoulders (`trailLineScatter`);
+  grass upgraded to bowed 3-blade tufts with per-instance colour variation.
+- 2026-07-02 — [sanctum] **Visual discoveries**: landmarks introduce themselves
+  with in-world nameplate sprites that resolve on approach (canvas textures, no
+  font fetches); the inspector was redesigned visual-first — growth data drawn
+  as concentric tree rings, long-form story collapsed behind "The Story".
+- 2026-07-02 — [homepage] **Sanctum preloading**: `SanctumPreloader` warms all
+  zone GLBs + PBR texture sets during idle time right after site load (skips
+  data-saver/2g), so the walk mounts against hot caches from the dashboard.
+- 2026-07-02 — [essays] **Walkable audio essays wireframed (spec 10)**: schema
+  in `data/audioEssays.ts` (segments, anchors, advance modes, moods, set-pieces)
+  plus a draft walk of "The Cost of Knowing Better" over the medicine fork.
+- 2026-07-02 — [hero] Starfield: per-star twinkle (shader-patched points with a
+  phase attribute) replaces whole-layer pulsing; added a sparse layer of large
+  diffraction-spiked hero stars.
+- 2026-07-02 — [field-notes] Fixed a stray `useEffect` outside the hook body in
+  `useLetterPhysics.ts` that broke `next build`.
+- 2026-07-02 — Verified: build clean; headless Chromium drive-through (trailhead
+  vista, quest log open, WASD auto-free-roam, 360° turn, off-trail wander) with
+  no console errors.
+
 ### 2026-06-26c — Iron-out pass (IDE clean + visually verified via headless Chromium)
 
 - 2026-06-26 — [tooling] Added `.markdownlint.json` (project doc-lint policy) so

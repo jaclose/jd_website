@@ -6,10 +6,12 @@ import InstancedModel, { type Placement } from "../SanctumFoliage";
 import SanctumColliders from "../SanctumColliders";
 import SanctumEnvironment from "../SanctumEnvironment";
 import SanctumFireflies from "../SanctumFireflies";
+import SanctumGuide from "../SanctumGuide";
 import SanctumLandmark from "../SanctumLandmark";
+import SanctumSecrets from "../SanctumSecrets";
 import type { ModelKey } from "../lib/assets";
 import { mulberry32 } from "../lib/rng";
-import { groundHeight, scatter, type ScatterPoint } from "../lib/terrain";
+import { groundHeight, scatter, trailLineScatter, type ScatterPoint } from "../lib/terrain";
 import type { QualityConfig } from "../SanctumQualityManager";
 
 /**
@@ -40,6 +42,14 @@ export default function LivingSanctum({
   const deadwood = useMemo(() => toPlacements(scatter(Math.round(gc * 0.12), 71, 3.0), 0.6, 1.0, 43), [gc]);
   const logs = useMemo(() => toPlacements(scatter(Math.round(gc * 0.1), 89, 2.6), 0.7, 1.1, 59), [gc]);
   const rocks = useMemo(() => toPlacements(scatter(Math.round(gc * 0.45), 79, 0.5), 0.4, 1.1, 47), [gc]);
+  // small border stones lining both trail shoulders — the path reads as *kept*
+  const borderRocks = useMemo(
+    () => [
+      ...toPlacements(trailLineScatter(3.1, 2.0, 3301, 0.35), 0.16, 0.4, 71),
+      ...toPlacements(trailLineScatter(3.4, -2.0, 3407, 0.35), 0.16, 0.4, 73),
+    ],
+    [],
+  );
 
   return (
     <group>
@@ -63,12 +73,18 @@ export default function LivingSanctum({
       <FoliageLayer model="deadwood" placements={deadwood} foliageWind={false} />
       <FoliageLayer model="log" placements={logs} foliageWind={false} />
       <FoliageLayer model="rock" placements={rocks} foliageWind={false} />
+      <FoliageLayer model="rock" placements={borderRocks} foliageWind={false} castShadow={false} />
 
       <Suspense fallback={null}>
         {gardenFeatures.map((f) => (
           <SanctumLandmark key={f.id} feature={f} onSelect={onInspect} lowFx={lowFx} />
         ))}
       </Suspense>
+
+      {/* the four quiet things, hidden off the trail */}
+      <SanctumSecrets />
+      {/* the tracked quest's beacon + leading chevron */}
+      <SanctumGuide />
 
       <SanctumFireflies count={config.fireflyCount} />
       {/* a cooler cluster by the Noctyrium greenhouse */}

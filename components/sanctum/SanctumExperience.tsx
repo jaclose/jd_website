@@ -6,10 +6,13 @@ import { gardenFeatureById } from "@/data/gardenFeatures";
 import SanctumBuildStamp from "./SanctumBuildStamp";
 import SanctumFallback from "./SanctumFallback";
 import SanctumInspector from "./SanctumInspector";
+import SanctumQuestTracker from "./SanctumQuestTracker";
+import SanctumToasts from "./SanctumToasts";
 import { useJourneyNav } from "./SanctumPathController";
 import { detectQuality, resolveConfig } from "./SanctumQualityManager";
 import { branchLabel } from "./lib/journey";
 import { preloadZone } from "./lib/assets";
+import { useProgress } from "./lib/progress";
 import { pointerLook, sanctumAudio, sanctumControl } from "./lib/store";
 
 const SanctumCanvas = dynamic(() => import("./SanctumCanvas"), { ssr: false });
@@ -53,6 +56,8 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     setReady(true);
     // look-around is on for everyone now: mouse drives it by hover, touch by drag.
     pointerLook.enabled = true;
+    // restore quests / achievements / secrets from the last visit
+    useProgress.getState().hydrate();
   }, []);
 
   useEffect(() => {
@@ -76,26 +81,41 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
   const config = useMemo(() => resolveConfig(caps.tier, caps.reducedMotion), [caps]);
   const fallback = caps.reducedMotion || !caps.webgl;
 
-  // mouse looks by hover position; touch/pen looks by drag delta (accumulated).
+  // mouse looks by hover position; dragging (mouse or touch) turns. In free-roam
+  // drag deltas feed the rig's true 360° heading; in guided mode touch-drag still
+  // pans the clamped look cone.
   const drag = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
   const onPointerMove = (e: React.PointerEvent) => {
     if (!pointerLook.enabled || !stage.current) return;
     const r = stage.current.getBoundingClientRect();
+    if (drag.current.active) {
+      const dx = (e.clientX - drag.current.x) / r.width;
+      const dy = (e.clientY - drag.current.y) / r.height;
+      if (sanctumControl.freeRoam) {
+        pointerLook.dragDX += dx;
+        pointerLook.dragDY += dy;
+      } else if (e.pointerType !== "mouse") {
+        pointerLook.x = Math.max(-1, Math.min(1, pointerLook.x + dx * 2.4));
+        pointerLook.y = Math.max(-1, Math.min(1, pointerLook.y + dy * 2.4));
+      }
+      drag.current.x = e.clientX;
+      drag.current.y = e.clientY;
+      return;
+    }
     if (e.pointerType === "mouse") {
       pointerLook.x = ((e.clientX - r.left) / r.width - 0.5) * 2;
       pointerLook.y = ((e.clientY - r.top) / r.height - 0.5) * 2;
-    } else if (drag.current.active) {
-      pointerLook.x = Math.max(-1, Math.min(1, pointerLook.x + ((e.clientX - drag.current.x) / r.width) * 2.4));
-      pointerLook.y = Math.max(-1, Math.min(1, pointerLook.y + ((e.clientY - drag.current.y) / r.height) * 2.4));
-      drag.current.x = e.clientX;
-      drag.current.y = e.clientY;
     }
   };
   const onPointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse") drag.current = { active: true, x: e.clientX, y: e.clientY };
+    // mouse drags only while free-roaming (guided keeps plain hover + clicks);
+    // touch/pen always drags.
+    if (e.pointerType !== "mouse" || sanctumControl.freeRoam) {
+      drag.current = { active: true, x: e.clientX, y: e.clientY };
+    }
   };
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse") drag.current.active = false;
+  const onPointerUp = () => {
+    drag.current.active = false;
   };
   const onPointerLeave = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse") {
@@ -105,21 +125,23 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     drag.current.active = false;
   };
 
-  // "Walk here" takes inline control: free-roam on + page scroll/snap paused so
-  // arrow keys and drag drive the scene, not the pager. Esc / "Exit walk" returns.
+  // Walking takes inline control: free-roam on + page scroll/snap paused so
+  // arrow keys and drag drive the scene, not the pager. The rig can also enter
+  // free-roam itself (just start walking with WASD), so the overlay *subscribes*
+  // to the control bridge instead of owning the state. Esc / "Exit walk" returns.
   const [walking, setWalking] = useState(false);
-  const enterWalk = () => {
-    setWalking(true);
-    sanctumControl.freeRoam = true;
-    sanctumControl.focused = true;
-    window.__lenis?.stop();
-  };
-  const exitWalk = () => {
-    setWalking(false);
-    sanctumControl.freeRoam = false;
-    sanctumControl.focused = false;
-    window.__lenis?.start();
-  };
+  const enterWalk = () => sanctumControl.setFreeRoam(true);
+  const exitWalk = () => sanctumControl.setFreeRoam(false);
+  useEffect(
+    () =>
+      sanctumControl.onFreeRoam((on) => {
+        setWalking(on);
+        sanctumControl.focused = on;
+        if (on) window.__lenis?.stop();
+        else window.__lenis?.start();
+      }),
+    [],
+  );
   useEffect(() => {
     if (!walking) return;
     const onKey = (e: KeyboardEvent) => {
@@ -133,7 +155,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     if (walking && !near) exitWalk();
   }, [walking, near]);
   useEffect(() => () => {
-    sanctumControl.freeRoam = false;
+    sanctumControl.setFreeRoam(false);
     sanctumControl.focused = false;
     window.__lenis?.start();
   }, []);
@@ -209,18 +231,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
           The Sanctum
         </h1>
         <p className="label mt-3 text-[8px]! tracking-[0.22em]! text-leaf/65 [text-shadow:0_1px_8px_rgba(3,8,5,0.9)]">
-          {zoneLabel} · {locationLabel}
-        </p>
-      </div>
-
-      <div className="pointer-events-none absolute right-5 top-24 z-20 hidden max-w-60 text-right md:block">
-        <p className="label text-[8px]! tracking-[0.24em]! text-leaf/70">
-          {walking ? "Free walk · WASD / arrows move · drag looks · Esc to exit" : "Guided walk · cursor looks · WASD wanders"}
-        </p>
-        <p className="mt-2 font-mono text-[0.66rem] leading-relaxed text-faint">
-          {walking
-            ? "Roam the clearing freely with WASD or the arrow keys; on touch, drag to look. Click a glowing marker to read a plaque. Press Esc or Exit walk to rejoin the page."
-            : "Step toward the light, cross the threshold, follow the trail. In the forest, choose Walk here to roam freely; click a glowing marker to read a plaque."}
+          {zoneLabel === locationLabel ? zoneLabel : `${zoneLabel} · ${locationLabel}`}
         </p>
       </div>
 
@@ -271,6 +282,13 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
             <div className="min-w-0">
               <p className="label text-[7px]! tracking-[0.22em]! text-leaf/75">{nav.moving ? "Moving" : zoneLabel}</p>
               <p className="mt-1 truncate font-mono text-sm text-ink">{locationLabel}</p>
+              <p className="mt-1 hidden font-mono text-[0.6rem] text-faint md:block">
+                {walking
+                  ? "WASD walk · Shift run · drag or ←→ turn · Esc rejoin trail"
+                  : nav.zone === "sanctum"
+                    ? "WASD to wander off-trail · cursor looks · markers open plaques"
+                    : "cursor looks around"}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {primary ? (
@@ -319,6 +337,10 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {/* the game layer: quest log + achievement toasts */}
+      <SanctumQuestTracker visible={nav.zone === "sanctum"} />
+      <SanctumToasts />
 
       <SanctumInspector feature={inspected} onClose={() => nav.inspect(null)} />
       <SanctumBuildStamp />

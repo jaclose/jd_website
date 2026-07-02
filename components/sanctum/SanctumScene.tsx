@@ -4,6 +4,7 @@ import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from "@react-three/dr
 import SanctumAudioSystem from "./SanctumAudioSystem";
 import SanctumCameraRig from "./SanctumCameraRig";
 import SanctumFog from "./SanctumFog";
+import SanctumQuestSensor from "./SanctumQuestSensor";
 import SanctumLighting from "./SanctumLighting";
 import SanctumPostFX from "./SanctumPostFX";
 import { SanctumWindSystem, useResetWind } from "./SanctumWindSystem";
@@ -54,6 +55,8 @@ export default function SanctumScene({
       <SanctumLighting zone={zone} config={config} />
       <SanctumFog zone={zone} config={config} />
       <SanctumCameraRig targetNodeId={targetNodeId} onArrive={onArrive} />
+      {/* quest tripwires ride the feet position the rig publishes */}
+      <SanctumQuestSensor />
 
       {/* one Suspense per zone — streaming the heavy forest must never blank
           the room/threshold the camera is currently standing in. */}

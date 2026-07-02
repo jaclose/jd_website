@@ -48,19 +48,90 @@ export function distanceToTrail(x: number, z: number): number {
   return Math.sqrt(min);
 }
 
-/** rolling elevation — layered octaves for an open, Skellige-ish landform: gentle
- *  broad swells with mound + surface detail, kept flat on the trail so footing
- *  reads true (and the cobble path never tilts underfoot). The flatten band is
+/* ————— deterministic value-noise FBM for the landform ————— */
+function hash2(x: number, z: number): number {
+  const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453123;
+  return s - Math.floor(s);
+}
+
+function vnoise(x: number, z: number): number {
+  const ix = Math.floor(x);
+  const iz = Math.floor(z);
+  const fx = x - ix;
+  const fz = z - iz;
+  const ux = fx * fx * (3 - 2 * fx);
+  const uz = fz * fz * (3 - 2 * fz);
+  const a = hash2(ix, iz);
+  const b = hash2(ix + 1, iz);
+  const c = hash2(ix, iz + 1);
+  const d = hash2(ix + 1, iz + 1);
+  return (a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz) * 2 - 1;
+}
+
+function fbm(x: number, z: number, octaves = 3): number {
+  let amp = 0.5;
+  let f = 1;
+  let sum = 0;
+  for (let i = 0; i < octaves; i++) {
+    sum += vnoise(x * f, z * f) * amp;
+    amp *= 0.5;
+    f *= 2.03;
+  }
+  return sum;
+}
+
+/** rolling elevation — domain-warped FBM for an open, Skellige-ish landform:
+ *  broad warped swells (no visible sine tiling), mid mounds, fine surface
+ *  detail, kept flat on the trail so footing reads true. The flatten band is
  *  wide so banks rise *gradually* away from the path — rolling country, not a
- *  trench. */
+ *  trench — with an extra bank lift so the trail sits cradled in the land. */
 export function groundHeight(x: number, z: number): number {
-  const broad = Math.sin(x * 0.018 + 1.3) * Math.cos(z * 0.016) * 1.25; // gentle large swells
-  const mid = Math.sin(x * 0.05) * Math.cos(z * 0.045) * 0.5 + Math.sin(z * 0.11 + 1.0) * 0.28; // mounds
-  const fine = Math.sin(x * 0.2 + z * 0.16) * 0.1; // small surface bumps
+  // warp the broad frequency so hills stop looking like a wave grid
+  const wx = x + fbm(x * 0.021 + 7.3, z * 0.021) * 16;
+  const wz = z + fbm(x * 0.021, z * 0.021 + 3.1) * 16;
+  const broad = fbm(wx * 0.013, wz * 0.013, 3) * 3.0;
+  const mid = fbm(x * 0.055 + 11.7, z * 0.055, 3) * 0.75;
+  const fine = vnoise(x * 0.33, z * 0.33) * 0.12;
   const roll = broad + mid + fine;
   const trail = distanceToTrail(x, z);
   const flatten = THREE.MathUtils.smoothstep(trail, 0.0, 9.0); // gradual rise over 9m → open banks
-  return roll * flatten;
+  // gentle positive bank lift so off-trail ground reads as rising meadow
+  const bank = THREE.MathUtils.smoothstep(trail, 2.0, 16.0) * 0.9;
+  return roll * flatten + bank;
+}
+
+/**
+ * Points strung along the trail edges — for border rocks, waymarkers, and
+ * stepping stones. `offset` is the signed perpendicular distance from the
+ * centreline (0 = on the path), `spacing` the along-trail interval; everything
+ * jitters deterministically per seed so the line never reads machine-laid.
+ */
+export function trailLineScatter(
+  spacing: number,
+  offset: number,
+  seed: number,
+  jitter = 0.4,
+): ScatterPoint[] {
+  const rnd = mulberry32(seed);
+  const out: ScatterPoint[] = [];
+  for (const [a, b] of TRAIL_EDGES) {
+    const len = a.distanceTo(b);
+    const steps = Math.max(1, Math.floor(len / spacing));
+    const dirX = (b.x - a.x) / len;
+    const dirZ = (b.y - a.y) / len;
+    // perpendicular (left of travel)
+    const nx = -dirZ;
+    const nz = dirX;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i + (rnd() - 0.5) * 0.5) / steps;
+      if (t < 0 || t > 1) continue;
+      const off = offset + (rnd() - 0.5) * 2 * jitter;
+      const x = a.x + (b.x - a.x) * t + nx * off;
+      const z = a.y + (b.y - a.y) * t + nz * off;
+      out.push({ x, z, y: groundHeight(x, z), rnd: rnd() });
+    }
+  }
+  return out;
 }
 
 export interface ScatterPoint {

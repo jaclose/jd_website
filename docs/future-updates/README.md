@@ -94,13 +94,14 @@ Legend — Effort: S(<½d) M(~1d) L(2-4d) XL(>1wk) · Pri: P0 blocking → P3 po
 |---|------|------|-----|--------|
 | 01 | [Homepage Sanctum preview/snap](active/01-homepage-sanctum-preview.md) | Homepage | P0 | 🔵 partial |
 | 02 | [Living monitor (site-in-scene)](active/02-living-monitor.md) | Sanctum | P2 | 🟢 shipped |
-| 03 | [World terrain + stream/water](active/03-world-terrain-and-water.md) | Sanctum | P2 | 🟡 |
-| 04 | [Flora / grass shaders](active/04-flora-grass-shaders.md) | Sanctum | P2 | 🟡 |
-| 05 | [Movement + walk feel](active/05-movement-and-walk-feel.md) | Sanctum | P1 | 🔵 partial |
+| 03 | [World terrain + stream/water](active/03-world-terrain-and-water.md) | Sanctum | P2 | 🔵 partial |
+| 04 | [Flora / grass shaders](active/04-flora-grass-shaders.md) | Sanctum | P2 | 🔵 partial |
+| 05 | [Movement + walk feel](active/05-movement-and-walk-feel.md) | Sanctum | P1 | 🟢 core shipped |
 | 06 | [Adaptive soundscape](active/06-adaptive-soundscape.md) | Sanctum | P1 | 🟢 shipped |
 | 07 | [Performance / smoothness](active/07-performance-smoothness.md) | Sanctum | P1 | 🔵 partial |
 | 08 | [Email list buildout](active/08-email-list-buildout.md) | Email | P1 | 🟡 |
 | 09 | [Site admin dashboard](active/09-site-admin-dashboard.md) | Infra | P2 | 🟡 |
+| 10 | [Walkable audio essays](active/10-walkable-audio-essays.md) | Sanctum+Essays | P2 | 🟡 wireframed |
 | D01 | [NPC essay walk](deferred/D01-npc-essay-walk.md) | Sanctum | — | ⏸️ |
 | D02 | [Realtime GPU fluid sim](deferred/D02-realtime-fluid-sim.md) | Sanctum | — | ⏸️ |
 | D03 | [Authored hero assets (Blender/UE5)](deferred/D03-authored-assets.md) | Sanctum | — | ⏸️ |

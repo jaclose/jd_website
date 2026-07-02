@@ -1,6 +1,6 @@
 # 04 — Flora & grass shaders (denser, prettier nature)
 
-Status: 🟡 Planned · Pri: P2 · Effort: L · Area: Sanctum (Living Sanctum)
+Status: 🔵 Partial (2026-07-02) · Pri: P2 · Effort: L · Area: Sanctum (Living Sanctum) — DONE: bowed 3-blade grass tufts w/ per-instance colour, denser border planting via trailLineScatter. REMAINING: texture-carded grass, slope/moisture scatter masks, canopy shader pass.
 Tracks: "I really like the trees so far, so corporate [incorporate] more of that
 … use shaders, procedurally generated tools and apps used for nature, such as
 grass, textures."

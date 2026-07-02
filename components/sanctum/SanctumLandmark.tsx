@@ -6,6 +6,8 @@ import type { GardenFeature } from "@/data/gardenFeatures";
 import { useMemo } from "react";
 import InstancedModel from "./SanctumFoliage";
 import SanctumInteractionMarker from "./SanctumInteractionMarker";
+import { useProgress } from "./lib/progress";
+import { playerState } from "./lib/store";
 import { groundHeight } from "./lib/terrain";
 import { makeWaterMaterial } from "./shaders/water";
 
@@ -40,6 +42,18 @@ const ARCHETYPE: Record<string, string> = {
 const WOOD = "#5e4530";
 const STONE = "#6f6c62";
 
+/** heights the nameplate floats at, per archetype silhouette. */
+const PLATE_Y: Record<string, number> = {
+  tower: 6.6,
+  greenhouse: 4.1,
+  station: 2.9,
+  study: 2.2,
+  apple: 1.9,
+  bench: 1.8,
+  water: 1.9,
+  unsown: 1.7,
+};
+
 export default function SanctumLandmark({
   feature,
   onSelect,
@@ -57,8 +71,72 @@ export default function SanctumLandmark({
   return (
     <group position={[x, groundHeight(x, z), z]} rotation={[0, rot, 0]}>
       <Archetype kind={archetype} accent={accent} lowFx={lowFx} />
+      <Nameplate feature={feature} accent={accent} y={PLATE_Y[archetype] ?? 2.4} />
       <SanctumInteractionMarker position={[0, 0, 1.3]} color={accent} onSelect={() => onSelect(feature.id)} />
     </group>
+  );
+}
+
+/**
+ * The place introduces *itself*: a floating in-world name that resolves as you
+ * approach (and brightens once the landmark has been visited), so wayfinding is
+ * reading the world, not a menu. Rendered as a canvas-texture sprite — no font
+ * fetches, always billboarded, one draw call each.
+ */
+function makeNameTexture(title: string, year: string | undefined, accent: string, visited: boolean): THREE.CanvasTexture {
+  const W = 512;
+  const H = 128;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d")!;
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  // title — spaced uppercase mono, the site's micro-label voice
+  ctx.font = "500 30px 'IBM Plex Mono', ui-monospace, monospace";
+  ctx.fillStyle = visited ? "rgba(232,230,225,0.98)" : "rgba(232,230,225,0.88)";
+  ctx.shadowColor = "rgba(3,8,5,0.9)";
+  ctx.shadowBlur = 14;
+  const spaced = title.toUpperCase().split("").join("  ");
+  ctx.fillText(spaced, W / 2, 56, W - 30);
+  // hairline + year
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = visited ? accent : "rgba(232,230,225,0.4)";
+  ctx.fillRect(W / 2 - 60, 74, 120, 2);
+  if (year) {
+    ctx.font = "400 20px 'IBM Plex Mono', ui-monospace, monospace";
+    ctx.fillStyle = "rgba(232,230,225,0.6)";
+    ctx.fillText(year, W / 2, 106);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+const PLATE_NEAR = 5; // fully resolved inside this range
+const PLATE_FAR = 26; // invisible beyond this
+
+function Nameplate({ feature, accent, y }: { feature: GardenFeature; accent: string; y: number }) {
+  const visited = useProgress((s) => !!s.visited[feature.id]);
+  const tex = useMemo(
+    () => makeNameTexture(feature.title, feature.year, accent, visited),
+    [feature.title, feature.year, accent, visited],
+  );
+  const sprite = useRef<THREE.Sprite>(null!);
+  const [fx, , fz] = feature.position;
+  useFrame(() => {
+    if (!sprite.current) return;
+    const d = Math.hypot(playerState.x - fx, playerState.z - fz);
+    const t = 1 - THREE.MathUtils.smoothstep(d, PLATE_NEAR, PLATE_FAR);
+    const m = sprite.current.material as THREE.SpriteMaterial;
+    m.opacity = t * (visited ? 1 : 0.85);
+    sprite.current.visible = t > 0.02;
+  });
+  return (
+    <sprite ref={sprite} position={[0, y, 0]} scale={[4.4, 1.1, 1]}>
+      <spriteMaterial map={tex} transparent opacity={0} depthWrite={false} toneMapped={false} />
+    </sprite>
   );
 }
 

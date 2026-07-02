@@ -25,6 +25,7 @@ import {
   glowTexture,
   beamTexture,
   starTexture,
+  spikedStarTexture,
   streakTexture,
   milkyWayTexture,
   nebulaTexture,
@@ -243,10 +244,15 @@ function Meteors() {
 function Starfield() {
   const mats = useRef<(THREE.PointsMaterial | null)[]>([]);
   const star = useMemo(() => starTexture(), []);
+  const spiked = useMemo(() => spikedStarTexture(), []);
+  // one shared clock uniform for every twinkle-patched material
+  const uTime = useMemo(() => ({ value: 0 }), []);
+
   const layers = useMemo(() => {
     const make = (count: number, rMin: number, rMax: number, warmBias: number) => {
       const pos = new Float32Array(count * 3);
       const col = new Float32Array(count * 3);
+      const phase = new Float32Array(count);
       const color = new THREE.Color();
       for (let i = 0; i < count; i++) {
         const v = new THREE.Vector3()
@@ -260,26 +266,52 @@ function Starfield() {
         else color.set("#dde4ee");
         color.multiplyScalar(0.7 + Math.random() * 0.3);
         col.set([color.r, color.g, color.b], i * 3);
+        phase[i] = Math.random() * 64;
       }
       const g = new THREE.BufferGeometry();
       g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
       g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+      g.setAttribute("aPhase", new THREE.BufferAttribute(phase, 1));
       return g;
     };
     return [
-      { g: make(1500, 60, 120, 0.12), size: 0.5, base: 0.6 },
-      { g: make(420, 42, 70, 0.18), size: 0.95, base: 0.8 },
-      { g: make(110, 32, 52, 0.25), size: 1.5, base: 0.95 },
+      { g: make(1500, 60, 120, 0.12), size: 0.5, base: 0.6, twinkle: false, tex: star },
+      { g: make(420, 42, 70, 0.18), size: 0.95, base: 0.8, twinkle: true, tex: star },
+      { g: make(110, 32, 52, 0.25), size: 1.5, base: 0.95, twinkle: true, tex: star },
+      // sparse hero stars: big, spiked, individually alive
+      { g: make(26, 40, 84, 0.3), size: 4.6, base: 0.85, twinkle: true, tex: spiked },
     ];
-  }, []);
+  }, [star, spiked]);
+
+  // per-star twinkle: phase attribute scales point size + brightness in-shader,
+  // so each star breathes on its own clock instead of whole layers pulsing.
+  const patchTwinkle = (m: THREE.PointsMaterial) => {
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = uTime;
+      shader.vertexShader =
+        "attribute float aPhase;\nvarying float vTw;\nuniform float uTime;\n" +
+        shader.vertexShader.replace(
+          "gl_PointSize = size;",
+          [
+            "vTw = 0.72 + 0.38 * sin(uTime * (0.9 + fract(aPhase * 0.37) * 1.9) + aPhase * 7.0);",
+            "gl_PointSize = size * (0.82 + 0.3 * vTw);",
+          ].join("\n"),
+        );
+      shader.fragmentShader =
+        "varying float vTw;\n" +
+        shader.fragmentShader.replace(
+          "#include <color_fragment>",
+          "#include <color_fragment>\n\tdiffuseColor.rgb *= vTw;",
+        );
+    };
+  };
 
   useFrame((state) => {
     const o = (1 - smoothstep(hero.pS, 0.2, 0.85)) * hero.intro;
-    const t = state.clock.elapsedTime;
+    uTime.value = state.clock.elapsedTime;
     mats.current.forEach((m, i) => {
       if (!m) return;
-      const breathe = reduced ? 1 : 0.88 + 0.12 * Math.sin(t * (0.9 + i * 0.35) + i * 2);
-      m.opacity = layers[i].base * o * (i === 0 ? 1 : breathe);
+      m.opacity = layers[i].base * o;
     });
   });
 
@@ -290,8 +322,13 @@ function Starfield() {
           <pointsMaterial
             ref={(m) => {
               mats.current[i] = m;
+              if (m && l.twinkle && !reduced && !m.userData.twinkled) {
+                m.userData.twinkled = true;
+                patchTwinkle(m);
+                m.needsUpdate = true;
+              }
             }}
-            map={star}
+            map={l.tex}
             size={l.size}
             sizeAttenuation
             vertexColors

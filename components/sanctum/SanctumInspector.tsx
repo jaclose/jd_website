@@ -1,12 +1,14 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import type { GardenFeature } from "@/data/gardenFeatures";
 
 /**
- * Landmark plaque panel — the only place text appears, and only on demand when a
- * marker is clicked. Reuses the existing gardenFeatures content (plaque, story
- * seed, growth rings, event rings, links) the old walk already authored; this is
- * a refined port of ForestScene's GardenFeatureInspector.
+ * The discovery card — what opens when you inspect a landmark. Visual-first:
+ * name, year, a single line of plaque text, and the growth data drawn as
+ * concentric tree rings (the garden's own metaphor) instead of labelled meter
+ * bars. The long-form story and event log stay one tap away behind "the story",
+ * so the walk stays a walk and reading is a choice.
  */
 function featureKicker(feature: GardenFeature) {
   if (feature.id === "noctyrium") return "Active Project · Medical Study System";
@@ -15,10 +17,60 @@ function featureKicker(feature: GardenFeature) {
   return "Site Landmark";
 }
 
+const ACCENT: Record<string, string> = {
+  main: "#9fce8f",
+  medicine: "#9fd8e8",
+  projects: "#d4b886",
+};
+
 function eventTone(status?: "past" | "current" | "future") {
   if (status === "current") return "text-leaf";
   if (status === "future") return "text-[rgba(167,183,199,0.82)]";
   return "text-[rgba(232,230,225,0.76)]";
+}
+
+/** growth entries as concentric tree rings — innermost is the first entry. */
+function GrowthRings({ growth, accent }: { growth: NonNullable<GardenFeature["growth"]>; accent: string }) {
+  const rings = growth.slice(0, 4);
+  const C = 60; // centre
+  return (
+    <div className="flex items-center gap-4">
+      <svg viewBox="0 0 120 120" className="h-28 w-28 shrink-0 -rotate-90">
+        {rings.map((ring, i) => {
+          const r = 18 + i * 13;
+          const circ = 2 * Math.PI * r;
+          const frac = Math.max(0.04, Math.min(1, ring.value / 100));
+          return (
+            <g key={ring.label}>
+              <circle cx={C} cy={C} r={r} fill="none" stroke="rgba(232,230,225,0.1)" strokeWidth="5" />
+              <circle
+                cx={C}
+                cy={C}
+                r={r}
+                fill="none"
+                stroke={accent}
+                strokeOpacity={0.5 + 0.5 * frac}
+                strokeWidth="5"
+                strokeDasharray={`${circ * frac} ${circ}`}
+                strokeLinecap="round"
+              />
+            </g>
+          );
+        })}
+        <circle cx={C} cy={C} r={4} fill={accent} fillOpacity={0.8} />
+      </svg>
+      <div className="min-w-0 space-y-1.5">
+        {rings.map((ring) => (
+          <div key={ring.label} className="flex items-baseline gap-2">
+            <span className="font-mono text-[0.6rem] tabular-nums text-faint">{Math.round(ring.value)}</span>
+            <span className="truncate font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[rgba(232,230,225,0.78)]">
+              {ring.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function SanctumInspector({
@@ -28,6 +80,8 @@ export default function SanctumInspector({
   feature: GardenFeature | undefined;
   onClose: () => void;
 }) {
+  const [showStory, setShowStory] = useState(false);
+  const accent = feature ? ACCENT[feature.branch] ?? ACCENT.main : ACCENT.main;
   return (
     <AnimatePresence>
       {feature ? (
@@ -42,7 +96,14 @@ export default function SanctumInspector({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="label text-[7px]! tracking-[0.22em]! text-leaf/75">{featureKicker(feature)}</p>
-              <h3 className="mt-2 font-display text-2xl font-light leading-tight text-ink">{feature.title}</h3>
+              <h3 className="mt-2 font-display text-2xl font-light leading-tight text-ink">
+                {feature.title}
+                {feature.year ? (
+                  <span className="ml-2 align-middle font-mono text-[0.62rem] uppercase tracking-[0.16em] text-faint">
+                    {feature.year}
+                  </span>
+                ) : null}
+              </h3>
             </div>
             <button
               type="button"
@@ -52,41 +113,46 @@ export default function SanctumInspector({
               Close
             </button>
           </div>
+
           <p className="mt-3 font-serif text-base leading-snug text-[rgba(232,230,225,0.84)]">{feature.plaqueText}</p>
-          <p className="mt-3 font-mono text-[0.68rem] leading-relaxed text-faint">{feature.visualNotes}</p>
+
+          {feature.growth?.length ? (
+            <div className="mt-4 border-t border-[rgba(232,230,225,0.1)] pt-3">
+              <p className="label mb-2 text-[7px]! tracking-[0.2em]! text-leaf/70">Growth Rings</p>
+              <GrowthRings growth={feature.growth} accent={accent} />
+            </div>
+          ) : null}
+
           {feature.story ? (
             <div className="mt-4 border-t border-[rgba(232,230,225,0.1)] pt-3">
-              <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Story Seed</p>
-              <p className="mt-2 font-serif text-sm leading-snug text-[rgba(232,230,225,0.78)]">{feature.story.summary}</p>
-            </div>
-          ) : null}
-          {feature.growth?.length ? (
-            <div className="mt-4 space-y-2">
-              <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Growth Rings</p>
-              {feature.growth.map((ring) => (
-                <div key={`${feature.id}-${ring.label}`} className="grid grid-cols-[86px_1fr] items-center gap-3">
-                  <span className="truncate font-mono text-[0.62rem] uppercase tracking-[0.12em] text-faint">{ring.label}</span>
-                  <span className="group relative h-2 overflow-hidden bg-[rgba(232,230,225,0.08)]">
-                    <span
-                      className="block h-full bg-[linear-gradient(90deg,rgba(159,206,143,0.28),rgba(240,199,124,0.76))]"
-                      style={{ width: `${Math.max(4, Math.min(100, ring.value))}%` }}
-                    />
-                  </span>
+              <button
+                type="button"
+                onClick={() => setShowStory((v) => !v)}
+                className="flex w-full items-baseline justify-between text-left"
+              >
+                <span className="label text-[7px]! tracking-[0.2em]! text-leaf/70">The Story</span>
+                <span className="font-mono text-[0.62rem] text-faint">{showStory ? "−" : "+"}</span>
+              </button>
+              {showStory ? (
+                <div className="mt-2">
+                  <p className="font-serif text-sm leading-snug text-[rgba(232,230,225,0.78)]">{feature.story.summary}</p>
+                  {feature.story.events?.length ? (
+                    <div className="mt-3 space-y-2">
+                      {feature.story.events.map((event) => (
+                        <div key={`${feature.id}-${event.label}`} className="border-l border-[rgba(159,206,143,0.22)] pl-3">
+                          <p className={`font-mono text-[0.64rem] uppercase tracking-[0.14em] ${eventTone(event.status)}`}>
+                            {event.label}
+                          </p>
+                          <p className="mt-1 font-mono text-[0.64rem] leading-snug text-faint">{event.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              ))}
+              ) : null}
             </div>
           ) : null}
-          {feature.story?.events?.length ? (
-            <div className="mt-4 space-y-2">
-              <p className="label text-[7px]! tracking-[0.2em]! text-leaf/70">Event Rings</p>
-              {feature.story.events.map((event) => (
-                <div key={`${feature.id}-${event.label}`} className="border-l border-[rgba(159,206,143,0.22)] pl-3">
-                  <p className={`font-mono text-[0.64rem] uppercase tracking-[0.14em] ${eventTone(event.status)}`}>{event.label}</p>
-                  <p className="mt-1 font-mono text-[0.64rem] leading-snug text-faint">{event.detail}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
+
           {feature.links?.length ? (
             <div className="mt-4 flex flex-wrap gap-2">
               {feature.links.map((link) => (
