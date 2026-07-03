@@ -76,6 +76,7 @@ void main(){
 
 const FRAG = /* glsl */ `
 uniform float uTime;
+uniform float uEmber;
 uniform vec3 uHot;
 uniform vec3 uMid;
 uniform vec3 uCool;
@@ -103,6 +104,9 @@ void main(){
   col += mix(uMid, uHot, 0.4) * fres * 0.6;
   // soft darkening at the extreme silhouette so the disc ends cleanly
   col *= mix(0.82, 1.0, smoothstep(0.02, 0.16, ndv));
+  // docked ember state: the star banks its fire — dimmer, redder, calmer
+  col = mix(col, col * vec3(0.98, 0.74, 0.52), uEmber * 0.6);
+  col *= mix(1.0, 0.62, uEmber);
   // HDR lift so only the star trips the bloom threshold
   col *= 1.6;
   gl_FragColor = vec4(col, 1.0);
@@ -115,6 +119,7 @@ export function makeSunMaterial(): THREE.ShaderMaterial {
     fragmentShader: FRAG,
     uniforms: {
       uTime: { value: 0 },
+      uEmber: { value: 0 },
       uHot: { value: new THREE.Color("#fff3d0") },
       uMid: { value: new THREE.Color("#f6b24a") },
       uCool: { value: new THREE.Color("#c2491c") },

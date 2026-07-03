@@ -8,6 +8,38 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-03a — Spec 12 complete + archive UX + field-note fidelity
+
+- 2026-07-03 — [hero] **Dock choreography (spec 12 · F4)**: docking is now a
+  state change — the sun banks to a dimmer, redder ember with a soft 1/f
+  flicker; each body lands with a gold arrival pulse in slot order (WAAPI,
+  mirrors the scene's stagger math exactly); the pill hairline draws itself
+  0→100% and settles to a faint gold seam; docked bodies breathe ±2% on an
+  8s clock offset per slot. Reduced motion: pulses/breath/flicker off.
+- 2026-07-03 — [hero] **Constellation egg (spec 12 · F5)**: after ~10s of
+  true stillness on the hero (no pointer, wheel, or key), faint gold
+  hairlines join the nav bodies in slot order for ~3s, then dissolve;
+  repeats gently while the stillness holds. **Spec 12 fully shipped.**
+- 2026-07-03 — [essays] **Collection filter rail**: data-driven square chips
+  (All works · Return · Sanctum · Blackout · Legacy · Field Study, with
+  counts) filter the shelf; active chip takes its collection's accent;
+  aria-pressed + focus-visible; clicking an active chip returns to All.
+- 2026-07-03 — [essays] **Reading progress hairline**: a 2px accent line
+  across the top of the reading chamber fills as the reader descends
+  (scaleX-only, compositor-friendly; rAF-throttled scroll listener).
+- 2026-07-03 — [field-notes] **Masthead junk stripped at load**: the
+  WordPress import kept "Field Note<sup>dd.mm.yyyy</sup>" inside every
+  excerpt and body ("Field Note23.11.2025 We live in…" on the hero hover
+  card) — lib/content now strips it from both and settles the trailing
+  WordPress "[…]" into a clean ellipsis. Generated JSON untouched.
+- 2026-07-03 — [field-notes] **The lamp breathes**: the desk's key light
+  carries a slow uneven candle flicker (opacity-only keyframes, off under
+  reduced motion).
+- 2026-07-03 — [sanctum] **Staircase step-up shipped (spec 05 closed)**:
+  feet glide onto stair treads and rocky ledges through a rate-limited
+  vertical follow instead of teleporting with the ground sample; true zone
+  warps (metres) still snap so travel stays crisp.
+
 ### 2026-07-02g — Key-lit system + comet double tail + brass card frames
 
 - 2026-07-02 — [hero] **The sun owns the light** (spec 12 · F2): ambient/hemi
@@ -93,7 +125,6 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 - 2026-07-02 — [docs] **Solar System Hero 2.0 wireframed (spec 12)** — sun
   corona/key-light, planet materials, living orbit arcs, dock-as-state-change,
   idle theatre. No hero code touched, per request.
-
 
 ### 2026-07-02d — Holo card pass + letter-scroll fix
 

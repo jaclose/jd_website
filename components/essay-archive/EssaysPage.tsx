@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { essayArtifacts, featuredArtifact, shelfArtifacts } from "@/data/essays";
+import { essayThemes, type EssayThemeId } from "@/data/essayThemes";
 import EssayArtifact from "./EssayArtifact";
 import FeaturedEssay from "./FeaturedEssay";
 import EssayReaderModal from "./EssayReaderModal";
@@ -13,12 +14,27 @@ import "./essayArchive.css";
  * atmospheric hero (grain, drifting dust, constellation points, vignette,
  * and a parallax so slow it registers as depth rather than motion), the
  * featured work as a centerpiece, and the remaining works shelved beneath it
- * in their three standings. Every artifact opens through the cinematic
- * reader; the archive is rendered entirely from data/essays.ts.
+ * in their three standings, filterable by collection. Every artifact opens
+ * through the cinematic reader; the archive is rendered entirely from
+ * data/essays.ts.
  */
 export default function EssaysPage() {
   const { state, open, close } = useEssayTransition();
   const skyRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState<EssayThemeId | "all">("all");
+
+  // the filter rail is data-driven: only collections with shelved works
+  const collections = useMemo(() => {
+    const counts = new Map<EssayThemeId, number>();
+    for (const a of shelfArtifacts) counts.set(a.theme, (counts.get(a.theme) ?? 0) + 1);
+    return Array.from(counts, ([id, count]) => ({
+      id,
+      count,
+      label: essayThemes[id].collection.replace(/^The /, "").replace(/ Collection$/, ""),
+    }));
+  }, []);
+  const visibleShelf =
+    filter === "all" ? shelfArtifacts : shelfArtifacts.filter((a) => a.theme === filter);
 
   // near-imperceptible parallax: the hero atmosphere falls behind the scroll
   useEffect(() => {
@@ -72,8 +88,32 @@ export default function EssaysPage() {
       {/* ————— the shelves ————— */}
       <section aria-label="The preserved works" className="ea-shelf-section">
         <p className="ea-section-label">The Collection · Filed &amp; Preserved</p>
+
+        <div className="ea-filter" role="group" aria-label="Filter by collection">
+          <button
+            type="button"
+            className="ea-filter__chip"
+            aria-pressed={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
+            All works <span>{shelfArtifacts.length}</span>
+          </button>
+          {collections.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className="ea-filter__chip"
+              style={essayThemes[c.id].vars}
+              aria-pressed={filter === c.id}
+              onClick={() => setFilter(filter === c.id ? "all" : c.id)}
+            >
+              {c.label} <span>{c.count}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="ea-shelf">
-          {shelfArtifacts.map((artifact) => (
+          {visibleShelf.map((artifact) => (
             <EssayArtifact key={artifact.id} artifact={artifact} onOpen={open} />
           ))}
         </div>

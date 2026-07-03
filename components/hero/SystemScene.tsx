@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
@@ -259,6 +259,84 @@ function Meteors() {
     pos.setXYZ(1, st.tip.x, st.tip.y, st.tip.z);
     pos.needsUpdate = true;
     mat.opacity = Math.sin(Math.PI * k) * 0.75;
+  });
+
+  return <primitive object={obj} />;
+}
+
+/* ————— constellation egg: stillness joins the worlds ————— */
+
+/**
+ * After ~10 seconds without pointer or scroll on the hero, faint gold
+ * hairlines connect the nav bodies in their slot order for a couple of
+ * seconds, then dissolve — the site's own constellation, drawn only for
+ * whoever waits. Repeats gently while the stillness holds.
+ */
+function Constellation() {
+  const { size } = useThree();
+  const idleAt = useRef(0);
+  const obj = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(bodies.length * 3), 3)
+    );
+    const m = new THREE.LineBasicMaterial({
+      color: "#d4b886",
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const l = new THREE.Line(g, m);
+    l.frustumCulled = false;
+    return l;
+  }, []);
+  const v = useMemo(() => new THREE.Vector3(), []);
+
+  useEffect(() => {
+    const wake = () => {
+      idleAt.current = performance.now();
+    };
+    wake();
+    window.addEventListener("pointermove", wake, { passive: true });
+    window.addEventListener("pointerdown", wake, { passive: true });
+    window.addEventListener("wheel", wake, { passive: true });
+    window.addEventListener("keydown", wake, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", wake);
+      window.removeEventListener("pointerdown", wake);
+      window.removeEventListener("wheel", wake);
+      window.removeEventListener("keydown", wake);
+    };
+  }, []);
+
+  useFrame(() => {
+    const mat = obj.material as THREE.LineBasicMaterial;
+    if (reduced || hero.pS > 0.12 || hero.intro < 0.9 || hero.hovered) {
+      mat.opacity = 0;
+      return;
+    }
+    const idle = (performance.now() - idleAt.current) / 1000;
+    if (idle < 10) {
+      mat.opacity = 0;
+      return;
+    }
+    // draw for ~3.2s, rest ~11s, repeat while the stillness holds
+    const cycle = (idle - 10) % 14;
+    const env = Math.min(smoothstep(cycle, 0, 0.9), 1 - smoothstep(cycle, 2.4, 3.2));
+    if (env <= 0) {
+      mat.opacity = 0;
+      return;
+    }
+    const s = orbitScale(size.width / size.height);
+    const pos = obj.geometry.attributes.position as THREE.BufferAttribute;
+    bodies.forEach((b, i) => {
+      orbitPoint(b, hero.theta.get(b.id) ?? b.phase, v).multiplyScalar(s);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    });
+    pos.needsUpdate = true;
+    mat.opacity = 0.2 * env;
   });
 
   return <primitive object={obj} />;
@@ -658,6 +736,7 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
   const theta = useRef(body ? body.phase : 0);
   const slow = useRef(1); // magnetic hover: orbit eases to a near-halt
   const lift = useRef(1); // gentle scale-up while hovered
+  const tAcc = useRef(Math.random() * 8); // clock for the docked idle breath
   const vOrbit = useMemo(() => new THREE.Vector3(), []);
   const vDock = useMemo(() => new THREE.Vector3(), []);
   const vCtrl = useMemo(() => new THREE.Vector3(), []);
@@ -708,12 +787,17 @@ function useGenie(body: CelestialBody | null, index: number, count: number) {
       .addScaledVector(vDock, e * e);
     group.position.copy(vPos);
 
-    // scale: true size in orbit, pixel-locked size in the bar
+    // scale: true size in orbit, pixel-locked size in the bar —
+    // docked bodies breathe (±2%, 8s, offset per slot) so the pill stays alive
+    tAcc.current += dt;
+    const breathe = reduced
+      ? 1
+      : 1 + Math.sin(tAcc.current * 0.785 + index * 1.7) * 0.02 * e;
     const perPx = worldPerPixel(cam, size.height, DOCK_DIST);
     const radius = body ? body.size : 1.55;
     const dockScale = (dockRadius(body ? body.kind : "terrestrial") * perPx) / radius;
     const intro = smoothstep(hero.intro, 0.12 + index * 0.07, 0.5 + index * 0.07);
-    const scale = (1 + (dockScale - 1) * e) * intro * lift.current;
+    const scale = (1 + (dockScale - 1) * e) * intro * lift.current * breathe;
     group.scale.setScalar(Math.max(scale, 0.0001));
 
     // publish screen position for the DOM overlays — r is the VISUAL
@@ -1669,17 +1753,29 @@ function Sun({ count }: { count: number }) {
   const sunMat = useMemo(() => makeSunMaterial(), []);
   const coronaMat = useMemo(() => makeCoronaMaterial(), []);
   const streakMap = useMemo(() => streakTexture(), []);
+  const haloBase = useMemo(() => new THREE.Color("#f4c87c"), []);
+  const haloEmber = useMemo(() => new THREE.Color("#d9834a"), []);
 
   useFrame((state, dt) => {
     const { e } = update(group.current, dt);
     const t = state.clock.elapsedTime;
     sunWorld.copy(group.current.position); // patched materials track the star
     sunMat.uniforms.uTime.value = t;
+    // docked, the star banks to an ember with a soft 1/f flicker
+    const flick = reduced
+      ? 1
+      : 1 +
+        (Math.sin(t * 8.3) * 0.3 + Math.sin(t * 3.7 + 1.3) * 0.45 + Math.sin(t * 17.9) * 0.25) *
+          0.05 *
+          e;
+    sunMat.uniforms.uEmber.value = e * flick;
     surface.current.rotation.y += dt * 0.02;
     const breathe = reduced ? 1 : 1 + Math.sin(t * 0.8) * 0.04;
     // halos collapse harder into the pill so the docked star reads crisp
     halo.current.scale.setScalar(6.5 * breathe * (1 - e * 0.35));
-    (halo.current.material as THREE.SpriteMaterial).opacity = (0.8 - e * 0.74) * hero.intro;
+    (halo.current.material as THREE.SpriteMaterial).color.copy(haloBase).lerp(haloEmber, e);
+    (halo.current.material as THREE.SpriteMaterial).opacity =
+      (0.8 - e * 0.74) * hero.intro * flick;
     // the flame corona: billboarded to the camera, alive in-shader, and
     // standing down as the star docks into the pill
     coronaMat.uniforms.uTime.value = reduced ? 12.4 : t;
@@ -1699,7 +1795,7 @@ function Sun({ count }: { count: number }) {
     (streak.current.material as THREE.SpriteMaterial).opacity = 0.18 * (1 - e) * hero.intro;
     // the point light eases off as it docks so it stops blowing out neighbours
     // (nearly out in the pill — DockFill carries the docked illumination)
-    light.current.intensity = 420 * (1 - e * 0.94);
+    light.current.intensity = 420 * (1 - e * 0.94) * flick;
   });
 
   return (
@@ -1792,6 +1888,7 @@ export default function SystemScene() {
       <ZodiacalLight />
       <Starfield />
       <Meteors />
+      <Constellation />
       <Belt />
       <SpaceDust />
       <Sun count={count} />

@@ -1,9 +1,9 @@
 # 12 — Solar System Hero 2.0 (the opening of the site)
 
-Status: 🔵 In progress (2026-07-02) · Pri: P1 · Effort: XL · Area: Homepage hero + nav — DONE: F1 flame corona + prominences; F2 key-light pass (ambient cut to starlight, wrap-lit terminators via shared `hero/materials.ts`, deployments night-side settlement lights, garden cloud deck + ocean sheen, gas-giant aurora ovals + sun-scattering rings, sun-lit feathered atmospheres) and the comet's real double tail (ion ribbon w/ kinks, curved dust ribbon, drifting grains, perihelion breathing); F3 hover orbit focus + leading arcs (glow ahead, wake behind); F5a zodiacal wedge. Meteors + camera parallax pre-existed. NEXT: F4 dock choreography, F5 constellation egg.
+Status: 🟢 Shipped (2026-07-03) · Pri: P1 · Effort: XL · Area: Homepage hero + nav — all five frames live: F1 flame corona + prominences; F2 key-light pass (wrap-lit terminators, night-side settlement lights, garden clouds + ocean sheen, aurora ovals, sun-scattering rings, sun-lit feathered atmospheres, comet ion+dust double tail); F3 hover focus + leading arcs; F4 dock choreography (ember sun w/ 1/f flicker, slot-order arrival pulses, self-drawing pill hairline, docked idle breathing); F5 idle theatre (meteors, zodiacal wedge, 10s-stillness constellation egg).
 Tracks: "start wireframing a much better solar system into the nav bar
-experience — this is the opening of the page — make it fantastic." **No code
-changes yet — planning surface only.**
+experience — this is the opening of the page — make it fantastic." All five
+frames are now live in `components/hero/` (see Status + CHANGELOG 2026-07-03a).
 
 ## North-star
 
@@ -86,8 +86,8 @@ docking itself* — one continuous camera thought from cosmos → instrument.
 - [x] F2 planet material patch (key light, wrap terminators, night lights,
       clouds, aurora, ring scattering, sun-lit atmospheres, comet double tail)
 - [x] F3 hover focus + leading arcs (parallax pre-existed)
-- [ ] F4 dock-as-state-change choreography
-- [~] F5 partial: meteors pre-existed, zodiacal wedge shipped; constellation egg open
+- [x] F4 dock-as-state-change choreography (ember + pulses + hairline draw + breathing)
+- [x] F5 idle theatre (meteors pre-existed; zodiacal wedge + constellation egg shipped)
 
 ## Dependencies / risks
 - Touches the hero store contract (slots/pill) — F4 must not change its shape.

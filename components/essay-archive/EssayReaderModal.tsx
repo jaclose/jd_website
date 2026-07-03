@@ -31,9 +31,34 @@ export default function EssayReaderModal({
   const { artifact, sourceRect, closing } = state;
   const theme = essayThemes[artifact.theme];
   const dialogRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     dialogRef.current?.focus();
+  }, [artifact.id]);
+
+  // reading progress — a hairline across the top of the chamber that fills
+  // as the reader descends (scaleX only, so it stays on the compositor)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const max = el.scrollHeight - el.clientHeight;
+      const k = max > 0 ? Math.min(1, el.scrollTop / max) : 0;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${k})`;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [artifact.id]);
 
   return (
@@ -63,7 +88,11 @@ export default function EssayReaderModal({
         ) : null}
       </div>
 
-      <div className="ea-reader__scroll" data-lenis-prevent>
+      <div className="ea-reader__progress" aria-hidden>
+        <div ref={progressRef} className="ea-reader__progress-fill" />
+      </div>
+
+      <div ref={scrollRef} className="ea-reader__scroll" data-lenis-prevent>
         <header className="ea-reader__header">
           {artifact.image ? (
             /* eslint-disable-next-line @next/next/no-img-element */

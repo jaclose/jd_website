@@ -160,6 +160,50 @@
   perspective: 1400px;
 }
 
+/* collection filter rail — square chips, hairline discipline */
+.ea-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  width: min(1120px, 100%);
+  margin: 0 auto 2.1rem;
+}
+
+.ea-filter__chip {
+  padding: 0.52rem 0.85rem;
+  border: 1px solid rgba(232, 230, 225, 0.14);
+  background: rgba(7, 10, 17, 0.5);
+  color: rgba(232, 230, 225, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.ea-filter__chip span {
+  margin-left: 0.45rem;
+  color: rgba(212, 184, 134, 0.55);
+}
+
+.ea-filter__chip:hover {
+  border-color: color-mix(in srgb, var(--ea-accent, #d4b886) 55%, transparent);
+  color: #e8e6e1;
+}
+
+.ea-filter__chip[aria-pressed="true"] {
+  border-color: var(--ea-accent, #d4b886);
+  color: var(--ea-accent, #d4b886);
+  background: color-mix(in srgb, var(--ea-accent, #d4b886) 10%, rgba(7, 10, 17, 0.6));
+}
+
+.ea-filter__chip:focus-visible {
+  outline: 1px solid var(--ea-accent, #d4b886);
+  outline-offset: 3px;
+}
+
 .ea-shelf {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -772,6 +816,29 @@
 
 .ea-reader:focus {
   outline: none;
+}
+
+/* reading progress hairline across the top of the chamber */
+.ea-reader__progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 6;
+  background: rgba(232, 230, 225, 0.07);
+}
+
+.ea-reader__progress-fill {
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(
+    90deg,
+    var(--ea-accent),
+    color-mix(in srgb, var(--ea-accent) 55%, white)
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ea-accent) 55%, transparent);
 }
 
 .ea-reader__shade {

@@ -226,7 +226,12 @@ export default function SanctumCameraRig({
       const s = collidersReady() ? sampleGround(ft.x, ft.z) : null;
       gy = s ?? groundHeight(ft.x, ft.z);
     }
-    ft.y = gy;
+    // step-up: glide onto stair treads and ledges instead of teleporting —
+    // the feet chase the sampled ground quickly but never discontinuously.
+    // True zone warps (metres of difference) still snap so travel stays crisp.
+    const rise = gy - ft.y;
+    if (Math.abs(rise) > 2.5) ft.y = gy;
+    else ft.y += rise * (1 - Math.exp(-11 * d));
 
     // ── walk cycle: pace by ground distance travelled (excludes the bob itself) ──
     const px = prevX.current ?? ft.x;

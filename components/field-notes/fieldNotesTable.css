@@ -34,7 +34,9 @@
   pointer-events: none;
 }
 
-/* one warm lamp from the upper left, cast across desk and letters alike */
+/* one warm lamp from the upper left, cast across desk and letters alike —
+   it breathes like a real flame: an uneven, slow candle flicker (opacity
+   only, so it stays on the compositor) */
 .field-notes-room__lamp {
   position: absolute;
   inset: 0;
@@ -44,6 +46,35 @@
     radial-gradient(80% 60% at 34% 34%, rgba(255, 178, 102, 0.09), transparent 70%);
   mix-blend-mode: screen;
   pointer-events: none;
+  animation: field-note-lamp 7.3s ease-in-out infinite;
+}
+
+@keyframes field-note-lamp {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  11% {
+    opacity: 0.93;
+  }
+  23% {
+    opacity: 1;
+  }
+  34% {
+    opacity: 0.88;
+  }
+  41% {
+    opacity: 0.97;
+  }
+  58% {
+    opacity: 0.91;
+  }
+  73% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 0.94;
+  }
 }
 
 /* dust drifting through the lamplight, above everything on the desk */
@@ -1056,6 +1087,10 @@
   .field-notes-room__dust span {
     animation: none;
     opacity: 0;
+  }
+
+  .field-notes-room__lamp {
+    animation: none;
   }
 
   .field-note-letter-object {
