@@ -8,6 +8,46 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-07-02g — Key-lit system + comet double tail + brass card frames
+
+- 2026-07-02 — [hero] **The sun owns the light** (spec 12 · F2): ambient/hemi
+  fill cut to starlight levels so every world carries a real crescent and
+  terminator; shared `hero/materials.ts` patch adds wrap-light terminator
+  softening and sun-tracked shading via live `sunWorld`/`sceneLife` uniforms;
+  DockFill carries the pill so docked planets stay evenly lit (sun point light
+  now nearly out when docked — it was blowing out the docked gas giant).
+- 2026-07-02 — [hero] **Planet moments**: deployments world grows night-side
+  settlement lights in its own accent; the garden world gets an independently
+  rotating cloud deck + soft ocean sheen; the gas giant gets breathing aurora
+  ovals at both poles and rings that brighten sunward and fall into the
+  planet's shadow behind.
+- 2026-07-02 — [hero] **Atmospheres stopped drawing circles**: the fresnel
+  shell now feathers to nothing at the outer silhouette and follows the sun
+  (bright day limb, faint in shadow) instead of ringing night sides.
+- 2026-07-02 — [hero] **Comet rebuilt** (spec 12 · F2 living detail): the two
+  static cones are gone — a narrow blue ion ribbon streams anti-sunward with
+  slow magnetotail kinks, a wide warm dust ribbon curves back along the orbit,
+  loose grains drift down it, and the whole display breathes with solar
+  distance (sungrazer bright at perihelion). Nucleus shrunk + dimmed so the
+  head reads as a coma, not a boulder; tails swing part-way off the camera
+  axis so they never foreshorten into nothing.
+- 2026-07-02 — [hero] **Leading orbit arcs** (spec 12 · F3): the per-body trail
+  now glows ahead of the body along the path it's about to travel and fades in
+  a short wake behind — motion with a heading, not a smear.
+- 2026-07-02 — [essays] **Holo border refit**: the always-spinning rainbow
+  conic foil replaced by a machined dark-brass frame (corner glints, whisper
+  of spectral cast, etched gold keyline around the plate) with an oil-slick
+  sheen that only wakes under the pointer via the tilt's glare variables;
+  sparkles nearly still at rest and wake on handling; hover adds a faint
+  collection-accent halo. Kills the perpetual hue-rotate filter animation.
+- 2026-07-02 — [dx] **Problems pane zeroed**: Edge-Tools webhint disabled for
+  the workspace (its keyframe-compositing hints flag exactly the properties
+  CSS animation should use), Tailwind v4 at-rules whitelisted for the CSS
+  validator, `outputFileTracingRoot` pinned (stray home-dir lockfile made Next
+  guess the wrong workspace root), `.hintrc` added for webhint CLI parity.
+- 2026-07-02 — [dx] `window.__hero` debug handle + `scripts/tmp-hero-detail.mjs`
+  detail-crop driver (waits for the comet, crops per body, docked pill zoom).
+
 ### 2026-07-02f — Solar System Hero 2.0, first light (spec 12 partial)
 
 - 2026-07-02 — [hero] **Flame corona**: the flat corona sprite replaced by an

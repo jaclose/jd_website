@@ -14,6 +14,9 @@ function commitSha(): string {
 }
 
 const nextConfig: NextConfig = {
+  // a stray lockfile in the home directory makes Next guess the wrong
+  // workspace root — pin it so builds stop warning and trace correctly
+  outputFileTracingRoot: __dirname,
   // build identity, surfaced on /garden (always in dev, ?debug=1 in production)
   env: {
     NEXT_PUBLIC_COMMIT_SHA: commitSha(),

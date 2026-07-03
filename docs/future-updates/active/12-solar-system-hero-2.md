@@ -1,6 +1,6 @@
 # 12 — Solar System Hero 2.0 (the opening of the site)
 
-Status: 🔵 In progress (2026-07-02) · Pri: P1 · Effort: XL · Area: Homepage hero + nav — DONE: F1 flame corona (in-shader radial teeth, billboarded, dock-fades) + prominence arcs; F3a hover orbit focus (hovered path lights in its accent, others recede, damped); F5a zodiacal light wedge. Meteors + camera parallax + atmospheres pre-existed. NEXT: F2 terminator/night-lights, F3 leading arcs, F4 dock choreography, F5 constellation egg.
+Status: 🔵 In progress (2026-07-02) · Pri: P1 · Effort: XL · Area: Homepage hero + nav — DONE: F1 flame corona + prominences; F2 key-light pass (ambient cut to starlight, wrap-lit terminators via shared `hero/materials.ts`, deployments night-side settlement lights, garden cloud deck + ocean sheen, gas-giant aurora ovals + sun-scattering rings, sun-lit feathered atmospheres) and the comet's real double tail (ion ribbon w/ kinks, curved dust ribbon, drifting grains, perihelion breathing); F3 hover orbit focus + leading arcs (glow ahead, wake behind); F5a zodiacal wedge. Meteors + camera parallax pre-existed. NEXT: F4 dock choreography, F5 constellation egg.
 Tracks: "start wireframing a much better solar system into the nav bar
 experience — this is the opening of the page — make it fantastic." **No code
 changes yet — planning surface only.**
@@ -82,9 +82,10 @@ docking itself* — one continuous camera thought from cosmos → instrument.
   suite unchanged except intended visuals.
 
 ## To-do (frames)
-- [x] F1 flame corona + prominences (key light already present; wrap-lighting deferred)
-- [ ] F2 planet material patch (rim/terminator/glint/night lights)
-- [x] F3a hover focus (parallax pre-existed; leading arcs still open)
+- [x] F1 flame corona + prominences
+- [x] F2 planet material patch (key light, wrap terminators, night lights,
+      clouds, aurora, ring scattering, sun-lit atmospheres, comet double tail)
+- [x] F3 hover focus + leading arcs (parallax pre-existed)
 - [ ] F4 dock-as-state-change choreography
 - [~] F5 partial: meteors pre-existed, zodiacal wedge shipped; constellation egg open
 

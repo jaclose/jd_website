@@ -432,6 +432,45 @@ export function gardenTexture(vegetation: number, water: number): THREE.Texture 
   return toTexture(c);
 }
 
+/** wispy cloud deck for the garden world — white on transparency so the
+ *  sphere beneath shows through; every blob is drawn thrice (x, x±w) to
+ *  keep the seam invisible where the texture wraps */
+export function cloudTexture(): THREE.Texture {
+  const w = 1024,
+    h = 512;
+  const c = canvas(w, h);
+  const ctx = c.getContext("2d")!;
+  const rnd = mulberry32(2026);
+  const blob = (x: number, y: number, rx: number, ry: number, a: number) => {
+    for (const px of [x - w, x, x + w]) {
+      const g = ctx.createRadialGradient(px, y, 0, px, y, rx);
+      g.addColorStop(0, `rgba(255,255,255,${a})`);
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g;
+      ctx.save();
+      ctx.translate(px, y);
+      ctx.scale(1, ry / rx);
+      ctx.translate(-px, -y);
+      ctx.beginPath();
+      ctx.arc(px, y, rx, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+  // sheared streaks riding the trade winds, densest at mid-latitudes
+  for (let i = 0; i < 230; i++) {
+    const band = rnd();
+    const y = h * (0.1 + band * 0.8);
+    const midlat = 0.5 + 0.5 * Math.sin(band * Math.PI);
+    blob(rnd() * w, y, 30 + rnd() * 95, 5 + rnd() * 13, (0.05 + rnd() * 0.11) * midlat);
+  }
+  // brighter storm knots
+  for (let i = 0; i < 26; i++) {
+    blob(rnd() * w, h * (0.2 + rnd() * 0.6), 10 + rnd() * 24, 6 + rnd() * 12, 0.16 + rnd() * 0.16);
+  }
+  return toTexture(c);
+}
+
 /** cratered rocky world — slate plains, frost at the poles */
 export function rockyTexture(base: string, fleck: string, seed = 7): THREE.Texture {
   const w = 1024,

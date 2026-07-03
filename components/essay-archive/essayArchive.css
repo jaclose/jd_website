@@ -169,12 +169,14 @@
 }
 
 /* ————— the collector's artifact ————— */
-/* Premium-holo card anatomy in the archive's own language: foil ring, chip +
+/* Premium-holo card anatomy in the archive's own language: a machined brass
+   frame with an iridescent sheen that only wakes under the pointer, chip +
    name + reading metric header, sparkle-dusted artwork, thesis rail, twin
    foot plaques, rarity marks and the gold collection banner. Tilt + glare
    custom properties come from useCardTilt. */
 
 .ea-card {
+  --foil-sheen: 0.8;
   position: relative;
   display: block;
   width: 100%;
@@ -187,7 +189,7 @@
   border-radius: 18px;
   transform: perspective(1100px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
     translateY(var(--lift, 0px));
-  transition: transform 0.35s cubic-bezier(0.22, 0.9, 0.3, 1);
+  transition: transform 0.35s cubic-bezier(0.22, 0.9, 0.3, 1), box-shadow 0.35s ease;
   will-change: transform;
   box-shadow: 0 0 0 1px rgba(2, 4, 8, 0.85), 0 18px 50px rgba(0, 0, 0, 0.45);
 }
@@ -195,7 +197,10 @@
 .ea-card:hover,
 .ea-card:focus-visible {
   --lift: -6px;
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(2, 4, 8, 0.85),
+    0 30px 70px rgba(0, 0, 0, 0.55),
+    0 0 46px -14px color-mix(in srgb, var(--ea-accent) 42%, transparent);
 }
 
 .ea-card:focus-visible {
@@ -203,37 +208,63 @@
   outline-offset: 5px;
 }
 
-/* the holo foil ring — a slow-turning rainbow tinted by the collection */
+/* the frame — dark machined brass, corner glints, a whisper of spectral
+   cast at rest. No motion of its own: the foil answers the pointer. */
 .ea-card__foil {
   position: absolute;
   inset: 0;
   border-radius: 18px;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.09' numOctaves='2' seed='8'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23s)' opacity='0.35'/%3E%3C/svg%3E"),
+    radial-gradient(130px 130px at 0% 0%, rgba(232, 212, 159, 0.5), transparent 62%),
+    radial-gradient(110px 110px at 100% 0%, rgba(232, 212, 159, 0.36), transparent 62%),
+    radial-gradient(140px 140px at 100% 100%, rgba(232, 212, 159, 0.44), transparent 62%),
+    radial-gradient(110px 110px at 0% 100%, rgba(232, 212, 159, 0.3), transparent 62%),
     conic-gradient(
       from 210deg,
-      #b78ae0,
-      #7ea8e0 12%,
-      #7fd6c2 26%,
-      #b9e07f 40%,
-      #e8d47f 54%,
-      #e0967f 68%,
-      #d67fb2 82%,
-      #b78ae0 100%
+      rgba(158, 190, 222, 0.12),
+      rgba(216, 187, 132, 0.18) 25%,
+      rgba(140, 206, 186, 0.1) 50%,
+      rgba(196, 150, 178, 0.12) 75%,
+      rgba(158, 190, 222, 0.12)
+    ),
+    linear-gradient(
+      155deg,
+      #151109 0%,
+      #4c3d24 12%,
+      #191309 26%,
+      #6d5735 41%,
+      #1b150c 55%,
+      #594732 71%,
+      #141008 86%,
+      #40331f 100%
     );
-  background-blend-mode: overlay;
-  filter: saturate(0.6) brightness(0.86);
-  animation: ea-foil-turn 26s linear infinite;
+  background-blend-mode: overlay, screen, screen, screen, screen, overlay, normal;
   pointer-events: none;
 }
 
-@keyframes ea-foil-turn {
-  to {
-    filter: saturate(0.6) brightness(0.86) hue-rotate(360deg);
-  }
+/* the living foil: an oil-slick sheen that slides with the pointer and
+   fades in only while the card is being handled — light on metal, not
+   a rainbow on a loop */
+.ea-card__foil::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(
+    78% 60% at var(--glare-x, 50%) var(--glare-y, 42%),
+    rgba(232, 206, 150, 0.75) 0%,
+    rgba(163, 195, 226, 0.44) 26%,
+    rgba(140, 208, 188, 0.3) 44%,
+    rgba(202, 154, 182, 0.2) 62%,
+    transparent 80%
+  );
+  mix-blend-mode: screen;
+  opacity: calc(var(--glare-o, 0) * var(--foil-sheen, 0.8));
+  transition: opacity 0.45s ease;
 }
 
-/* collection tint sits over the rainbow so each shelf reads distinct */
+/* collection tint sits over the metal so each shelf reads distinct */
 .ea-card__foil::after {
   content: "";
   position: absolute;
@@ -256,6 +287,8 @@
   overflow: hidden;
   border: 1px solid rgba(232, 230, 225, 0.1);
   box-shadow:
+    0 0 0 1px rgba(16, 12, 6, 0.92),
+    0 0 0 2px rgba(226, 200, 150, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.09),
     inset 0 -1px 0 rgba(0, 0, 0, 0.6),
     inset 0 0 34px rgba(0, 0, 0, 0.4);
@@ -388,7 +421,7 @@
   background-position: 12% 18%, 78% 10%, 88% 62%, 30% 76%, 58% 38%;
   mix-blend-mode: screen;
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
-  opacity: 0.35;
+  opacity: 0.22;
   animation: ea-twinkle 3.8s ease-in-out infinite;
   pointer-events: none;
 }
@@ -399,14 +432,20 @@
   animation-delay: -1.9s;
 }
 
+/* nearly still at rest; being handled wakes the dust */
 @keyframes ea-twinkle {
   0%,
   100% {
-    opacity: 0.12;
+    opacity: calc(var(--spark, 1) * 0.08);
   }
   50% {
-    opacity: 0.55;
+    opacity: calc(var(--spark, 1) * 0.4);
   }
+}
+
+.ea-card[data-standing]:hover,
+.ea-card[data-standing]:focus-visible {
+  --spark: 1.7;
 }
 
 /* works preserved without artwork: engraved title on paper + holo dots */
@@ -595,12 +634,13 @@
   flex: 1;
 }
 
-.ea-card[data-standing="archive-entry"] .ea-card__foil {
-  filter: saturate(0.3) brightness(0.78);
+.ea-card[data-standing="archive-entry"] {
+  --foil-sheen: 0.4;
+  --spark: 0.5;
 }
 
-.ea-card[data-standing="archive-entry"] .ea-card__sparkles {
-  opacity: 0.14;
+.ea-card[data-standing="archive-entry"] .ea-card__foil {
+  filter: saturate(0.75) brightness(0.84);
 }
 
 /* relic: full-bleed art behind head/rails, hotter foil */
@@ -608,8 +648,8 @@
   background: #0a0f19;
 }
 
-.ea-card[data-standing="relic"] .ea-card__foil {
-  filter: saturate(0.75) brightness(0.92);
+.ea-card[data-standing="relic"] {
+  --foil-sheen: 0.9;
 }
 
 .ea-card[data-standing="relic"] .ea-card__name {
@@ -625,12 +665,13 @@
   min-height: 300px;
 }
 
-.ea-card[data-standing="immersive"] .ea-card__foil {
-  filter: saturate(0.9) brightness(0.98);
+.ea-card[data-standing="immersive"] {
+  --foil-sheen: 1;
+  --spark: 1.35;
 }
 
-.ea-card[data-standing="immersive"] .ea-card__sparkles {
-  opacity: 0.5;
+.ea-card[data-standing="immersive"] .ea-card__foil {
+  filter: brightness(1.08);
 }
 
 @media (min-width: 900px) {

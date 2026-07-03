@@ -1,0 +1,11 @@
+{
+  // Tailwind v4 directives (@theme, @plugin, @custom-variant, @utility) are
+  // valid here — stop the built-in CSS validator flagging them as unknown
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  // Edge Tools webhint floods the Problems pane with keyframe-compositing
+  // hints for exactly the properties CSS animation is supposed to use
+  // (opacity/transform) and for inline custom properties the tilt/physics
+  // layers must set. tsc + next build are the real gates here.
+  "vscode-edge-devtools.webhint": false
+}

@@ -27,6 +27,15 @@ export const hero = {
   theta: new Map<string, number>(),
 };
 
+// debug handle for the headless screenshot drivers (scripts/*.mjs): lets a
+// script locate bodies on screen without touching React internals
+declare global {
+  interface Window {
+    __hero?: typeof hero;
+  }
+}
+if (typeof window !== "undefined") window.__hero = hero;
+
 const listeners = new Set<() => void>();
 function emit() {
   listeners.forEach((l) => l());

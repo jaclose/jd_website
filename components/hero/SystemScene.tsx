@@ -32,10 +32,18 @@ import {
   gasGiantTexture,
   ringTexture,
   gardenTexture,
+  cloudTexture,
   rockyTexture,
 } from "./textures";
 import { makeSunMaterial } from "./sunMaterial";
 import { makeCoronaMaterial } from "./coronaMaterial";
+import {
+  sunWorld,
+  sceneLife,
+  patchPlanetMaterial,
+  patchRingScatter,
+  type PlanetPatchOpts,
+} from "./materials";
 
 const DOCK_DIST = 13; // how far in front of the camera the pill plane sits
 
@@ -93,25 +101,37 @@ function worldPerPixel(cam: THREE.PerspectiveCamera, height: number, dist: numbe
 const atmoVert = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vView;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
   void main() {
     vNormal = normalize(normalMatrix * normal);
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     vView = normalize(-mv.xyz);
+    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
     gl_Position = projectionMatrix * mv;
   }
 `;
-// soft scatter shell — a single feathered Fresnel halo in the body's own
-// colour that fades smoothly to nothing. No white limb line (that read as
-// a hard border); the glow is densest at the limb and gone by the disc.
+// soft scatter shell, drawn on the shell's far hemisphere (the planet's own
+// depth carves out the disc, leaving an annulus of air). The view dot runs
+// 0 at the outer silhouette → ~-0.38 against the planet limb at scale 1.08,
+// so the glow is densest against the limb and feathers to nothing outward —
+// never a drawn circle. Sunlit: brightest along the day limb, faint in shadow.
 const atmoFrag = /* glsl */ `
   uniform vec3 uColor;
   uniform float uIntensity;
+  uniform vec3 uSunPos;
+  uniform float uLife;
   varying vec3 vNormal;
   varying vec3 vView;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
   void main() {
-    float ndv = max(dot(vNormal, vView), 0.0);
-    float halo = pow(1.0 - ndv, 3.2);   // feathered, no sharp edge
-    gl_FragColor = vec4(uColor, halo * uIntensity);
+    float depth = clamp(-dot(vNormal, vView) / 0.38, 0.0, 1.0);
+    float halo = depth * depth;
+    float day = dot(normalize(vWorldNormal), normalize(uSunPos - vWorldPos));
+    float lit = mix(1.0, 0.22 + 0.78 * smoothstep(-0.35, 0.55, day), uLife);
+    gl_FragColor = vec4(uColor, halo * uIntensity * lit);
   }
 `;
 
@@ -131,6 +151,8 @@ function Atmosphere({
       uniforms: {
         uColor: { value: new THREE.Color(color) },
         uIntensity: { value: intensity },
+        uSunPos: { value: sunWorld },
+        uLife: sceneLife,
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -144,7 +166,7 @@ function Atmosphere({
       intensity * (1 - smoothstep(hero.pS, 0.55, 1) * 0.75);
   });
   return (
-    <mesh material={material} scale={1.05}>
+    <mesh material={material} scale={1.08}>
       <sphereGeometry args={[radius, 32, 32]} />
     </mesh>
   );
@@ -158,6 +180,8 @@ function Choreographer() {
     const d = Math.min(dt, 0.05);
     hero.pS = damp(hero.pS, hero.p, 5.5, d);
     hero.intro = damp(hero.intro, state.clock.elapsedTime > 0.2 ? 1 : 0, 1.4, d);
+    // every patched material reads this: 1 in free flight, 0 in the pill
+    sceneLife.value = (1 - smoothstep(hero.pS, 0.45, 0.9)) * hero.intro;
 
     const calm = 1 - hero.pS;
     const px = reduced ? 0 : state.pointer.x * 1.5 * calm;
@@ -556,14 +580,17 @@ function OrbitLine({ body }: { body: CelestialBody }) {
   );
 }
 
-const TRAIL_N = 36;
+const TRAIL_N = 48;
+const TRAIL_BACK = 0.34; // radians of fading history behind the body
+const TRAIL_AHEAD = 0.85; // radians of glowing path ahead of it
 const GAS_GIANT_MOONS = [
   { orbitR: 2.5, radius: 0.16, color: "#cfc4b4" },
   { orbitR: 3.08, radius: 0.185, color: "#b9c2cf" },
   { orbitR: 4.18, radius: 0.21, color: "#cfb9a9" },
 ] as const;
 
-/** a fading arc behind the body along its orbit — reads as motion */
+/** a gradient arc along the orbit — bright over the path the body is about
+ *  to travel, a short fading wake behind it. Reads as motion with a heading. */
 function OrbitTrail({ body }: { body: CelestialBody }) {
   const line = useRef<THREE.Line>(null!);
   const { size } = useThree();
@@ -573,8 +600,12 @@ function OrbitTrail({ body }: { body: CelestialBody }) {
     const col = new Float32Array(TRAIL_N * 3);
     const c = new THREE.Color(body.accent);
     for (let i = 0; i < TRAIL_N; i++) {
-      const k = 1 - i / (TRAIL_N - 1); // 1 at the body, 0 at the tail end
-      col.set([c.r * k * k, c.g * k * k, c.b * k * k], i * 3);
+      const o = -TRAIL_BACK + (i / (TRAIL_N - 1)) * (TRAIL_BACK + TRAIL_AHEAD);
+      const k =
+        o < 0
+          ? Math.pow(1 + o / TRAIL_BACK, 2) * 0.45 // the wake
+          : Math.pow(1 - o / TRAIL_AHEAD, 1.6); // the road ahead
+      col.set([c.r * k, c.g * k, c.b * k], i * 3);
     }
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
     const m = new THREE.LineBasicMaterial({
@@ -598,10 +629,10 @@ function OrbitTrail({ body }: { body: CelestialBody }) {
       return;
     }
     const scale = orbitScale(size.width / size.height);
-    const span = 0.55; // radians of arc behind the body
     const pos = obj.geometry.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < TRAIL_N; i++) {
-      orbitPoint(body, theta - (i / (TRAIL_N - 1)) * span, v);
+      const o = -TRAIL_BACK + (i / (TRAIL_N - 1)) * (TRAIL_BACK + TRAIL_AHEAD);
+      orbitPoint(body, theta + o, v);
       v.multiplyScalar(scale);
       pos.setXYZ(i, v.x, v.y, v.z);
     }
@@ -812,15 +843,44 @@ function GasGiant({ body, index, count }: BodyProps) {
   const moons = useRef<THREE.Group>(null!);
   const moonRefs = useRef<(THREE.Group | null)[]>([]);
   const moonSpeed = useRef(1);
+  const aurN = useRef<THREE.Mesh>(null!);
+  const aurS = useRef<THREE.Mesh>(null!);
   const update = useGenie(body, index, count);
   const { camera, size } = useThree();
   const map = useMemo(() => gasGiantTexture(body.color, body.accent), [body]);
   const rings = useMemo(() => ringTexture(body.accent), [body]);
+  const giantMat = useMemo(
+    () =>
+      patchPlanetMaterial(
+        new THREE.MeshStandardMaterial({ map, roughness: 0.74, metalness: 0 }),
+        { wrap: 0.2 }
+      ),
+    [map]
+  );
+  const ringMat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        map: rings,
+        color: "#e8d9bd",
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    [rings]
+  );
+  const ringUniforms = useMemo(() => patchRingScatter(ringMat), [ringMat]);
   const vWorld = useMemo(() => new THREE.Vector3(), []);
 
-  useFrame((_, dt) => {
-    update(group.current, dt);
+  useFrame((state, dt) => {
+    const { e } = update(group.current, dt);
     sphere.current.rotation.y += dt * 0.12;
+    ringUniforms.uPlanetPos.value.copy(group.current.position);
+    // aurora ovals breathe on the poles, gone once docked
+    const t = state.clock.elapsedTime;
+    const aur = (0.2 + (reduced ? 0 : 0.12 * Math.sin(t * 1.15))) * (1 - e) * hero.intro;
+    (aurN.current.material as THREE.MeshBasicMaterial).opacity = aur;
+    (aurS.current.material as THREE.MeshBasicMaterial).opacity = aur * 0.75;
     // a hovered moon freezes its orbit so it stays under the pointer
     const moonHover = hero.hovered?.startsWith(`${body.id}-moon`) ?? false;
     moonSpeed.current = damp(moonSpeed.current, moonHover ? 0.02 : 1, 7, dt);
@@ -844,22 +904,36 @@ function GasGiant({ body, index, count }: BodyProps) {
 
   return (
     <group ref={group}>
-      <mesh ref={sphere} rotation={[0.18, 0, -0.1]}>
+      <mesh ref={sphere} rotation={[0.18, 0, -0.1]} material={giantMat}>
         <sphereGeometry args={[body.size, 64, 64]} />
-        <meshStandardMaterial map={map} roughness={0.78} metalness={0} />
       </mesh>
       <Atmosphere radius={body.size} color={body.accent} intensity={0.5} />
-      {/* the ring system */}
-      <mesh rotation={[Math.PI / 2 - 0.32, 0.05, 0]}>
+      {/* aurora ovals hugging the magnetic poles */}
+      <group rotation={[0.18, 0, -0.1]}>
+        <mesh ref={aurN} position={[0, body.size * 0.74, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[body.size * 0.52, 0.024, 6, 40]} />
+          <meshBasicMaterial
+            color={body.accent}
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+        <mesh ref={aurS} position={[0, -body.size * 0.74, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[body.size * 0.52, 0.02, 6, 40]} />
+          <meshBasicMaterial
+            color={body.accent}
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      </group>
+      {/* the ring system — brighter on the sunward arc, shadowed behind */}
+      <mesh rotation={[Math.PI / 2 - 0.32, 0.05, 0]} material={ringMat}>
         <ringGeometry args={[body.size * 1.3, body.size * 2.3, 128]} />
-        <meshBasicMaterial
-          map={rings}
-          color="#e8d9bd"
-          transparent
-          opacity={0.85}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
       </mesh>
       {/* three moons — the three most recent essays, each clickable */}
       <group ref={moons} rotation={[0.2, 0, 0]}>
@@ -903,10 +977,28 @@ function TexturedPlanet({
   count,
   map,
   atmosphere,
-}: BodyProps & { map: THREE.Texture; atmosphere?: { color: string; intensity: number } }) {
+  roughness = 0.92,
+  patch,
+  children,
+}: BodyProps & {
+  map: THREE.Texture;
+  atmosphere?: { color: string; intensity: number };
+  roughness?: number;
+  patch?: PlanetPatchOpts;
+  children?: React.ReactNode;
+}) {
   const group = useRef<THREE.Group>(null!);
   const sphere = useRef<THREE.Mesh>(null!);
   const update = useGenie(body, index, count);
+  const material = useMemo(
+    () =>
+      patchPlanetMaterial(
+        new THREE.MeshStandardMaterial({ map, roughness, metalness: 0 }),
+        patch
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [map, roughness]
+  );
 
   useFrame((_, dt) => {
     update(group.current, dt);
@@ -915,9 +1007,8 @@ function TexturedPlanet({
 
   return (
     <group ref={group}>
-      <mesh ref={sphere} rotation={[0.1, 0, 0.08]}>
+      <mesh ref={sphere} rotation={[0.1, 0, 0.08]} material={material}>
         <sphereGeometry args={[body.size, 48, 48]} />
-        <meshStandardMaterial map={map} roughness={0.92} metalness={0} />
       </mesh>
       {atmosphere && (
         <Atmosphere
@@ -926,8 +1017,38 @@ function TexturedPlanet({
           intensity={atmosphere.intensity}
         />
       )}
+      {children}
       <HitSphere body={body} factor={2.4} />
     </group>
+  );
+}
+
+/** the garden world's independently rotating cloud deck — its living detail */
+function CloudLayer({ radius }: { radius: number }) {
+  const mesh = useRef<THREE.Mesh>(null!);
+  const material = useMemo(
+    () =>
+      patchPlanetMaterial(
+        new THREE.MeshStandardMaterial({
+          map: cloudTexture(),
+          transparent: true,
+          roughness: 1,
+          metalness: 0,
+          depthWrite: false,
+          opacity: 0.9,
+        }),
+        { wrap: 0.24 }
+      ),
+    []
+  );
+  useFrame((_, dt) => {
+    mesh.current.rotation.y += dt * (reduced ? 0.012 : 0.05);
+    material.opacity = 0.9 - smoothstep(hero.pS, 0.5, 1) * 0.5;
+  });
+  return (
+    <mesh ref={mesh} rotation={[0.1, 1.7, 0.08]} material={material}>
+      <sphereGeometry args={[radius * 1.018, 48, 48]} />
+    </mesh>
   );
 }
 
@@ -942,8 +1063,11 @@ function GardenPlanet(props: BodyProps) {
     <TexturedPlanet
       {...props}
       map={map}
-      atmosphere={{ color: atmoColor, intensity: 0.4 }}
-    />
+      roughness={0.62} // seas and humid air catch a soft specular glint
+      atmosphere={{ color: atmoColor, intensity: 0.5 }}
+    >
+      <CloudLayer radius={props.body.size} />
+    </TexturedPlanet>
   );
 }
 
@@ -952,11 +1076,20 @@ function RockyPlanet(props: BodyProps) {
     () => rockyTexture(props.body.color, props.body.accent, 17),
     [props.body]
   );
+  // the deployments world carries settlements — its night side glows
+  const patch = useMemo<PlanetPatchOpts>(
+    () =>
+      props.body.id === "deployments"
+        ? { nightLights: 1.1, nightColor: props.body.accent }
+        : {},
+    [props.body]
+  );
   return (
     <TexturedPlanet
       {...props}
       map={map}
-      atmosphere={{ color: props.body.accent, intensity: 0.22 }}
+      patch={patch}
+      atmosphere={{ color: props.body.accent, intensity: 0.3 }}
     />
   );
 }
@@ -1056,103 +1189,232 @@ function nucleusGeometry(size: number): THREE.BufferGeometry {
   return g;
 }
 
-/** a smooth tapered tail cone — wide glowing base at the nucleus, feathered
- *  to a point downstream. Oriented each frame to a world-space direction. */
-function makeTailGeometry(): THREE.BufferGeometry {
-  const g = new THREE.ConeGeometry(1, 1, 20, 1, true);
-  // ConeGeometry: apex at +y/2, base ring at -y/2. Re-base so the wide
-  // mouth sits at the origin (the nucleus) and the point runs to +y.
-  g.rotateX(Math.PI); // flip: wide end now toward +y
-  g.translate(0, 0.5, 0); // base at y=0, apex at y=1
+/* ————— the comet: nucleus, coma, and a real double tail ————— */
+
+const TAIL_SEGS = 26;
+const DUST_GRAINS = 46;
+
+/** a camera-facing ribbon strip: two vertices per segment, UV.v running
+ *  head(0) → tip(1) so beamTexture fades it along its length. Positions are
+ *  rebuilt every frame from a curve. */
+function makeRibbonGeometry(segs: number): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array((segs + 1) * 2 * 3);
+  const uv = new Float32Array((segs + 1) * 2 * 2);
+  const idx: number[] = [];
+  for (let i = 0; i <= segs; i++) {
+    const v = i / segs;
+    uv.set([0, v], i * 4);
+    uv.set([1, v], i * 4 + 2);
+    if (i < segs) {
+      const a = i * 2;
+      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx);
   return g;
 }
 
+/**
+ * C/2025 JD. The ion tail is a narrow blue ribbon streaming dead anti-sunward
+ * with slow magnetotail kinks; the dust tail is a wide warm ribbon that curves
+ * back along the orbit; loose grains drift down it. The whole display breathes
+ * with solar distance — brightest and longest near perihelion — and folds away
+ * as the comet docks.
+ */
 function Comet({ body, index, count }: BodyProps) {
   const group = useRef<THREE.Group>(null!);
   const nucleus = useRef<THREE.Mesh>(null!);
   const ice = useRef<THREE.Sprite>(null!);
   const coma = useRef<THREE.Sprite>(null!);
-  const ion = useRef<THREE.Mesh>(null!);
-  const dust = useRef<THREE.Mesh>(null!);
+  const ionMesh = useRef<THREE.Mesh>(null!);
+  const dustMesh = useRef<THREE.Mesh>(null!);
+  const grains = useRef<THREE.Points>(null!);
   const update = useGenie(body, index, count);
+  const { camera, size } = useThree();
   const glow = useMemo(() => glowTexture(), []);
   const beam = useMemo(() => beamTexture(), []);
+  const star = useMemo(() => starTexture(), []);
   const rockGeom = useMemo(() => nucleusGeometry(body.size), [body.size]);
-  const tailGeom = useMemo(() => makeTailGeometry(), []);
+  const ionGeom = useMemo(() => makeRibbonGeometry(TAIL_SEGS), []);
+  const dustGeom = useMemo(() => makeRibbonGeometry(TAIL_SEGS), []);
+  const grainData = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(DUST_GRAINS * 3), 3)
+    );
+    g.setAttribute(
+      "color",
+      new THREE.BufferAttribute(new Float32Array(DUST_GRAINS * 3), 3)
+    );
+    const seed = Array.from({ length: DUST_GRAINS }, () => ({
+      speed: 0.05 + Math.random() * 0.1,
+      phase: Math.random(),
+      j1: Math.random() - 0.5,
+      j2: Math.random() - 0.5,
+      tint: 0.4 + Math.random() * 0.6,
+    }));
+    return { g, seed };
+  }, []);
 
-  const wDir = useMemo(() => new THREE.Vector3(), []);
-  const lDir = useMemo(() => new THREE.Vector3(), []);
+  const antiSun = useMemo(() => new THREE.Vector3(), []);
   const tangent = useMemo(() => new THREE.Vector3(), []);
-  const dustDir = useMemo(() => new THREE.Vector3(), []);
-  const vT = useMemo(() => new THREE.Vector3(), []);
+  const n1 = useMemo(() => new THREE.Vector3(), []);
+  const n2 = useMemo(() => new THREE.Vector3(), []);
+  const vA = useMemo(() => new THREE.Vector3(), []);
+  const vB = useMemo(() => new THREE.Vector3(), []);
+  const P = useMemo(() => new THREE.Vector3(), []);
+  const Pn = useMemo(() => new THREE.Vector3(), []);
+  const W = useMemo(() => new THREE.Vector3(), []);
+  const camLocal = useMemo(() => new THREE.Vector3(), []);
   const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const q = useMemo(() => new THREE.Quaternion(), []);
 
-  // orient + scale a tail to point along a world direction, given length/width
-  const aim = (
-    mesh: THREE.Mesh,
-    worldDir: THREE.Vector3,
-    len: number,
-    width: number,
-    op: number
-  ) => {
-    // the group only translates/scales (no rotation), so world dir == local dir
-    lDir.copy(worldDir);
-    q.setFromUnitVectors(up, lDir);
-    mesh.quaternion.copy(q);
-    mesh.scale.set(width, len, width);
-    (mesh.material as THREE.MeshBasicMaterial).opacity = op;
-  };
-
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     const { e, scale } = update(group.current, dt);
-    // ion tail streams straight anti-sunward; dust tail lags along the orbit
-    wDir.copy(group.current.position).normalize();
-    const theta = hero.theta.get(body.id) ?? body.phase;
-    orbitPoint(body, theta - 0.05, vT);
-    tangent.copy(group.current.position).sub(vT).normalize();
-    dustDir.copy(wDir).addScaledVector(tangent, -0.9).normalize();
-
+    const t = reduced ? 8 : state.clock.elapsedTime;
     const live = (1 - e) * hero.intro;
-    const len = (5.4 * (1 - e) + 0.5) / Math.max(scale, 0.0001);
-    aim(ion.current, wDir, len, body.size * 1.7, 0.5 * live);
-    aim(dust.current, dustDir, len * 0.62, body.size * 3.0, 0.22 * live);
+    const sOrbit = orbitScale(size.width / size.height);
+
+    // geometry of the moment: which way is away from the sun, which way
+    // is the orbit heading — both from real positions, not approximations
+    camLocal.copy(camera.position).sub(group.current.position).normalize();
+    antiSun.copy(group.current.position).sub(sunWorld);
+    if (antiSun.lengthSq() < 1e-6) antiSun.set(1, 0, 0);
+    antiSun.normalize();
+    // stage cheat: when the true anti-sun runs down the camera axis the tail
+    // foreshortens into the coma — swing it part-way off-axis so the comet
+    // always shows its plume without losing the away-from-the-sun sense
+    antiSun.addScaledVector(camLocal, -antiSun.dot(camLocal) * 0.55).normalize();
+    const theta = hero.theta.get(body.id) ?? body.phase;
+    orbitPoint(body, theta, vA).multiplyScalar(sOrbit);
+    orbitPoint(body, theta - 0.06, vB).multiplyScalar(sOrbit);
+    tangent.copy(vA).sub(vB).normalize();
+    n1.crossVectors(antiSun, up);
+    if (n1.lengthSq() < 1e-6) n1.set(0, 0, 1);
+    n1.normalize();
+    n2.crossVectors(antiSun, n1);
+
+    // activity: a sungrazer wakes up near perihelion, sleeps out far
+    const rSun = group.current.position.distanceTo(sunWorld);
+    const act = THREE.MathUtils.clamp(1.9 - rSun / (body.orbit * sOrbit), 0.7, 1.35);
+    const L = ((7.2 * (1 - e) + 0.4) * act) / Math.max(scale, 0.0001);
+    const sz = body.size;
+
+    // curve definitions in group-local space (the group never rotates)
+    const ionCurve = (s: number, out: THREE.Vector3) =>
+      out
+        .copy(antiSun)
+        .multiplyScalar(s * L)
+        .addScaledVector(n1, Math.sin(s * 6.5 - t * 2.4) * L * 0.045 * s)
+        .addScaledVector(n2, Math.sin(s * 3.7 - t * 1.6 + 1.7) * L * 0.03 * s);
+    const dustCurve = (s: number, out: THREE.Vector3) =>
+      out
+        .copy(antiSun)
+        .multiplyScalar(s * L * 0.8)
+        .addScaledVector(tangent, -(s * s) * L * 0.5)
+        .addScaledVector(n1, Math.sin(s * 2.2 + t * 0.35) * L * 0.02 * s);
+
+    const fillRibbon = (
+      geom: THREE.BufferGeometry,
+      curve: (s: number, out: THREE.Vector3) => THREE.Vector3,
+      widthOf: (s: number) => number
+    ) => {
+      const pos = geom.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i <= TAIL_SEGS; i++) {
+        const s = i / TAIL_SEGS;
+        curve(s, P);
+        if (i < TAIL_SEGS) {
+          curve(s + 0.04, Pn).sub(P);
+        } else {
+          curve(s - 0.04, Pn);
+          Pn.subVectors(P, Pn);
+        }
+        W.crossVectors(Pn, camLocal);
+        if (W.lengthSq() < 1e-8) W.copy(n1);
+        W.normalize().multiplyScalar(widthOf(s));
+        pos.setXYZ(i * 2, P.x - W.x, P.y - W.y, P.z - W.z);
+        pos.setXYZ(i * 2 + 1, P.x + W.x, P.y + W.y, P.z + W.z);
+      }
+      pos.needsUpdate = true;
+    };
+
+    fillRibbon(ionGeom, ionCurve, (s) => sz * (0.5 + 2.1 * s));
+    fillRibbon(dustGeom, dustCurve, (s) => sz * (0.9 + 3.8 * s));
+    (ionMesh.current.material as THREE.MeshBasicMaterial).opacity =
+      Math.min(1, 0.8 * act) * live;
+    (dustMesh.current.material as THREE.MeshBasicMaterial).opacity =
+      Math.min(1, 0.5 * act) * live;
+
+    // grains ride the dust curve outward, scattering wider as they go
+    const gp = grainData.g.attributes.position as THREE.BufferAttribute;
+    const gc = grainData.g.attributes.color as THREE.BufferAttribute;
+    for (let i = 0; i < DUST_GRAINS; i++) {
+      const sd = grainData.seed[i];
+      const s = (sd.phase + t * sd.speed) % 1;
+      dustCurve(s, P)
+        .addScaledVector(n1, sd.j1 * sz * (0.5 + 3.0 * s))
+        .addScaledVector(n2, sd.j2 * sz * (0.4 + 2.2 * s));
+      gp.setXYZ(i, P.x, P.y, P.z);
+      const fade = (1 - s) * sd.tint;
+      gc.setXYZ(i, fade, fade * 0.93, fade * 0.8);
+    }
+    gp.needsUpdate = true;
+    gc.needsUpdate = true;
+    (grains.current.material as THREE.PointsMaterial).opacity = 0.85 * live * act;
 
     nucleus.current.rotation.x += dt * 0.4;
     nucleus.current.rotation.y += dt * 0.23;
-    const comaP = 0.65 * (1 - e * 0.9) * hero.intro;
+    // coma: bright ice core wrapping the nucleus, wide envelope anti-sunward
+    const comaP = (0.55 + 0.35 * act) * (1 - e * 0.9) * hero.intro;
     (ice.current.material as THREE.SpriteMaterial).opacity = comaP;
-    ice.current.scale.setScalar(body.size * 3.4 * (1 - e * 0.5));
-    (coma.current.material as THREE.SpriteMaterial).opacity = 0.22 * (1 - e) * hero.intro;
-    coma.current.scale.setScalar(body.size * 8 * (1 - e * 0.5));
+    ice.current.scale.setScalar(sz * 3.0 * (1 - e * 0.5) * (0.75 + 0.35 * act));
+    coma.current.position.copy(antiSun).multiplyScalar(sz * 1.1 * (1 - e));
+    (coma.current.material as THREE.SpriteMaterial).opacity =
+      0.24 * act * (1 - e) * hero.intro;
+    coma.current.scale.setScalar(sz * 8 * (1 - e * 0.5));
   });
 
   return (
     <group ref={group}>
-      {/* icy nucleus */}
-      <mesh ref={nucleus} geometry={rockGeom}>
+      {/* icy nucleus — small and half-lost in its own coma, as it should be */}
+      <mesh ref={nucleus} geometry={rockGeom} scale={0.55}>
         <meshStandardMaterial
-          color="#aebfcb"
+          color="#9fb2c2"
           emissive={body.accent}
-          emissiveIntensity={0.35}
-          roughness={0.78}
+          emissiveIntensity={0.32}
+          roughness={0.85}
           metalness={0.05}
         />
       </mesh>
-      {/* bright inner coma + soft outer coma */}
+      {/* bright inner coma + soft outer envelope */}
       <sprite ref={ice}>
         <spriteMaterial map={glow} color="#eaf6fb" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
       <sprite ref={coma}>
         <spriteMaterial map={glow} color={body.accent} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
-      {/* smooth tapered tails — ion (blue-white) + dust (warm, wider) */}
-      <mesh ref={dust} geometry={tailGeom}>
+      {/* the double tail — warm curved dust beneath, blue ion over it */}
+      <mesh ref={dustMesh} geometry={dustGeom} frustumCulled={false}>
         <meshBasicMaterial map={beam} color="#e8d3a6" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
       </mesh>
-      <mesh ref={ion} geometry={tailGeom}>
-        <meshBasicMaterial map={beam} color="#bfe0ff" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      <mesh ref={ionMesh} geometry={ionGeom} frustumCulled={false}>
+        <meshBasicMaterial map={beam} color="#a9d6ff" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
       </mesh>
+      <points ref={grains} geometry={grainData.g} frustumCulled={false}>
+        <pointsMaterial
+          map={star}
+          size={body.size * 0.42}
+          sizeAttenuation
+          vertexColors
+          transparent
+          opacity={0}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
       <HitSphere body={body} factor={4} />
     </group>
   );
@@ -1226,7 +1488,7 @@ function Pulsar({ body, index, count }: BodyProps) {
     const t = state.clock.elapsedTime;
     // sharp lighthouse pulse — a brief flash twice per rotation
     const flash = Math.pow(Math.max(0, Math.sin(t * 2.4)), 8);
-    const dockDim = 1 - smoothstep(hero.pS, 0.5, 1) * 0.96; // jets gone in pill
+    const dockDim = 1 - smoothstep(hero.pS, 0.5, 1); // jets gone in pill
     spin.current.rotation.y += dt * (reduced ? 0.5 : 2.6);
     jetMats.current.forEach((m) => {
       if (m) m.opacity = (0.32 + flash * 0.6) * hero.intro * dockDim;
@@ -1411,6 +1673,7 @@ function Sun({ count }: { count: number }) {
   useFrame((state, dt) => {
     const { e } = update(group.current, dt);
     const t = state.clock.elapsedTime;
+    sunWorld.copy(group.current.position); // patched materials track the star
     sunMat.uniforms.uTime.value = t;
     surface.current.rotation.y += dt * 0.02;
     const breathe = reduced ? 1 : 1 + Math.sin(t * 0.8) * 0.04;
@@ -1435,7 +1698,8 @@ function Sun({ count }: { count: number }) {
     streak.current.scale.set(24 * (reduced ? 1 : 1 + Math.sin(t * 0.7) * 0.08), 1.2, 1);
     (streak.current.material as THREE.SpriteMaterial).opacity = 0.18 * (1 - e) * hero.intro;
     // the point light eases off as it docks so it stops blowing out neighbours
-    light.current.intensity = 420 * (1 - e * 0.62);
+    // (nearly out in the pill — DockFill carries the docked illumination)
+    light.current.intensity = 420 * (1 - e * 0.94);
   });
 
   return (
@@ -1494,7 +1758,7 @@ function Sun({ count }: { count: number }) {
 function DockFill() {
   const light = useRef<THREE.AmbientLight>(null!);
   useFrame(() => {
-    light.current.intensity = 0.9 * smoothstep(hero.pS, 0.55, 0.95);
+    light.current.intensity = 1.15 * smoothstep(hero.pS, 0.5, 0.95);
   });
   return <ambientLight ref={light} intensity={0} color="#d8e0f0" />;
 }
@@ -1519,8 +1783,10 @@ export default function SystemScene() {
         </EffectComposer>
       )}
       <Choreographer />
-      <ambientLight intensity={0.4} color="#aab4cc" />
-      <hemisphereLight intensity={0.22} color="#bcc8e0" groundColor="#1a1410" />
+      {/* starlight only — the sun's point light owns the scene, so worlds
+          carry real crescents and terminators instead of flat even fill */}
+      <ambientLight intensity={0.13} color="#aab4cc" />
+      <hemisphereLight intensity={0.08} color="#bcc8e0" groundColor="#1a1410" />
       <DockFill />
       <DeepSky />
       <ZodiacalLight />
