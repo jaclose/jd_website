@@ -90,6 +90,316 @@ body {
   }
 }
 
+/* ————— Signal Layer: motherboard uplink board ————— */
+.signal-board {
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 184, 134, 0.1), transparent 22%),
+    radial-gradient(circle at 76% 16%, rgba(159, 216, 232, 0.13), transparent 27%),
+    radial-gradient(circle at 22% 76%, rgba(252, 122, 31, 0.09), transparent 30%),
+    linear-gradient(180deg, rgba(13, 16, 23, 0.94), rgba(4, 6, 11, 0.98));
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255, 255, 255, 0.025) inset;
+}
+.signal-board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(232, 230, 225, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(232, 230, 225, 0.018) 1px, transparent 1px),
+    repeating-linear-gradient(90deg, transparent 0 36px, rgba(159, 216, 232, 0.035) 36px 37px, transparent 37px 74px);
+  background-size: 52px 52px, 52px 52px, auto;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 88%);
+  opacity: 0.78;
+}
+.signal-board::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: 7px;
+  background:
+    linear-gradient(90deg, rgba(212, 184, 134, 0.32), transparent 18%, transparent 82%, rgba(159, 216, 232, 0.22)),
+    linear-gradient(180deg, rgba(232, 230, 225, 0.08), transparent 18%, transparent 82%, rgba(232, 230, 225, 0.04));
+  opacity: 0.38;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+}
+.signal-board--archive {
+  background:
+    linear-gradient(135deg, rgba(212, 184, 134, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(12, 11, 10, 0.98), rgba(4, 4, 5, 0.98));
+}
+.signal-board--clinical {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(159, 216, 232, 0.18), transparent 32%),
+    linear-gradient(180deg, rgba(8, 15, 18, 0.98), rgba(3, 8, 10, 0.98));
+}
+.signal-board--celestial {
+  background:
+    radial-gradient(circle at 72% 28%, rgba(159, 216, 232, 0.16), transparent 28%),
+    radial-gradient(circle at 24% 70%, rgba(212, 184, 134, 0.13), transparent 31%),
+    linear-gradient(180deg, rgba(6, 8, 18, 0.98), rgba(2, 3, 8, 0.99));
+}
+.signal-board--terminal {
+  background:
+    linear-gradient(180deg, rgba(4, 13, 9, 0.98), rgba(2, 5, 4, 0.99));
+}
+.signal-board--minimal {
+  background:
+    linear-gradient(180deg, rgba(10, 12, 16, 0.98), rgba(4, 5, 7, 0.99));
+}
+.signal-chip,
+.signal-social-node {
+  border: 1px solid rgba(232, 230, 225, 0.11);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--signal-accent) 12%, transparent), transparent 30%),
+    linear-gradient(180deg, rgba(12, 15, 21, 0.92), rgba(4, 6, 10, 0.94));
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
+}
+.signal-chip:hover,
+.signal-social-node:hover {
+  border-color: color-mix(in srgb, var(--signal-accent) 42%, rgba(232, 230, 225, 0.16));
+  box-shadow:
+    0 20px 58px rgba(0, 0, 0, 0.34),
+    0 0 34px color-mix(in srgb, var(--signal-accent) 13%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.025) inset;
+}
+.signal-chip--chip {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(232, 230, 225, 0.025) 18px 19px, transparent 19px 38px),
+    linear-gradient(135deg, color-mix(in srgb, var(--signal-accent) 13%, transparent), transparent 36%),
+    linear-gradient(180deg, rgba(13, 16, 22, 0.95), rgba(4, 6, 10, 0.96));
+}
+.signal-chip--waveform {
+  background:
+    radial-gradient(circle at 18% 50%, color-mix(in srgb, var(--signal-accent) 12%, transparent), transparent 34%),
+    linear-gradient(135deg, rgba(159, 216, 232, 0.06), transparent 45%),
+    linear-gradient(180deg, rgba(12, 16, 20, 0.94), rgba(3, 5, 8, 0.96));
+}
+.signal-chip--glass {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 30%),
+    linear-gradient(180deg, rgba(16, 20, 28, 0.68), rgba(5, 7, 12, 0.76));
+  backdrop-filter: blur(12px);
+}
+.signal-chip--ledger {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 30px, rgba(232, 230, 225, 0.035) 30px 31px),
+    linear-gradient(180deg, rgba(14, 13, 12, 0.95), rgba(5, 5, 5, 0.98));
+}
+.signal-chip--orbital {
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--signal-accent) 15%, transparent), transparent 42%),
+    linear-gradient(180deg, rgba(9, 12, 22, 0.95), rgba(3, 4, 9, 0.98));
+}
+.signal-chip--console {
+  background:
+    linear-gradient(180deg, rgba(4, 13, 9, 0.94), rgba(2, 5, 4, 0.98));
+}
+.signal-chip--card {
+  background:
+    linear-gradient(180deg, rgba(15, 17, 20, 0.95), rgba(7, 8, 11, 0.98));
+}
+.signal-chip--active {
+  box-shadow:
+    0 22px 62px rgba(0, 0, 0, 0.38),
+    0 0 38px color-mix(in srgb, var(--signal-accent) 15%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.025) inset;
+}
+.signal-chip__corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--signal-accent) 50%, transparent);
+  opacity: 0.8;
+}
+.signal-chip__corner--tl {
+  top: 8px;
+  left: 8px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.signal-chip__corner--tr {
+  top: 8px;
+  right: 8px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+.signal-chip__corner--bl {
+  bottom: 8px;
+  left: 8px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+.signal-chip__corner--br {
+  right: 8px;
+  bottom: 8px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+.signal-stat {
+  display: block;
+  border: 1px solid rgba(232, 230, 225, 0.08);
+  background: rgba(232, 230, 225, 0.03);
+  padding: 0.68rem 0.72rem;
+}
+.signal-core-readout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+.signal-core-orbit {
+  display: grid;
+  width: 4.6rem;
+  height: 4.6rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--signal-accent) 42%, transparent);
+  border-radius: 999px;
+  color: var(--signal-accent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--signal-accent) 13%, transparent);
+}
+.signal-chip--active .signal-core-orbit {
+  animation: signal-soft-pulse 5.6s ease-in-out infinite;
+}
+.signal-route {
+  stroke-dasharray: 18 12;
+  animation: signal-route-flow 7s linear infinite;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--signal-accent) 38%, transparent));
+}
+.signal-album-frame {
+  aspect-ratio: 1;
+  width: 96px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--signal-accent) 36%, rgba(232, 230, 225, 0.08));
+  background: rgba(3, 4, 8, 0.72);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+}
+.signal-waveform {
+  display: flex;
+  height: 58px;
+  align-items: center;
+  gap: 0.38rem;
+  border-top: 1px solid rgba(232, 230, 225, 0.08);
+  padding-top: 1rem;
+}
+.signal-waveform span {
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--signal-accent), rgba(232, 230, 225, 0.08));
+  opacity: 0.52;
+  transform-origin: center;
+}
+.signal-waveform--active span {
+  animation: signal-wave 1.8s ease-in-out infinite;
+}
+.signal-social-node {
+  position: relative;
+  min-height: 112px;
+  padding: 1rem;
+}
+.signal-social-node:hover {
+  transform: translateY(-2px);
+}
+.signal-social-node__trace {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--signal-accent), transparent);
+  opacity: 0.22;
+  transform: scaleX(0.34);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.signal-social-node:hover .signal-social-node__trace {
+  opacity: 0.72;
+  transform: scaleX(1);
+}
+.signal-trace {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: 8 14;
+  opacity: 0.54;
+}
+.signal-board--animated .signal-trace {
+  animation: signal-trace-flow 8s linear infinite;
+}
+.signal-trace--gold {
+  stroke: rgba(212, 184, 134, 0.58);
+}
+.signal-trace--cyan {
+  stroke: rgba(159, 216, 232, 0.54);
+}
+.signal-trace--dim {
+  stroke: rgba(232, 230, 225, 0.18);
+}
+.signal-trace-node {
+  fill: rgba(3, 4, 8, 0.94);
+  stroke: rgba(159, 216, 232, 0.72);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 8px rgba(159, 216, 232, 0.32));
+}
+.signal-trace-node--gold {
+  stroke: rgba(212, 184, 134, 0.74);
+  filter: drop-shadow(0 0 8px rgba(212, 184, 134, 0.32));
+}
+.signal-mobile-rail {
+  position: absolute;
+  top: 10rem;
+  bottom: 4rem;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(159, 216, 232, 0.22), rgba(212, 184, 134, 0.2), transparent);
+}
+@keyframes signal-soft-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--signal-accent) 13%, transparent);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 42px color-mix(in srgb, var(--signal-accent) 24%, transparent);
+  }
+}
+@keyframes signal-route-flow {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+@keyframes signal-trace-flow {
+  to {
+    stroke-dashoffset: -88;
+  }
+}
+@keyframes signal-wave {
+  0%, 100% {
+    transform: scaleY(0.48);
+    opacity: 0.42;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.88;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal-chip--active .signal-core-orbit,
+  .signal-route,
+  .signal-board--animated .signal-trace,
+  .signal-waveform--active span {
+    animation: none;
+  }
+}
+
 /* ————— prose: migrated WordPress essays ————— */
 .prose-space {
   font-family: var(--font-serif);

@@ -13,6 +13,7 @@ interface StravaApiActivity {
   total_elevation_gain?: number;
   start_date?: string;
   average_speed?: number;
+  average_heartrate?: number;
   achievement_count?: number;
   kudos_count?: number;
 }
@@ -74,6 +75,7 @@ function toNativeActivity(activity: StravaApiActivity) {
     totalElevationGainMeters: Math.round(activity.total_elevation_gain ?? 0),
     startDate: activity.start_date ?? null,
     averageSpeedMetersPerSecond: activity.average_speed ?? null,
+    averageHeartRate: activity.average_heartrate ?? null,
     achievementCount: activity.achievement_count ?? 0,
     kudosCount: activity.kudos_count ?? 0,
   };

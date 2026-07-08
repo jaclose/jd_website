@@ -1,101 +1,103 @@
 /**
- * Live uplinks — the section of the site that phones home to the
- * services Jafar actually uses. GitHub is wired and public; Strava and
- * Spotify use embeddable widgets until their optional OAuth relays are set.
+ * Signal Layer configuration.
+ *
+ * Spotify and Strava are live API uplinks. Public social profiles are link-out
+ * nodes so the section stays focused instead of becoming a feed wall.
  */
-export interface Signal {
-  id: "github" | "strava" | "spotify";
+export type NativeSignalId = "strava" | "spotify";
+export type SocialNodeId = "github" | "linkedin" | "instagram";
+
+export type SignalTheme = "motherboard" | "archive" | "clinical" | "celestial" | "terminal" | "minimal";
+export type SignalFrame = "chip" | "glass" | "ledger" | "orbital" | "console" | "card" | "waveform";
+
+export interface NativeSignal {
+  id: NativeSignalId;
   label: string;
-  channel: string; // what it broadcasts
+  title: string;
+  nodeLabel: string;
+  channel: string;
   accent: string;
-  glyph: string;
-  live: boolean;
-  status?: "LIVE" | "LINKED" | "STANDBY";
-  /** shown until the uplink is live */
-  pending: string;
-  href?: string;
-  endpoint?: `/api/signals/${"strava" | "spotify"}`;
-  embeds?: {
-    title: string;
-    src: string;
-    height: number;
-    allow?: string;
-    note?: string;
-  }[];
+  endpoint: `/api/signals/${NativeSignalId}`;
+}
+
+export interface SocialNode {
+  id: SocialNodeId;
+  label: string;
+  nodeLabel: string;
+  href: string;
+  type: "build" | "professional" | "visual";
+  accent: string;
+  handle: string;
+}
+
+export interface SignalDesign {
+  theme: SignalTheme;
+  stravaFrame: SignalFrame;
+  spotifyFrame: SignalFrame;
+  socialFrame: SignalFrame;
+  showSocialNodes: boolean;
+  animationLevel: "none" | "subtle" | "active";
 }
 
 export const GITHUB_USER = "jaclose";
 export const GITHUB_REPO = "jd_website";
 
-export const signals: Signal[] = [
-  {
-    id: "github",
-    label: "GitHub",
-    channel: "commits to this universe",
-    accent: "#e8e6e1",
-    glyph: "⌥",
-    live: true,
-    status: "LIVE",
-    pending: "",
-    href: `https://github.com/${GITHUB_USER}`,
-  },
+export const nativeSignals: NativeSignal[] = [
   {
     id: "strava",
     label: "Strava",
-    channel: "the miles under the study",
-    accent: "#fc5200",
-    glyph: "▲",
-    live: false,
-    status: "LINKED",
-    pending: "PUBLIC WIDGET · NATIVE API OPTIONAL",
+    title: "Physical Core",
+    nodeLabel: "BODY SIGNAL",
+    channel: "recent training telemetry",
+    accent: "#fc7a1f",
     endpoint: "/api/signals/strava",
-    embeds: [
-      {
-        title: "Jafar's Strava activity summary",
-        src: "https://www.strava.com/athletes/86740264/activity-summary/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
-        height: 160,
-      },
-      {
-        title: "Jafar's latest Strava rides",
-        src: "https://www.strava.com/athletes/86740264/latest-rides/562f0d8d70db1930e3b1fc8e5bcec6e3549c0da9",
-        height: 454,
-      },
-    ],
   },
   {
     id: "spotify",
     label: "Spotify",
-    channel: "what plays while the work happens",
-    accent: "#1db954",
-    glyph: "♪",
-    live: false,
-    status: "LINKED",
-    pending: "PLAYER WIDGET · NATIVE API OPTIONAL",
+    title: "Current Frequency",
+    nodeLabel: "AUDIO SIGNAL",
+    channel: "now playing / recent track",
+    accent: "#67e8a5",
     endpoint: "/api/signals/spotify",
-    embeds: [
-      {
-        title: "Spotify track player",
-        src: "https://open.spotify.com/embed/track/0Lc3coQTcMMJiiEFi7BG2z?utm_source=generator",
-        height: 152,
-        allow: "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",
-        note: "Currently-playing will switch on when the Spotify relay token is added.",
-      },
-    ],
   },
 ];
 
-/**
- * LinkedIn — the professional record. No anonymous embed (LinkedIn blocks
- * iframing and unauthenticated scraping), so this is a link-out antenna that
- * opens Jafar's profile.
- */
-export const linkedin = {
-  label: "LinkedIn",
-  channel: "the professional record — roles, history, connections",
-  accent: "#4aa3e0",
-  glyph: "in",
-  status: "LINK" as const,
-  note: "The full professional record — opens on LinkedIn.",
-  href: "https://www.linkedin.com/in/jafardabbagh/",
-  handle: "in/jafardabbagh",
+export const socialNodes: SocialNode[] = [
+  {
+    id: "github",
+    label: "GitHub",
+    nodeLabel: "Build Archive",
+    href: `https://github.com/${GITHUB_USER}`,
+    type: "build",
+    accent: "#e8e6e1",
+    handle: `@${GITHUB_USER}`,
+  },
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    nodeLabel: "Professional Signal",
+    href: "https://www.linkedin.com/in/jafardabbagh/",
+    type: "professional",
+    accent: "#72c7ff",
+    handle: "in/jafardabbagh",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    nodeLabel: "Visual Archive",
+    href: "https://www.instagram.com/jafardabbagh/",
+    type: "visual",
+    accent: "#f2a6c8",
+    handle: "@jafardabbagh",
+  },
+];
+
+export const signalDesign: SignalDesign = {
+  theme: "motherboard",
+  stravaFrame: "chip",
+  spotifyFrame: "waveform",
+  socialFrame: "chip",
+  showSocialNodes: true,
+  animationLevel: "subtle",
 };
