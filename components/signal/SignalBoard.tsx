@@ -136,6 +136,10 @@ function ChipFrame({
       )}
       style={signalStyle(accent)}
     >
+      <span aria-hidden className="signal-chip__pins signal-chip__pins--top" />
+      <span aria-hidden className="signal-chip__pins signal-chip__pins--right" />
+      <span aria-hidden className="signal-chip__pins signal-chip__pins--bottom" />
+      <span aria-hidden className="signal-chip__pins signal-chip__pins--left" />
       <span aria-hidden className="signal-chip__corner signal-chip__corner--tl" />
       <span aria-hidden className="signal-chip__corner signal-chip__corner--tr" />
       <span aria-hidden className="signal-chip__corner signal-chip__corner--bl" />
@@ -405,6 +409,33 @@ function SocialNodeChip({ node, frame }: { node: (typeof socialNodes)[number]; f
   );
 }
 
+function BoardHardware() {
+  const components = [
+    "signal-board-part--ic signal-board-part--tl",
+    "signal-board-part--ic signal-board-part--tr",
+    "signal-board-part--ic signal-board-part--br",
+    "signal-board-part--socket signal-board-part--left",
+    "signal-board-part--socket signal-board-part--right",
+    "signal-board-part--capacitors signal-board-part--mid",
+    "signal-board-part--vias signal-board-part--center",
+    "signal-board-part--vias signal-board-part--lower",
+  ];
+
+  return (
+    <div aria-hidden className="signal-board__hardware">
+      <span className="signal-board__edge signal-board__edge--top" />
+      <span className="signal-board__edge signal-board__edge--bottom" />
+      <span className="signal-board__screw signal-board__screw--tl" />
+      <span className="signal-board__screw signal-board__screw--tr" />
+      <span className="signal-board__screw signal-board__screw--bl" />
+      <span className="signal-board__screw signal-board__screw--br" />
+      {components.map((className) => (
+        <span key={className} className={cx("signal-board-part", className)} />
+      ))}
+    </div>
+  );
+}
+
 function CircuitTraces() {
   return (
     <svg aria-hidden className="pointer-events-none absolute inset-0 hidden h-full w-full lg:block" viewBox="0 0 1180 560">
@@ -442,6 +473,7 @@ export default function SignalBoard({ states, design = signalDesign }: SignalBoa
           design.animationLevel !== "none" && "signal-board--animated"
         )}
       >
+        <BoardHardware />
         <CircuitTraces />
         <div aria-hidden className="signal-mobile-rail lg:hidden" />
 
