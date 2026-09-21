@@ -1,6 +1,6 @@
 # 08 — Email list, fully built out
 
-Status: 🟡 Planned · Pri: P1 · Effort: M · Area: Email
+Status: 🔵 Partial (2026-09-21) · Pri: P1 · Effort: M · Area: Email — DONE: sending domain DNS (DKIM/SPF/DMARC) live on jafardabbagh.com; account runbook + `npm run signals:check` pre-flight (key scope, domain, segments) in docs/signals-setup.md; dispatch log baselined so the back catalogue is never emailed. REMAINING: Full-access key + two segments into Vercel (owner), welcome/double opt-in, Upstash rate limit, React Email templates.
 Tracks: "I also want the email list to be fully built out and suggestions on
 tools."
 

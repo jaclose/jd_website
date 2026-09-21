@@ -8,6 +8,45 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-09-21 — Live features: signals relays hardened, email list ready
+
+- 2026-09-21 — [signals] **Visitors no longer see setup detail**: unconfigured
+  or failing relays answered the public board with raw text and env names
+  (`STRAVA_CLIENT_ID`…). Relays now return a calm per-signal `offlineCopy`
+  (data/signals.ts) and log the real reason; env names only in `npm run dev`.
+  Client never renders network errors or HTML error pages as text.
+- 2026-09-21 — [signals] **Relay hardening**: access tokens reused across
+  requests (Strava ~6h, Spotify 1h); 60s failure backoff so an outage can't
+  burn quota; Strava edge cache 5→15 min (+1h stale) under its 1,000/day read
+  cap; Strava rotated refresh tokens persisted through optional Upstash Redis
+  (`lib/signals/tokenStore.ts`), with memory → store → env fallback; Spotify
+  `invalid_grant` (6-month authorization limit) logged with the fix.
+- 2026-09-21 — [signals] **Board fidelity**: "View on Strava" + "Listen on
+  Spotify" links (brand-guideline wording); hand-drawn brand marks replaced
+  with neutral pulse/record glyphs; Spotify panel lists the last three tracks;
+  full-width waveform; caption no longer collides with the bottom pin strip
+  and reads as plain attribution.
+- 2026-09-21 — [signals] **Setup helpers**: `npm run strava:token` (new),
+  `npm run spotify:token` (reworked) — both read/write `.env.local`, open the
+  browser, and accept `--code=<pasted URL>`; `npm run signals:check` verifies
+  Spotify, Strava, Resend (key scope, domain, segments) and Upstash without
+  printing secrets. Runbook: docs/signals-setup.md.
+- 2026-09-21 — [email] **Back catalogue protected**: the dispatch log was
+  empty, so adding the Resend secrets to GitHub would have emailed all 11
+  existing pieces at once on the next content push. New
+  `email:dispatch -- --baseline` records them without sending; log seeded.
+- 2026-09-21 — [sanctum] Restored `public/sanctum/textures/bark_color.webp`
+  (deleted locally, still referenced by the loader).
+
+### 2026-07-08 — Signal Board (motherboard uplink)
+
+- 2026-07-08 — [signals] **Signal Layer rebuilt as a PCB board**
+  (`components/signal/SignalBoard.tsx`, `data/signals.ts` design config):
+  Strava "Physical Core" chip + Spotify "Current Frequency" waveform chip +
+  GitHub / LinkedIn / Instagram link nodes on a motherboard plate with etched
+  traces, pins and screws; six theme / seven frame variants switchable from
+  data. (Logged retroactively.)
+
 ### 2026-07-03a — Spec 12 complete + archive UX + field-note fidelity
 
 - 2026-07-03 — [hero] **Dock choreography (spec 12 · F4)**: docking is now a

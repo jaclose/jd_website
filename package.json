@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "spotify:token": "node scripts/spotify-refresh-token.mjs",
+    "strava:token": "node scripts/strava-refresh-token.mjs",
+    "signals:check": "node scripts/check-signals.mjs",
     "email:dispatch": "tsx scripts/send-publication-broadcast.ts",
     "test:newsletter": "node --import tsx --test tests/newsletter.test.ts",
+    "test:signals": "node --import tsx --test tests/signals-relay.test.ts",
     "lint": "next lint"
   },
   "dependencies": {

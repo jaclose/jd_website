@@ -461,7 +461,9 @@ body {
   display: flex;
   height: 58px;
   align-items: center;
-  gap: 0.38rem;
+  justify-content: space-between;
+  gap: 0.25rem;
+  overflow: hidden; /* narrow screens clip the strip instead of widening the chip */
   border-top: 1px solid rgba(232, 230, 225, 0.08);
   padding-top: 1rem;
 }

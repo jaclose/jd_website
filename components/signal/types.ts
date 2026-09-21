@@ -6,7 +6,8 @@ export interface SetupSignalResponse {
   provider: NativeProvider;
   configured: false;
   message: string;
-  needs: string[];
+  /** missing env keys — only sent in local development */
+  needs?: string[];
   docs?: string;
   scopes?: string[];
   officialApiAvailable?: boolean;
@@ -24,6 +25,8 @@ export interface StravaActivity {
   averageHeartRate: number | null;
   achievementCount: number;
   kudosCount: number;
+  /** link back to the activity ("View on Strava") */
+  url?: string | null;
 }
 
 export interface StravaSignalResponse {
@@ -48,6 +51,8 @@ export interface SpotifyItem {
   imageUrl: string | null;
   durationMs: number | null;
   playedAt: string | null;
+  /** open.spotify.com link ("Listen on Spotify") */
+  url?: string | null;
 }
 
 export interface SpotifySignalResponse {

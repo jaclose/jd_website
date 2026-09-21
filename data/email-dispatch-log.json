@@ -1,3 +1,81 @@
 {
-  "dispatches": []
+  "dispatches": [
+    {
+      "contentType": "essay",
+      "slug": "the-cost-of-knowing-better",
+      "title": "The Cost of Knowing Better",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "anatomy-of-the-test",
+      "title": "Anatomy of the Test",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "the-anatomy-of-arrival",
+      "title": "The Anatomy of Arrival",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "threads-of-serendipity-veins-of-trial",
+      "title": "Threads of Serendipity, Veins of Trial",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "cinders-beneath-a-fading-night",
+      "title": "Cinders Beneath a Fading Night",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "the-echoes-of-the-body-and-the-whispers-of-the-weaver",
+      "title": "The Echoes of the Body and The Whispers of the Weaver",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "essay",
+      "slug": "hello-world",
+      "title": "The Space Between What Was and What’s Next",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "field_note",
+      "slug": "how-we-behave-when-it-matters-least",
+      "title": "How We Behave When It Matters Least",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "field_note",
+      "slug": "faith-without-forecasts",
+      "title": "Faith Without Forecasts",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "field_note",
+      "slug": "anatomy-of-value",
+      "title": "Anatomy of Value",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    },
+    {
+      "contentType": "deployment",
+      "slug": "noctyrium",
+      "title": "Noctyrium",
+      "createdAt": "2026-09-21T21:52:57.950Z",
+      "status": "baseline"
+    }
+  ]
 }

@@ -99,7 +99,7 @@ Legend — Effort: S(<½d) M(~1d) L(2-4d) XL(>1wk) · Pri: P0 blocking → P3 po
 | 05 | [Movement + walk feel](active/05-movement-and-walk-feel.md) | Sanctum | P1 | 🟢 core shipped |
 | 06 | [Adaptive soundscape](active/06-adaptive-soundscape.md) | Sanctum | P1 | 🟢 shipped |
 | 07 | [Performance / smoothness](active/07-performance-smoothness.md) | Sanctum | P1 | 🔵 partial |
-| 08 | [Email list buildout](active/08-email-list-buildout.md) | Email | P1 | 🟡 |
+| 08 | [Email list buildout](active/08-email-list-buildout.md) | Email | P1 | 🔵 partial |
 | 09 | [Site admin dashboard](active/09-site-admin-dashboard.md) | Infra | P2 | 🟡 |
 | 10 | [Walkable audio essays](active/10-walkable-audio-essays.md) | Sanctum+Essays | P2 | 🟡 wireframed |
 | 12 | [Solar System Hero 2.0](active/12-solar-system-hero-2.md) | Homepage | P1 | 🟡 wireframed |

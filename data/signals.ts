@@ -18,6 +18,8 @@ export interface NativeSignal {
   channel: string;
   accent: string;
   endpoint: `/api/signals/${NativeSignalId}`;
+  /** what visitors read when the relay is dark (unconfigured, expired, or upstream down) */
+  offlineCopy: string;
 }
 
 export interface SocialNode {
@@ -51,6 +53,7 @@ export const nativeSignals: NativeSignal[] = [
     channel: "recent training telemetry",
     accent: "#fc7a1f",
     endpoint: "/api/signals/strava",
+    offlineCopy: "The body signal is dark for now. The relay tries again on its next pass.",
   },
   {
     id: "spotify",
@@ -60,6 +63,7 @@ export const nativeSignals: NativeSignal[] = [
     channel: "now playing / recent track",
     accent: "#67e8a5",
     endpoint: "/api/signals/spotify",
+    offlineCopy: "No frequency on the wire right now. The relay tries again on its next pass.",
   },
 ];
 

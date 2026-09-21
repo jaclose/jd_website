@@ -8,6 +8,10 @@
  *   npm run email:dispatch -- --schedule=2026-06-19T14:00:00.000Z
  *   DRY_RUN_EMAILS=true npm run email:dispatch   # render only, no Resend calls
  *
+ *   # baseline: mark everything already published as dispatched WITHOUT
+ *   # emailing it, so the first automated run only sends future work:
+ *   npm run email:dispatch -- --baseline
+ *
  *   # test mode: email ONE address the most recent item (or --slug=…),
  *   # using the real template — no broadcast, no log entry:
  *   npm run email:dispatch -- --test-to=you@example.com
@@ -118,6 +122,18 @@ async function main() {
   const queue = allPublications().filter(
     (item) => !done.has(`${item.contentType}:${item.slug}`) && (!onlySlug || item.slug === onlySlug)
   );
+
+  // ── baseline: record the back catalogue as dispatched, send nothing ──
+  if (process.argv.includes("--baseline")) {
+    const at = new Date().toISOString();
+    for (const item of queue) {
+      log.dispatches.push({ contentType: item.contentType, slug: item.slug, title: item.title, createdAt: at, status: "baseline" });
+      console.log(`  · baseline ${item.contentType} "${item.title}"`);
+    }
+    saveLog(log);
+    console.log(`${queue.length} item(s) marked as already dispatched. Commit data/email-dispatch-log.json.`);
+    return;
+  }
 
   if (queue.length === 0) {
     console.log("Nothing new to dispatch — every published item already has a broadcast.");

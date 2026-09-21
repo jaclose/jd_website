@@ -7,6 +7,9 @@ import { createNativeStates, type NativeProvider, type NativeState, type SignalR
 import { nativeSignals, signalDesign } from "@/data/signals";
 import { unlockVisitor } from "@/lib/visitor";
 
+/** an error whose message is safe to show visitors (sanitized by the relay) */
+class RelayError extends Error {}
+
 export default function SignalsSection() {
   const section = useRef<HTMLElement>(null);
   const requested = useRef(false);
@@ -30,13 +33,14 @@ export default function SignalsSection() {
 
       fetch(signal.endpoint, { signal: ctrl.signal })
         .then(async (response) => {
-          const payload = (await response.json()) as SignalResponse | { message?: string };
-          if (!response.ok) {
+          // a platform error page (HTML) must never leak into the board as text
+          const payload = (await response.json().catch(() => null)) as SignalResponse | { message?: string } | null;
+          if (!response.ok || !payload) {
             const message =
-              typeof payload === "object" && payload && "message" in payload && payload.message
+              payload && typeof payload === "object" && "message" in payload && payload.message
                 ? String(payload.message)
-                : `${signal.label} API returned ${response.status}`;
-            throw new Error(message);
+                : signal.offlineCopy;
+            throw new RelayError(message);
           }
 
           setNativeStates((prev) => ({
@@ -51,7 +55,8 @@ export default function SignalsSection() {
             [signal.id]: {
               loading: false,
               data: null,
-              error: error instanceof Error ? error.message : `${signal.label} API request failed.`,
+              // network failures ("Failed to fetch") fall back to the calm offline copy
+              error: error instanceof RelayError && error.message ? error.message : signal.offlineCopy,
             },
           }));
         });

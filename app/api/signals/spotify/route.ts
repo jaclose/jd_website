@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
+import {
+  RefreshTokenRejected,
+  clearFailure,
+  errorResponse,
+  liveToken,
+  missingEnv,
+  recentFailure,
+  setupResponse,
+  type CachedToken,
+} from "@/lib/signals/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 interface SpotifyTokenResponse {
   access_token?: string;
+  /** seconds */
+  expires_in?: number;
+  error?: string;
   error_description?: string;
 }
 
@@ -22,6 +35,7 @@ interface SpotifyItem {
   name?: string;
   type?: string;
   duration_ms?: number;
+  external_urls?: { spotify?: string };
   album?: {
     name?: string;
     images?: SpotifyImage[];
@@ -52,57 +66,47 @@ interface SpotifyRecentResponse {
   }[];
 }
 
-const needs = ["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN"];
+const NEEDS = ["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN"];
 
-function missingEnv() {
-  return needs.filter((key) => !process.env[key]);
-}
-
-function setupResponse(missing: string[]) {
-  return NextResponse.json(
-    {
-      provider: "spotify",
-      configured: false,
-      message: "Spotify native listening needs OAuth credentials before this site can render now-playing or recent tracks.",
-      needs: missing,
-      scopes: ["user-read-currently-playing", "user-read-recently-played"],
-      docs: "https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens",
-    },
-    { headers: { "Cache-Control": "no-store" } }
-  );
-}
+/** access tokens live 1h; reuse them across requests on a warm instance */
+let accessToken: CachedToken | null = null;
 
 async function getAccessToken() {
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    refresh_token: process.env.SPOTIFY_REFRESH_TOKEN!,
-  });
-  const basic = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString(
-    "base64"
-  );
+  const cached = liveToken(accessToken);
+  if (cached) return cached;
 
+  const basic = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString("base64");
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
       Authorization: `Basic ${basic}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body,
+    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: process.env.SPOTIFY_REFRESH_TOKEN! }),
     cache: "no-store",
   });
 
-  const payload = (await response.json()) as SpotifyTokenResponse;
-  if (!response.ok || !payload.access_token) {
-    throw new Error(payload.error_description ?? `Spotify token refresh failed with ${response.status}`);
+  const payload = (await response.json().catch(() => ({}))) as SpotifyTokenResponse;
+  if (response.ok && payload.access_token) {
+    accessToken = { value: payload.access_token, expiresAt: Date.now() + (payload.expires_in ?? 3600) * 1000 };
+    return accessToken.value;
   }
 
-  return payload.access_token;
+  if (payload.error === "invalid_grant") {
+    // Spotify refresh tokens expire 6 months after the original authorization
+    // (refreshing does not extend them) — re-authorize to get a new one.
+    throw new RefreshTokenRejected(
+      "Spotify rejected the refresh token (invalid_grant: expired after 6 months, or revoked). " +
+        "Run `npm run spotify:token` and update SPOTIFY_REFRESH_TOKEN in Vercel."
+    );
+  }
+  throw new Error(payload.error_description ?? payload.error ?? `Spotify token refresh failed with ${response.status}`);
 }
 
 function normalizeSpotifyItem(item: SpotifyItem | null | undefined, playedAt?: string) {
   if (!item) return null;
 
-  const artists = item.artists?.map((artist) => artist.name).filter(Boolean) ?? [];
+  const artists = item.artists?.map((artist) => artist.name).filter((name): name is string => Boolean(name)) ?? [];
   const imageUrl = item.album?.images?.[0]?.url ?? item.images?.[0]?.url ?? item.show?.images?.[0]?.url ?? null;
 
   return {
@@ -114,24 +118,30 @@ function normalizeSpotifyItem(item: SpotifyItem | null | undefined, playedAt?: s
     imageUrl,
     durationMs: item.duration_ms ?? null,
     playedAt: playedAt ?? null,
+    url: item.external_urls?.spotify ?? null,
   };
 }
 
-async function fetchCurrentlyPlaying(accessToken: string) {
+async function fetchCurrentlyPlaying(token: string) {
   const response = await fetch(
     "https://api.spotify.com/v1/me/player/currently-playing?additional_types=track,episode",
     {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     }
   );
 
-  if (response.status === 204) return { current: null, isPlaying: false, progressMs: null, note: null };
+  if (response.status === 204) return { current: null, isPlaying: false, progressMs: null, device: null, note: null };
+  if (response.status === 401) accessToken = null;
   if (!response.ok) {
+    // 403 here usually means the app owner's Premium lapsed or the listening
+    // account isn't on the app's allowlist (Spotify dev-mode rules, Feb 2026)
+    console.error(`[signals:spotify] currently-playing returned ${response.status}`);
     return {
       current: null,
       isPlaying: false,
       progressMs: null,
+      device: null,
       note: `Currently-playing request returned ${response.status}`,
     };
   }
@@ -146,13 +156,16 @@ async function fetchCurrentlyPlaying(accessToken: string) {
   };
 }
 
-async function fetchRecentlyPlayed(accessToken: string) {
-  const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=5", {
-    headers: { Authorization: `Bearer ${accessToken}` },
+async function fetchRecentlyPlayed(token: string) {
+  const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=6", {
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
 
-  if (!response.ok) return [];
+  if (!response.ok) {
+    console.error(`[signals:spotify] recently-played returned ${response.status}`);
+    return [];
+  }
 
   const payload = (await response.json()) as SpotifyRecentResponse;
   return (
@@ -163,12 +176,21 @@ async function fetchRecentlyPlayed(accessToken: string) {
 }
 
 export async function GET() {
-  const missing = missingEnv();
-  if (missing.length) return setupResponse(missing);
+  const missing = missingEnv(NEEDS);
+  if (missing.length) {
+    return setupResponse("spotify", missing, {
+      scopes: ["user-read-currently-playing", "user-read-recently-played"],
+      docs: "https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens",
+    });
+  }
+
+  const backoff = recentFailure("spotify");
+  if (backoff) return backoff;
 
   try {
-    const accessToken = await getAccessToken();
-    const [current, recent] = await Promise.all([fetchCurrentlyPlaying(accessToken), fetchRecentlyPlayed(accessToken)]);
+    const token = await getAccessToken();
+    const [current, recent] = await Promise.all([fetchCurrentlyPlaying(token), fetchRecentlyPlayed(token)]);
+    clearFailure("spotify");
 
     return NextResponse.json(
       {
@@ -178,20 +200,14 @@ export async function GET() {
         current: current.current,
         isPlaying: current.isPlaying,
         progressMs: current.progressMs,
-        device: current.device ?? null,
+        device: current.device,
         note: current.note,
         recent,
       },
       { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        provider: "spotify",
-        configured: true,
-        message: error instanceof Error ? error.message : "Spotify API request failed.",
-      },
-      { status: 502, headers: { "Cache-Control": "no-store" } }
-    );
+    if (error instanceof RefreshTokenRejected) accessToken = null;
+    return errorResponse("spotify", error);
   }
 }

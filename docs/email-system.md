@@ -22,6 +22,9 @@ deliverability.
 
 ## Environment
 
+Step-by-step account setup (Resend key, segments, Vercel) and a live pre-flight
+check: [signals-setup.md](signals-setup.md) · `npm run signals:check`.
+
 Set these in Vercel and in `.env.local` for local testing:
 
 ```bash
@@ -111,6 +114,11 @@ anything already recorded in `data/email-dispatch-log.json`, and sends essays to
 
 After any real draft, send, or scheduled dispatch, commit
 `data/email-dispatch-log.json` so the same slug is not emailed again.
+
+The log was **baselined on 2026-09-21** (`npm run email:dispatch -- --baseline`):
+every piece published before then is recorded with `"status": "baseline"` and
+will never be emailed. Without that, the first automated run would have sent
+the whole back catalogue at once. Re-run `--baseline` after any bulk import.
 
 ## Single-Item Admin Route
 

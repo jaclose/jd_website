@@ -187,18 +187,17 @@ function LoadingTelemetry() {
 
 function SetupTelemetry({
   setup,
-  provider,
+  fallback,
   message,
 }: {
   setup?: SetupSignalResponse;
-  provider: string;
+  /** calm visitor-facing line for when the relay has nothing better to say */
+  fallback: string;
   message?: string;
 }) {
   return (
     <div className="space-y-4">
-      <p className="font-serif text-[1.02rem] leading-relaxed text-faint">
-        {message ?? setup?.message ?? `${provider} relay is standing by for its next API response.`}
-      </p>
+      <p className="font-serif text-[1.02rem] leading-relaxed text-faint">{message ?? setup?.message ?? fallback}</p>
       {setup?.needs?.length ? (
         <div className="grid gap-2">
           {setup.needs.map((item) => (
@@ -267,13 +266,30 @@ function StravaCore({ state, frame }: { state: NativeState; frame: SignalFrame }
       {state.loading ? (
         <LoadingTelemetry />
       ) : state.error ? (
-        <SetupTelemetry provider="Strava" message={state.error} />
+        <div className="space-y-6">
+          <SetupTelemetry fallback={signal.offlineCopy} message={state.error} />
+          <div className="opacity-35">
+            <RouteTrace active={false} />
+          </div>
+        </div>
       ) : latest && data ? (
         <div className="space-y-5">
           <div className="signal-core-readout">
             <div className="min-w-0">
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.22em] text-dim">
-                {formatDate(latest.startDate)} · {formatSport(latest.type)}
+              <p className="flex flex-wrap items-baseline gap-x-3 font-mono text-[0.72rem] uppercase tracking-[0.22em] text-dim">
+                <span>
+                  {formatDate(latest.startDate)} · {formatSport(latest.type)}
+                </span>
+                {latest.url ? (
+                  <a
+                    href={latest.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[0.64rem] font-semibold normal-case tracking-[0.06em] text-[var(--signal-accent)] underline decoration-[color-mix(in_srgb,var(--signal-accent)_45%,transparent)] underline-offset-4 transition-colors hover:text-ink"
+                  >
+                    View on Strava
+                  </a>
+                ) : null}
               </p>
               <p className="mt-2 truncate font-display text-[clamp(1.65rem,4vw,2.85rem)] font-light leading-none text-ink">
                 {formatDistance(latest.distanceMeters)}
@@ -281,7 +297,7 @@ function StravaCore({ state, frame }: { state: NativeState; frame: SignalFrame }
               <p className="mt-2 truncate font-serif text-base italic text-faint">{latest.name}</p>
             </div>
             <span className="signal-core-orbit" aria-hidden>
-              <StravaMark />
+              <PulseGlyph />
             </span>
           </div>
 
@@ -304,19 +320,30 @@ function StravaCore({ state, frame }: { state: NativeState; frame: SignalFrame }
           </div>
         </div>
       ) : (
-        <SetupTelemetry setup={setup} provider="Strava" />
+        <div className="space-y-6">
+          <SetupTelemetry
+            setup={setup}
+            fallback={data ? "No activities in the current window yet. The next session will surface here." : signal.offlineCopy}
+          />
+          <div className="opacity-35">
+            <RouteTrace active={false} />
+          </div>
+        </div>
       )}
     </ChipFrame>
   );
 }
 
-function Waveform({ active }: { active: boolean }) {
-  const bars = [22, 36, 18, 44, 28, 52, 24, 40, 30, 48, 20, 34];
+/** deterministic bar heights (no Math.random — server and client must agree) */
+const WAVE_BARS = Array.from({ length: 44 }, (_, index) =>
+  Math.round(14 + Math.abs(Math.sin(index * 1.7) * 24 + Math.sin(index * 0.43) * 12))
+);
 
+function Waveform({ active }: { active: boolean }) {
   return (
     <div className={cx("signal-waveform", active && "signal-waveform--active")} aria-hidden>
-      {bars.map((height, index) => (
-        <span key={`${height}-${index}`} style={{ height: `${height}px`, animationDelay: `${index * 120}ms` }} />
+      {WAVE_BARS.map((height, index) => (
+        <span key={index} style={{ height: `${height}px`, animationDelay: `${(index % 12) * 120}ms` }} />
       ))}
     </div>
   );
@@ -327,7 +354,18 @@ function SpotifyFrequency({ state, frame }: { state: NativeState; frame: SignalF
   const data = state.data?.configured && state.data.provider === "spotify" ? state.data : null;
   const setup = state.data && !state.data.configured && state.data.provider === "spotify" ? state.data : undefined;
   const current = data?.current ?? data?.recent[0] ?? null;
-  const status = state.loading ? "ACQUIRING" : state.error ? "OFFLINE" : data?.isPlaying ? "LIVE" : current ? "RECENT" : "READY";
+  const earlier = (data?.recent ?? []).filter((track) => track !== current && track.id !== current?.id).slice(0, 3);
+  const status = state.loading
+    ? "ACQUIRING"
+    : state.error
+      ? "OFFLINE"
+      : data?.isPlaying
+        ? "LIVE"
+        : current
+          ? "RECENT"
+          : setup
+            ? "STANDBY"
+            : "READY";
 
   return (
     <ChipFrame accent={signal.accent} frame={frame} active={Boolean(data?.isPlaying)}>
@@ -344,15 +382,20 @@ function SpotifyFrequency({ state, frame }: { state: NativeState; frame: SignalF
       {state.loading ? (
         <LoadingTelemetry />
       ) : state.error ? (
-        <SetupTelemetry provider="Spotify" message={state.error} />
+        <div className="space-y-5">
+          <SetupTelemetry fallback={signal.offlineCopy} message={state.error} />
+          <div className="opacity-50">
+            <Waveform active={false} />
+          </div>
+        </div>
       ) : current && data ? (
-        <div className="grid gap-4 sm:grid-cols-[96px_1fr] sm:items-center">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[96px_minmax(0,1fr)] sm:items-center">
           <div className="signal-album-frame">
             {current.imageUrl ? (
               <img src={current.imageUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <span className="grid h-full w-full place-items-center text-[var(--signal-accent)]">
-                <SpotifyMark />
+                <RecordGlyph />
               </span>
             )}
           </div>
@@ -367,18 +410,61 @@ function SpotifyFrequency({ state, frame }: { state: NativeState; frame: SignalF
             {current.collection ? (
               <p className="mt-1 truncate font-mono text-[0.65rem] text-dim">{current.collection}</p>
             ) : null}
+            {current.url ? (
+              <a
+                href={current.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="label mt-2 inline-block text-[0.48rem]! tracking-[0.2em]! text-[var(--signal-accent)] transition-colors hover:text-ink"
+              >
+                Listen on Spotify ↗
+              </a>
+            ) : null}
             <div className="mt-4">
               <span className="block h-1 overflow-hidden bg-[rgba(232,230,225,0.09)]">
                 <span className="block h-full bg-[var(--signal-accent)]" style={{ width: `${progressPercent(data)}%` }} />
               </span>
             </div>
           </div>
-          <div className="sm:col-span-2">
+          <div className="min-w-0 sm:col-span-2">
             <Waveform active={data.isPlaying} />
           </div>
+          {earlier.length ? (
+            <div className="min-w-0 sm:col-span-2">
+              <p className="label text-[0.45rem]! tracking-[0.2em]! text-dim">Earlier on this frequency</p>
+              <ul className="mt-2 space-y-1.5">
+                {earlier.map((track) => (
+                  <li
+                    key={`${track.id}-${track.playedAt ?? ""}`}
+                    className="flex items-baseline justify-between gap-3 border-b border-[rgba(232,230,225,0.05)] pb-1.5 font-mono text-[0.68rem]"
+                  >
+                    <span className="min-w-0 truncate text-faint">
+                      {track.url ? (
+                        <a href={track.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">
+                          {track.name}
+                        </a>
+                      ) : (
+                        track.name
+                      )}
+                      <span className="text-dim"> · {formatArtists(track.artists)}</span>
+                    </span>
+                    <span className="shrink-0 text-dim">{formatRelative(track.playedAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : (
-        <SetupTelemetry setup={setup} provider="Spotify" />
+        <div className="space-y-5">
+          <SetupTelemetry
+            setup={setup}
+            fallback={data ? "Quiet on the frequency. The next track will surface here." : signal.offlineCopy}
+          />
+          <div className="opacity-50">
+            <Waveform active={false} />
+          </div>
+        </div>
       )}
     </ChipFrame>
   );
@@ -468,7 +554,7 @@ export default function SignalBoard({ states, design = signalDesign }: SignalBoa
 
       <div
         className={cx(
-          "signal-board relative overflow-hidden border border-[rgba(232,230,225,0.12)] p-3 sm:p-5 lg:p-6",
+          "signal-board relative overflow-hidden border border-[rgba(232,230,225,0.12)] p-3 pb-11 sm:p-5 sm:pb-11 lg:p-6 lg:pb-11",
           themeClasses[design.theme],
           design.animationLevel !== "none" && "signal-board--animated"
         )}
@@ -491,32 +577,35 @@ export default function SignalBoard({ states, design = signalDesign }: SignalBoa
         </div>
 
         <p className="relative z-10 mt-5 font-mono text-[0.58rem] uppercase tracking-[0.22em] text-dim">
-          API relays: Strava + Spotify · Static nodes: GitHub / LinkedIn / Instagram · iframe layer disabled
+          Relays: activity via Strava · listening via Spotify · refreshed every few minutes
         </p>
       </div>
     </div>
   );
 }
 
-function StravaMark() {
+/** neutral pulse glyph for the body signal (not a brand mark) */
+function PulseGlyph() {
   return (
-    <svg className="h-7 w-7" viewBox="0 0 32 32" fill="currentColor" aria-hidden>
-      <path d="M13.2 4 5.4 20h4.6l3.2-6.7 3.2 6.7H21L13.2 4Z" />
-      <path d="m21.2 15.8-4.6 9.8h3l1.6-3.4 1.7 3.4h3.7l-5.4-9.8Z" opacity="0.72" />
+    <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden>
+      <path
+        d="M3 17h6l2.6-6 4.2 13 3.6-10 2 3H29"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-function SpotifyMark() {
+/** neutral record glyph for tracks without artwork (not a brand mark) */
+function RecordGlyph() {
   return (
-    <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden>
-      <circle cx="16" cy="16" r="13" fill="currentColor" opacity="0.16" />
-      <path
-        d="M9.2 12.4c4.8-1.4 9.3-1.1 13.7 1.1M10.1 16.3c3.9-1.1 7.8-.8 11.5.9M11.2 20c3-.7 5.8-.5 8.5.8"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2"
-      />
+    <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none" aria-hidden>
+      <circle cx="16" cy="16" r="12.5" stroke="currentColor" strokeWidth="1.4" opacity="0.8" />
+      <circle cx="16" cy="16" r="8.5" stroke="currentColor" strokeWidth="0.8" opacity="0.35" />
+      <circle cx="16" cy="16" r="3.2" fill="currentColor" opacity="0.7" />
     </svg>
   );
 }
