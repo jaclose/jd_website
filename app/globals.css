@@ -98,7 +98,7 @@ body {
     linear-gradient(180deg, rgba(2, 3, 6, 0.24), rgba(2, 3, 6, 0.78)),
     radial-gradient(circle at 76% 16%, rgba(159, 216, 232, 0.16), transparent 23%),
     radial-gradient(circle at 22% 76%, rgba(252, 122, 31, 0.13), transparent 26%),
-    url("/images/signals/motherboard-pcb.png"),
+    url("/images/signals/motherboard-pcb.webp"),
     linear-gradient(180deg, rgba(13, 16, 23, 0.94), rgba(4, 6, 11, 0.98));
   background-position: center;
   background-size: cover;

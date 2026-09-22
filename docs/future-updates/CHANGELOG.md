@@ -8,6 +8,20 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-09-21c — First-visit weight: 14.4 MB → 1.4 MB
+
+- 2026-09-21 — [perf] **The Sanctum warms on intent, not on landing**: a
+  phone that opened the homepage and never scrolled downloaded 14.4 MB —
+  10.5 MB of it Sanctum GLBs/textures from `SanctumPreloader`. It now arms on
+  the first scroll past the hero, a pointer on a link into the Sanctum, or
+  ~12 s of dwell (then warms in idle time), and skips data-saver and
+  2G/3G connections. Verified: no scroll for 10 s → 0 Sanctum requests;
+  scroll or dwell → all 27 assets warm as before.
+- 2026-09-21 — [perf] **Signal board background**: `motherboard-pcb.png`
+  (2.7 MB, the single largest file on every visit) → `motherboard-pcb.webp`
+  (259 KB, visually identical under the board's overlays). The PNG is no
+  longer referenced and can be deleted.
+
 ### 2026-09-21b — Site audit fixes (SEO, broken images, mobile nav)
 
 - 2026-09-21 — [seo] **Old WordPress links work again**: every permalink
