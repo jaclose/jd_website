@@ -8,6 +8,29 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-09-21b — Site audit fixes (SEO, broken images, mobile nav)
+
+- 2026-09-21 — [seo] **Old WordPress links work again**: every permalink
+  shared before the move to Vercel (`/YYYY/MM/DD/slug/`, bare `/slug/`, the
+  WordPress feed, date/category/tag/author archives) 404'd. `next.config.ts`
+  now generates 301s from the content JSON: essays → `/essays/<slug>`, field
+  notes → `/field-notes#<slug>`, `/feed` → `/feed.xml`, archives → `/essays`.
+- 2026-09-21 — [about] **Broken photos removed**: the WordPress blog went
+  private, so the three images still hosted there 403'd for every visitor.
+  Two were duplicates of the page's local "two frames" photos; the third
+  (`image5.png`) has no local original. Dead remote figures are stripped at
+  load time in `lib/content.ts` (JSON untouched).
+- 2026-09-21 — [seo] **Share cards per page**: /essays, /field-notes, /about,
+  /vault and /garden shared the homepage's generic Open Graph/Twitter title.
+  New `pageMetadata()` in `lib/seo.ts` sets title, description, URL and the
+  share image per page.
+- 2026-09-21 — [a11y] **One h1 per page**: Field Notes' plaque title is now
+  the page h1 (it had none); the homepage's inline Sanctum title steps down
+  to h2 (the hero name is the h1); the WebGL fallback title is an h2.
+- 2026-09-21 — [404] "Signal lost" page gets its own tab title and `noindex`.
+- 2026-09-21 — [nav] **Mobile docked pill**: "DEPLOYMENTS" (11 chars) spilled
+  out of its 36px slot over SANCTUM and ABOUT; it now reads "DEPLOY".
+
 ### 2026-09-21 — Live features: signals relays hardened, email list ready
 
 - 2026-09-21 — [signals] **Visitors no longer see setup detail**: unconfigured

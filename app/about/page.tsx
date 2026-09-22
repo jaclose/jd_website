@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import { about } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
@@ -6,12 +7,12 @@ import Footer from "@/components/Footer";
 import LifeMap from "@/components/about/LifeMap";
 import Reveal from "@/components/Reveal";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About — Jafar Dabbagh",
   description:
     "The inner world. Never satisfied with surfaces — the thought before the action, the mercy inside the motion.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

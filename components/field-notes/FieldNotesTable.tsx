@@ -48,7 +48,7 @@ export default function FieldNotesTable() {
 
         <div className="field-notes-table-shell">
           <div className="field-notes-table-plaque">
-            <p id="field-notes-table-title">Field Notes</p>
+            <h1 id="field-notes-table-title">Field Notes</h1>
             <span>{String(fieldNotes.length).padStart(2, "0")} letters on the table</span>
           </div>
 

@@ -20,6 +20,7 @@ const SHORT: Record<string, string> = {
   essays: "essays",
   "field-notes": "notes",
   garden: "sanctum",
+  deployments: "deploy",
   about: "about",
   vault: "vault",
   quote: "quote",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
@@ -7,12 +8,12 @@ import GardenGallery from "@/components/garden/GardenGallery";
 import AchievementsGrid from "@/components/garden/AchievementsGrid";
 import { biosphere } from "@/data/garden";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "The Sanctum — Jafar Dabbagh",
   description:
     "Every skill is a tree. The Sanctum terraforms its planet as the work deepens.",
-  alternates: { canonical: "/garden" },
-};
+  path: "/garden",
+});
 
 export default function GardenPage() {
   const bio = biosphere();

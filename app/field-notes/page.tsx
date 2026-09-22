@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { fieldNotes, dispatchDate } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
@@ -6,12 +7,12 @@ import Reveal from "@/components/Reveal";
 import EssaySignup from "@/components/newsletter/EssaySignup";
 import FieldNotesTable from "@/components/field-notes/FieldNotesTable";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Field Notes — Jafar Dabbagh",
   description:
     "A desk of letters left behind over time — dispatches from study, faith, and the battle to stay present.",
-  alternates: { canonical: "/field-notes" },
-};
+  path: "/field-notes",
+});
 
 /**
  * Field Notes are living fragments, not preserved artifacts — so the page is a

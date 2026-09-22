@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import UnlockOnMount from "@/components/UnlockOnMount";
 import VaultConsole from "@/components/vault/VaultConsole";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "The Vault — Jafar Dabbagh",
   description:
     "A hollowed asteroid station for travelers: sign the log, choose a starter seed, and tend a sanctum of your own.",
-  alternates: { canonical: "/vault" },
-};
+  path: "/vault",
+});
 
 export default function VaultPage() {
   return (

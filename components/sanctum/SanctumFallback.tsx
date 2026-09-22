@@ -106,9 +106,10 @@ export default function SanctumFallback({
       {/* copy */}
       <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center px-6 pb-16 text-center">
         <p className="label mb-3 text-leaf/80">A place between disorder and restoration</p>
-        <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-light leading-none text-ink [text-shadow:0_2px_30px_rgba(3,8,5,0.9)]">
+        {/* the experience overlay already carries the page-level Sanctum title */}
+        <h2 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-light leading-none text-ink [text-shadow:0_2px_30px_rgba(3,8,5,0.9)]">
           The Sanctum
-        </h1>
+        </h2>
         <p className="mt-4 max-w-md font-serif text-lg leading-relaxed text-[rgba(232,230,225,0.82)]">
           The room of entanglement gives way to a threshold, and the threshold to
           a cultivated world. This is the decision to keep tending.

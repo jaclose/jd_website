@@ -36,6 +36,9 @@ function hasWebGL(): boolean {
  * the camera rig for clamped look-around.
  */
 export default function SanctumExperience({ id }: { id?: string } = {}) {
+  // inline on the homepage (id="garden") the page already has its h1 — the
+  // hero name — so the Sanctum title steps down a level; /garden keeps h1
+  const Title = id ? "h2" : "h1";
   const [ready, setReady] = useState(false);
   const [caps, setCaps] = useState<{ tier: ReturnType<typeof detectQuality>["tier"]; reducedMotion: boolean; webgl: boolean }>(
     { tier: "high", reducedMotion: false, webgl: true },
@@ -235,9 +238,9 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
       {/* title / location */}
       <div className="pointer-events-none absolute left-5 top-24 z-20 max-w-[min(86vw,440px)] md:left-10">
         <p className="label mb-3 text-leaf/80 [text-shadow:0_1px_10px_rgba(3,8,5,0.9)]">A place between disorder and restoration</p>
-        <h1 className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-light leading-none text-ink [text-shadow:0_2px_22px_rgba(3,8,5,0.95)]">
+        <Title className="font-display text-[clamp(2.1rem,4.6vw,3.9rem)] font-light leading-none text-ink [text-shadow:0_2px_22px_rgba(3,8,5,0.95)]">
           The Sanctum
-        </h1>
+        </Title>
         <p className="label mt-3 text-[8px]! tracking-[0.22em]! text-leaf/65 [text-shadow:0_1px_8px_rgba(3,8,5,0.9)]">
           {zoneLabel === locationLabel ? zoneLabel : `${zoneLabel} · ${locationLabel}`}
         </p>

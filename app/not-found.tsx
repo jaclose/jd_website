@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import UnlockOnMount from "@/components/UnlockOnMount";
+
+export const metadata: Metadata = {
+  title: "Signal lost — Jafar Dabbagh",
+  robots: { index: false },
+};
 
 export default function NotFound() {
   return (

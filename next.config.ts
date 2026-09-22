@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 /** short commit SHA — Vercel provides it as an env var; locally read git. */
 function commitSha(): string {
@@ -11,6 +13,37 @@ function commitSha(): string {
   } catch {
     return "local";
   }
+}
+
+/**
+ * Old WordPress permalinks → their new homes. When jafardabbagh.com moved to
+ * Vercel (and the WordPress blog went private), every link shared before the
+ * migration — /YYYY/MM/DD/slug/, bare /slug/, the feed, archives — started
+ * 404ing. Generated from the content JSON, so new imports are covered too.
+ */
+function legacyWordPressRedirects() {
+  const read = (file: string) =>
+    JSON.parse(readFileSync(path.join(__dirname, "content", file), "utf8")) as { slug: string }[];
+  const dated = "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})";
+  const to = (source: string, destination: string) => ({ source, destination, permanent: true });
+
+  return [
+    ...read("essays.json").flatMap(({ slug }) => [to(`${dated}/${slug}`, `/essays/${slug}`), to(`/${slug}`, `/essays/${slug}`)]),
+    ...read("field-notes.json").flatMap(({ slug }) => [
+      to(`${dated}/${slug}`, `/field-notes#${slug}`),
+      to(`/${slug}`, `/field-notes#${slug}`),
+    ]),
+    // WordPress chrome: feed, archives, taxonomy, author pages
+    to("/feed", "/feed.xml"),
+    to("/comments/feed", "/feed.xml"),
+    to("/blog", "/essays"),
+    to("/category/:path*", "/essays"),
+    to("/tag/:path*", "/essays"),
+    to("/:year(\\d{4})/:month(\\d{2})", "/essays"),
+    to("/:year(\\d{4})", "/essays"),
+    to("/author/:path*", "/about"),
+    to("/about-me", "/about"),
+  ];
 }
 
 const nextConfig: NextConfig = {
@@ -47,9 +80,7 @@ const nextConfig: NextConfig = {
         destination: "/works/fault-lines-and-failures.pdf",
         permanent: true,
       },
-      // ── paste remaining old WordPress slug → new path pairs here ──
-      // { source: "/old-wordpress-slug", destination: "/essays/new-slug", permanent: true },
-      // { source: "/2025/02/11/hello-world", destination: "/essays/hello-world", permanent: true },
+      ...legacyWordPressRedirects(),
     ];
   },
 };

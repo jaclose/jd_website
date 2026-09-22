@@ -32,7 +32,17 @@ function cleanNote(note: Writing): Writing {
 }
 
 export const fieldNotes: Writing[] = (notesJson as Writing[]).map(cleanNote);
-export const about = aboutJson as { title: string; html: string };
+
+/**
+ * The WordPress blog is private now, so images still hosted there answer 403
+ * for every visitor (broken figures + console errors). The About page's two
+ * photos already render locally in its "two frames" block; drop the dead
+ * remote figures at load time (the JSON stays generated, never hand-edited).
+ */
+const DEAD_REMOTE_FIGURE = /<figure>\s*<img[^>]*src="https?:\/\/[^"]*(?:wordpress\.com|wp\.com)[^"]*"[^>]*\/?>\s*<\/figure>\s*/g;
+
+const aboutRaw = aboutJson as { title: string; html: string };
+export const about = { ...aboutRaw, html: aboutRaw.html.replace(DEAD_REMOTE_FIGURE, "") };
 
 export function essayBySlug(slug: string): Writing | undefined {
   return essays.find((e) => e.slug === slug);

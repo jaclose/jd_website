@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { essays } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import EssaysPage from "@/components/essay-archive/EssaysPage";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Essays — Jafar Dabbagh",
   description: `The JD-1184 essay archive: ${essays.length} long-form works preserved — reflections, research, and personal observations.`,
-  alternates: { canonical: "/essays" },
-};
+  path: "/essays",
+});
 
 /**
  * The Essay Archive. Essays are preserved artifacts (Field Notes are the
