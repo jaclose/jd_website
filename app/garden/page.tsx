@@ -4,7 +4,6 @@ import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
 import SanctumExperience from "@/components/sanctum/SanctumExperience";
-import GardenGallery from "@/components/garden/GardenGallery";
 import AchievementsGrid from "@/components/garden/AchievementsGrid";
 import { biosphere } from "@/data/garden";
 
@@ -68,9 +67,6 @@ export default function GardenPage() {
             </div>
           </Reveal>
         </section>
-
-        {/* every planted plot, by growth stage */}
-        <GardenGallery />
 
         <AchievementsGrid />
       </main>
