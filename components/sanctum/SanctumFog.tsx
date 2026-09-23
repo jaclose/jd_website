@@ -15,7 +15,9 @@ import { makeMistMaterial } from "./shaders/mist";
  */
 export default function SanctumFog({ zone, config }: { zone: Zone; config: QualityConfigLite }) {
   const { scene } = useThree();
-  const fog = useMemo(() => new THREE.Fog(MOODS.room.fogColor.clone(), MOODS.room.fogNear, MOODS.room.fogFar), []);
+  // same rule as the light rig: open in the zone's own fog, then ease on change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fog = useMemo(() => new THREE.Fog(MOODS[zone].fogColor.clone(), MOODS[zone].fogNear, MOODS[zone].fogFar), []);
 
   useEffect(() => {
     scene.fog = fog;

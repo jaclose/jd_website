@@ -21,7 +21,9 @@ export default function SanctumLighting({ zone, config }: { zone: Zone; config: 
   const fill = useRef<THREE.DirectionalLight>(null!);
   const hemi = useRef<THREE.HemisphereLight>(null!);
   const amb = useRef<THREE.AmbientLight>(null!);
-  const live = useMemo(() => cloneMood(MOODS.room), []);
+  // start from the zone we actually open in (?sanctumStart deep links land in
+  // the Sanctum, not the room) — the easing is for *changes*, not for arrival
+  const live = useMemo(() => cloneMood(MOODS[zone]), []); // eslint-disable-line react-hooks/exhaustive-deps
   // HDRI image-based lighting is an ultra-only enhancement. The analytic rig
   // (key/fill/hemisphere/ambient) is the verified baseline that reads well on
   // every tier; on software-GL the HDR PMREM probe can wash PBR surfaces white,

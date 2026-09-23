@@ -16,11 +16,18 @@ export default function SanctumFireflies({
   color = "#ffcf87",
   region = { x: 18, zNear: 8, zFar: -66, yMin: 0.4, yMax: 4.2 },
   seed = 303,
+  size = 24,
+  /** 1 = blinking fireflies · 0 = steady drifting motes (pollen in the shafts) */
+  pulse = 1,
+  drift = 0.9,
 }: {
   count: number;
   color?: string;
   region?: { x: number; zNear: number; zFar: number; yMin: number; yMax: number };
   seed?: number;
+  size?: number;
+  pulse?: number;
+  drift?: number;
 }) {
   const gl = useThree((s) => s.gl);
   const matRef = useRef<THREE.ShaderMaterial>(null);
@@ -34,12 +41,12 @@ export default function SanctumFireflies({
         region.yMin + rnd() * (region.yMax - region.yMin),
         region.zNear + rnd() * (region.zFar - region.zNear),
       ],
-      0.9,
+      drift,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, seed]);
 
-  const material = useMemo(() => makeFireflyMaterial(color, 24, 1.5), [color]);
+  const material = useMemo(() => makeFireflyMaterial(color, size, 1.5, pulse), [color, size, pulse]);
 
   useEffect(() => {
     material.uniforms.uPixelRatio.value = Math.min(gl.getPixelRatio(), 2);

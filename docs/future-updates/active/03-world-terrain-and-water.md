@@ -1,6 +1,6 @@
 # 03 — World terrain + stream/water (Witcher 3 · Skellige)
 
-Status: 🔵 Partial (2026-07-02) · Pri: P2 · Effort: XL · Area: Sanctum (Living Sanctum) — DONE: domain-warped FBM heightfield + bank lift, worn dirt trail w/ ragged edges, stepping stones + border stones. REMAINING: stream/water, splat-blended materials, ridgeline/fjord backdrop.
+Status: 🔵 Partial (2026-07-02) · Pri: P2 · Effort: XL · Area: Sanctum (Living Sanctum) — DONE: domain-warped FBM heightfield + bank lift, worn dirt trail w/ ragged edges, stepping stones + border stones. DONE 2026-09-22: moss↔floor texture blend + damp/dry colour law on the ground, tree impostors rebuilt as real silhouettes with aerial perspective. REMAINING: stream/water, splat-blended materials, ridgeline/fjord backdrop.
 Tracks: "I really like the trees … build out the terrain … use shaders,
 procedurally generated tools for nature … fluid mechanics since I want some type
 of stream … a very beautiful background … like a Witcher 3 scene in Skellige."

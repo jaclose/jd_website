@@ -34,22 +34,22 @@ export interface QualityConfig {
 const PRESETS: Record<SanctumQuality, Omit<QualityConfig, "tier" | "reducedMotion">> = {
   low: {
     dpr: [1, 1.2], shadows: false, shadowSize: 0, postfx: false, dof: false,
-    grassCount: 1600, fireflyCount: 18, forestCount: 60, heroTreeCount: 6,
-    groundCover: 40, fog: true, windStrength: 0.7,
+    grassCount: 6000, fireflyCount: 18, forestCount: 70, heroTreeCount: 6,
+    groundCover: 52, fog: true, windStrength: 0.7,
   },
   medium: {
     dpr: [1, 1.5], shadows: true, shadowSize: 1024, postfx: true, dof: false,
-    grassCount: 4200, fireflyCount: 40, forestCount: 120, heroTreeCount: 10,
+    grassCount: 11000, fireflyCount: 40, forestCount: 140, heroTreeCount: 10,
     groundCover: 90, fog: true, windStrength: 0.9,
   },
   high: {
     dpr: [1, 1.75], shadows: true, shadowSize: 2048, postfx: true, dof: true,
-    grassCount: 8000, fireflyCount: 70, forestCount: 180, heroTreeCount: 14,
+    grassCount: 16000, fireflyCount: 70, forestCount: 180, heroTreeCount: 14,
     groundCover: 150, fog: true, windStrength: 1.0,
   },
   ultra: {
     dpr: [1, 2], shadows: true, shadowSize: 2048, postfx: true, dof: true,
-    grassCount: 13000, fireflyCount: 110, forestCount: 260, heroTreeCount: 18,
+    grassCount: 24000, fireflyCount: 110, forestCount: 260, heroTreeCount: 18,
     groundCover: 230, fog: true, windStrength: 1.1,
   },
 };

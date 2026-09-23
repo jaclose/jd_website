@@ -33,6 +33,8 @@ export function makeFireflyMaterial(
   color: THREE.ColorRepresentation = "#ffcf87",
   size = 22,
   pixelRatio = 1.5,
+  /** 1 = fireflies blinking out of phase, 0 = steady motes (daytime pollen) */
+  pulse = 1,
 ) {
   return new THREE.ShaderMaterial({
     transparent: true,
@@ -43,12 +45,14 @@ export function makeFireflyMaterial(
       uColor: { value: new THREE.Color(color) },
       uSize: { value: size },
       uPixelRatio: { value: pixelRatio },
+      uPulse: { value: pulse },
     },
     vertexShader: /* glsl */ `
       ${GLSL_NOISE}
       uniform float uTime;
       uniform float uSize;
       uniform float uPixelRatio;
+      uniform float uPulse;
       attribute float aSeed;
       attribute float aAmp;
       varying float vPulse;
@@ -59,7 +63,8 @@ export function makeFireflyMaterial(
         p.x += (fbm(vec3(t, aSeed, 0.0)) - 0.5) * 2.0 * aAmp;
         p.y += (fbm(vec3(0.0, t * 1.3, aSeed)) - 0.5) * 1.4 * aAmp;
         p.z += (fbm(vec3(aSeed, 0.0, t)) - 0.5) * 2.0 * aAmp;
-        vPulse = 0.45 + 0.55 * pow(0.5 + 0.5 * sin(uTime * 1.6 + aSeed * 6.28), 2.0);
+        float blink = 0.45 + 0.55 * pow(0.5 + 0.5 * sin(uTime * 1.6 + aSeed * 6.28), 2.0);
+        vPulse = mix(0.7 + 0.15 * sin(uTime * 0.5 + aSeed), blink, uPulse);
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_PointSize = uSize * uPixelRatio * (1.0 / -mv.z) * (0.6 + 0.6 * vPulse);
         gl_Position = projectionMatrix * mv;

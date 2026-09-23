@@ -1,0 +1,57 @@
+/*
+ * Film grade for the Sanctum — pure CSS over the canvas, so it costs the GPU
+ * nothing and every tier gets it (the low tier has no post-processing at all).
+ * Two layers: split toning (warm where the sun is, cool in the far shade) and a
+ * held-back vignette. `--grade` scales both down when the real postFX vignette
+ * is already running, so the two never stack into a tunnel.
+ */
+.sanctum-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  --grade: 1;
+}
+
+.sanctum-grade__tone {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: soft-light;
+  opacity: calc(0.6 * var(--grade));
+  background:
+    radial-gradient(70% 55% at 18% 16%, rgba(255, 214, 150, 0.55), transparent 62%),
+    radial-gradient(90% 70% at 82% 88%, rgba(30, 54, 74, 0.5), transparent 66%),
+    linear-gradient(180deg, rgba(255, 236, 205, 0.16), transparent 42%, rgba(10, 18, 24, 0.3));
+}
+
+.sanctum-grade__vignette {
+  position: absolute;
+  inset: 0;
+  opacity: calc(0.72 * var(--grade));
+  background:
+    radial-gradient(56% 42% at 6% 10%, rgba(4, 8, 10, 0.5), transparent 72%),
+    radial-gradient(74% 64% at 50% 46%, transparent 38%, rgba(4, 8, 10, 0.55) 100%),
+    linear-gradient(180deg, rgba(4, 8, 10, 0.34), transparent 22%),
+    linear-gradient(0deg, rgba(4, 8, 10, 0.16), transparent 18%);
+}
+
+/* a whisper of bloom haze where the dawn sun sits, only while the light is warm */
+.sanctum-grade__sun {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: calc(0.35 * var(--grade));
+  background: radial-gradient(34% 30% at 52% 44%, rgba(255, 226, 172, 0.4), transparent 72%);
+  transition: opacity 900ms ease;
+}
+
+.sanctum-grade[data-zone="room"] .sanctum-grade__sun {
+  opacity: 0;
+}
+
+.sanctum-grade[data-zone="room"] .sanctum-grade__tone {
+  opacity: calc(0.45 * var(--grade));
+  background:
+    radial-gradient(80% 60% at 50% 40%, rgba(120, 160, 210, 0.35), transparent 70%),
+    linear-gradient(180deg, rgba(10, 16, 28, 0.35), transparent 40%, rgba(4, 7, 12, 0.45));
+}

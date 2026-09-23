@@ -8,6 +8,44 @@ Format: `YYYY-MM-DD — [area] short description (spec ref, commit/PR)`
 
 ## Unreleased
 
+### 2026-09-22 — Sanctum cinematic pass (light, ground, flora, silhouettes)
+
+- 2026-09-22 — [sanctum] **The mood no longer fades in from the room**:
+  `SanctumLighting`/`SanctumFog` started their easing at `MOODS.room` whatever
+  zone the camera actually opened in, so a `?sanctumStart=` deep link (and the
+  homepage section) spent its first seconds under cold interior light and a
+  30 m fog wall. They now open in the current zone's own mood and ease only on
+  *change*.
+- 2026-09-22 — [sanctum] **Golden-hour rig**: warmer, lower key (longer
+  shadows across the trail), cooler sky fill, greener ground bounce, warm sage
+  haze at 26→100 m instead of grey at 9→74 m, renderer exposure 0.85 → 0.9.
+- 2026-09-22 — [sanctum] **One ground law** (`groundTint` / `groundMoss` in
+  `lib/terrain.ts`): crowns dry to gold, hollows cool and carry a contact
+  shadow, the trodden shoulder warms to bare earth. It is a *multiplier* over
+  the terrain textures (the old version painted absolute colour over them,
+  which is what made the meadow read flat and muddy), and the ground now
+  blends the CC0 moss set over the dry floor set by the same law — one extra
+  texture fetch, no per-frame cost. Grass tufts inherit the same law, so a
+  tuft matches the ground it grows out of.
+- 2026-09-22 — [sanctum] **A meadow instead of stubble**: 55% of the grass
+  budget now scatters in a band along the trail (`trailBandScatter`) where the
+  walker actually looks, counts roughly doubled on every tier (one instanced
+  draw call), taller tufts, and a lifted root→tip ramp so blades stop reading
+  as black reeds.
+- 2026-09-22 — [sanctum] **Impostor trees are trees again**: the canvas sprite
+  massed its blobs into a rectangle, so the far ranks read as grey cardboard.
+  New silhouettes — leaning tapered trunk, round broadleaf or conical conifer
+  crown, lighter toward the sun and the crown top, feathered edge — in two
+  variants, with per-instance hue spread and aerial perspective toward the
+  haze.
+- 2026-09-22 — [sanctum] **Free atmosphere for the low tier** (what phones
+  run): a CSS film grade over the canvas (split toning + vignette + a sun
+  bloom, scaled back when real postFX is on), sun shafts no longer disabled,
+  and daylight pollen motes drifting above the firefly band on medium+
+  (`SanctumFireflies` gained `size`/`pulse`/`drift`).
+- 2026-09-22 — [dx] `window.__sanctum` (dev only) exposes scene/camera/renderer
+  for headless look-tuning, mirroring the hero's `window.__hero`.
+
 ### 2026-09-21c — First-visit weight: 14.4 MB → 1.4 MB
 
 - 2026-09-21 — [perf] **The Sanctum warms on intent, not on landing**: a

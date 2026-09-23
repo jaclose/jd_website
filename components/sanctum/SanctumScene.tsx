@@ -1,6 +1,7 @@
 "use client";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import SanctumAudioSystem from "./SanctumAudioSystem";
 import SanctumCameraRig from "./SanctumCameraRig";
 import SanctumFog from "./SanctumFog";
@@ -21,6 +22,23 @@ import LivingSanctum from "./zones/LivingSanctum";
  * frustum culling hide what's behind you. Lighting, fog and postFX ease by the
  * active `zone`, giving a continuous mood change as the camera walks the spine.
  */
+/**
+ * Dev handle: `window.__sanctum` exposes scene/camera/renderer so a headless
+ * driver (or the console) can inspect materials, toggle fog, and reposition the
+ * camera while tuning the look. Mirrors the hero's `window.__hero`.
+ */
+function SanctumDebugHandle() {
+  const { scene, camera, gl } = useThree();
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    (window as unknown as { __sanctum?: unknown }).__sanctum = { scene, camera, gl, THREE_REVISION: undefined };
+    return () => {
+      delete (window as unknown as { __sanctum?: unknown }).__sanctum;
+    };
+  }, [scene, camera, gl]);
+  return null;
+}
+
 export default function SanctumScene({
   config,
   zone,
@@ -50,6 +68,7 @@ export default function SanctumScene({
           r3f performance flag (and steps the whole quality tier down on
           sustained decline — down only, so it can never oscillate); AdaptiveDpr
           drops resolution under load, AdaptiveEvents sheds raycasts. */}
+      <SanctumDebugHandle />
       <PerformanceMonitor onDecline={onPerfDecline} />
       <AdaptiveDpr pixelated={false} />
       <AdaptiveEvents />

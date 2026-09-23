@@ -86,6 +86,20 @@ export default function LivingSanctum({
       {/* the tracked quest's beacon + leading chevron */}
       <SanctumGuide />
 
+      {/* daylight pollen: steady motes riding the sun shafts, well above the
+          fireflies' drift band — the air itself stops reading as empty */}
+      {config.tier !== "low" ? (
+        <SanctumFireflies
+          count={Math.round(config.fireflyCount * 0.9)}
+          color="#f7e8c6"
+          seed={1717}
+          size={12}
+          pulse={0}
+          drift={1.6}
+          region={{ x: 24, zNear: 8, zFar: -70, yMin: 1.4, yMax: 7 }}
+        />
+      ) : null}
+
       <SanctumFireflies count={config.fireflyCount} />
       {/* a cooler cluster by the Noctyrium greenhouse */}
       <SanctumFireflies

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { gardenFeatureById } from "@/data/gardenFeatures";
 import SanctumBuildStamp from "./SanctumBuildStamp";
 import SanctumFallback from "./SanctumFallback";
+import "./sanctumGrade.css";
 import SanctumInspector from "./SanctumInspector";
 import SanctumJoystick from "./SanctumJoystick";
 import SanctumQuestTracker from "./SanctumQuestTracker";
@@ -233,6 +234,19 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
             onPerfDecline={onPerfDecline}
           />
         ) : null}
+      </div>
+
+      {/* film grade — CSS over the canvas: free on every tier, and the only
+          colour grading the low tier gets (it runs without post-processing) */}
+      <div
+        aria-hidden
+        className="sanctum-grade"
+        data-zone={nav.zone}
+        style={{ ["--grade" as string]: config.postfx ? 0.55 : 1 }}
+      >
+        <span className="sanctum-grade__tone" />
+        <span className="sanctum-grade__sun" />
+        <span className="sanctum-grade__vignette" />
       </div>
 
       {/* title / location */}

@@ -59,28 +59,28 @@ export const MOODS: Record<Zone, Mood> = {
     hemiIntensity: 0.4,
     ambient: c("#1d2230"),
     ambientIntensity: 0.3,
-    fogColor: c("#2a2a2e"),
+    fogColor: c("#3a3730"),
     fogNear: 4,
-    fogFar: 40,
+    fogFar: 44,
     envIntensity: 0.35,
-    background: c("#1a1c20"),
+    background: c("#24262a"),
   },
   sanctum: {
-    keyColor: c("#f0d29a"), // muted gold dawn sun
-    keyIntensity: 1.35,
-    keyPos: v(-16, 22, -18),
-    fillColor: c("#7fa0c4"), // cool sky bounce
-    fillIntensity: 0.3,
-    hemiSky: c("#8aa2b2"),
-    hemiGround: c("#1c2818"), // earthy green/soil
-    hemiIntensity: 0.5,
-    ambient: c("#222a34"),
-    ambientIntensity: 0.22,
-    fogColor: c("#8a9c92"),
-    fogNear: 9,
-    fogFar: 74,
+    keyColor: c("#ffd6a2"), // low gold sun, warmer than the old muted key
+    keyIntensity: 1.25,
+    keyPos: v(-20, 17, -20), // lower in the sky → longer shadows across the trail
+    fillColor: c("#86a9cf"), // cool sky bounce holding the shadow side
+    fillIntensity: 0.28,
+    hemiSky: c("#9dbcd2"),
+    hemiGround: c("#31491d"), // green bounce off the meadow
+    hemiIntensity: 0.44,
+    ambient: c("#1e2733"),
+    ambientIntensity: 0.2,
+    fogColor: c("#8b9675"), // warm sage haze, not grey — deep enough to hold contrast
+    fogNear: 26, // the near field stays crisp; the far ranks dissolve
+    fogFar: 100,
     envIntensity: 0.5,
-    background: c("#8fa093"),
+    background: c("#97a384"),
   },
 };
 

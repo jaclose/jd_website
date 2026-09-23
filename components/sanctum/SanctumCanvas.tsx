@@ -52,7 +52,9 @@ export default function SanctumCanvas({
         antialias: true,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.85,
+        // the zone moods carry the darkness now (the room's rig is dim by
+        // design), so the renderer no longer crushes the whole walk
+        toneMappingExposure: 0.9,
       }}
       style={{ background: "transparent" }}
     >

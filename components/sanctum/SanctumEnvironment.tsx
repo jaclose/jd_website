@@ -6,10 +6,13 @@ import * as THREE from "three";
 import { useTerrain } from "./lib/assets";
 import { mulberry32 } from "./lib/rng";
 import {
+  SANCTUM_BOUNDS,
   buildTrailRibbon,
   groundHeight,
-  SANCTUM_BOUNDS,
+  groundMoss,
+  groundTint,
   scatter,
+  trailBandScatter,
   trailLineScatter,
 } from "./lib/terrain";
 import { applyGrassWind } from "./shaders/grassWind";
@@ -69,9 +72,10 @@ function SunShafts({ config }: { config: QualityConfig }) {
     return Math.atan2(dir.x, dir.y); // lean off-vertical toward the sun azimuth
   }, []);
   const shafts = useMemo(() => {
-    if (config.tier === "low") return [];
     const rnd = mulberry32(21);
-    const n = config.tier === "ultra" ? 16 : 10;
+    // the low tier keeps a handful: additive quads cost almost nothing, and the
+    // shafts are most of what makes the clearing feel lit from somewhere
+    const n = config.tier === "ultra" ? 18 : config.tier === "low" ? 6 : 12;
     return Array.from({ length: n }, () => ({
       x: (rnd() - 0.5) * 40,
       y: 10 + rnd() * 6,
@@ -108,8 +112,34 @@ function SunShafts({ config }: { config: QualityConfig }) {
 }
 
 /* ————— ground ————— */
+/**
+ * Two terrain sets blended by the ground's own damp/dry law: CC0 moss where the
+ * land lies low and shaded, the dry forest floor on crowns and beside the worn
+ * path. The blend weight rides a per-vertex attribute, so it costs one extra
+ * texture fetch and no CPU work per frame.
+ */
+function blendMoss(mat: THREE.MeshStandardMaterial, mossMap: THREE.Texture) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uMossMap = { value: mossMap };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\n attribute float aMoss;\n varying float vMoss;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\n vMoss = aMoss;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\n uniform sampler2D uMossMap;\n varying float vMoss;")
+      .replace(
+        "#include <map_fragment>",
+        `#include <map_fragment>
+         vec4 mossTexel = texture2D(uMossMap, vMapUv);
+         diffuseColor.rgb = mix(diffuseColor.rgb, mossTexel.rgb, vMoss);`,
+      );
+  };
+  mat.needsUpdate = true;
+  return mat;
+}
+
 function Ground() {
   const { map, normalMap, roughnessMap } = useTerrain("floor", 22);
+  const moss = useTerrain("moss", 22);
   const geom = useMemo(() => {
     const w = SANCTUM_BOUNDS.maxX - SANCTUM_BOUNDS.minX + 40;
     const d = SANCTUM_BOUNDS.maxZ - SANCTUM_BOUNDS.minZ + 40;
@@ -117,17 +147,43 @@ function Ground() {
     g.rotateX(-Math.PI / 2);
     g.translate((SANCTUM_BOUNDS.minX + SANCTUM_BOUNDS.maxX) / 2, 0, (SANCTUM_BOUNDS.minZ + SANCTUM_BOUNDS.maxZ) / 2);
     const pos = g.attributes.position as THREE.BufferAttribute;
+    const col = new Float32Array(pos.count * 3);
+    const moss = new Float32Array(pos.count);
+    const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
-      pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      pos.setY(i, groundHeight(x, z));
+      // damp hollows read mossy and shaded, crowns dry to gold, banks show soil
+      groundTint(x, z, c);
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+      moss[i] = groundMoss(x, z);
     }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    g.setAttribute("aMoss", new THREE.BufferAttribute(moss, 1));
     g.computeVertexNormals();
     return g;
   }, []);
-  return (
-    <mesh geometry={geom} receiveShadow>
-      <meshStandardMaterial map={map} normalMap={normalMap} roughnessMap={roughnessMap} color="#5a5e48" dithering />
-    </mesh>
+  const mat = useMemo(
+    () =>
+      blendMoss(
+        new THREE.MeshStandardMaterial({
+          map,
+          normalMap,
+          roughnessMap,
+          vertexColors: true,
+          // white: the moss/floor textures are the colour, the vertex law the tilt
+          color: "#ffffff",
+          roughness: 1,
+          dithering: true,
+        }),
+        moss.map,
+      ),
+    [map, normalMap, roughnessMap, moss.map],
   );
+  return <mesh geometry={geom} material={mat} receiveShadow />;
 }
 
 /* ————— worn dirt trail ————— */
@@ -305,8 +361,8 @@ function buildGrassTuft(): THREE.BufferGeometry {
   const uv: number[] = [];
   const col: number[] = [];
   const idx: number[] = [];
-  const base = new THREE.Color("#2c3a22");
-  const tip = new THREE.Color("#7ba55a");
+  const base = new THREE.Color("#3f512b");
+  const tip = new THREE.Color("#a3c46c");
   const tmp = new THREE.Color();
   let vo = 0;
   for (let b = 0; b < BLADES; b++) {
@@ -326,7 +382,7 @@ function buildGrassTuft(): THREE.BufferGeometry {
       const oz = sa * bow;
       pos.push(-lx + ox, y, -lz + oz, lx + ox, y, lz + oz);
       uv.push(0, t, 1, t);
-      tmp.copy(base).lerp(tip, t * t);
+      tmp.copy(base).lerp(tip, Math.pow(t, 1.35));
       col.push(tmp.r, tmp.g, tmp.b, tmp.r, tmp.g, tmp.b);
       if (r < ROWS) {
         const o = vo + r * 2;
@@ -357,21 +413,30 @@ function GrassField({ config }: { config: QualityConfig }) {
   }, []);
 
   useEffect(() => {
-    const pts = scatter(count, 909, 0.5);
+    // the walker only ever sees the band around the path — spend most of the
+    // budget lining the trail, the rest across the open meadow
+    const band = Math.round(count * 0.55);
+    const pts = [...trailBandScatter(band, 4041, 1.9, 8.5), ...scatter(count - band, 909, 0.5)];
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
     const rnd = mulberry32(13);
     const c = new THREE.Color();
+    const ground = new THREE.Color();
     for (let i = 0; i < count; i++) {
       const p = pts[i] ?? { x: 0, z: 0, y: 0 };
-      const s = 0.7 + rnd() * 0.9;
+      const s = 0.95 + rnd() * 1.05;
       q.setFromAxisAngle(up, rnd() * Math.PI * 2);
-      m.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(s, s + rnd() * 0.6, s));
+      m.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(s, s + rnd() * 0.85, s));
       ref.current.setMatrixAt(i, m);
-      // meadow variation: drier gold tufts among the green, subtle lightness spread
+      // every tuft belongs to the ground it grows out of: the same damp/dry law
+      // tints it, then a per-tuft spread keeps the field from reading flat
+      groundTint(p.x, p.z, ground);
       const dry = rnd();
-      c.setHSL(0.22 - dry * 0.07, 0.3 - dry * 0.1, 0.82 + rnd() * 0.22);
+      // the tuft's own root→tip ramp carries the green; this only tilts it,
+      // so drier ground grows goldener grass and hollows grow deeper green
+      c.copy(ground).multiplyScalar(0.92 + dry * 0.42);
+      c.offsetHSL(-0.015 - dry * 0.035, 0.06, (rnd() - 0.5) * 0.06);
       ref.current.setColorAt(i, c);
     }
     ref.current.instanceMatrix.needsUpdate = true;
@@ -382,35 +447,129 @@ function GrassField({ config }: { config: QualityConfig }) {
 }
 
 /* ————— billboard-impostor forest walling the playable area ————— */
-function makeTreeImpostor(seed: number): THREE.CanvasTexture {
+/** canopy near the clearing, and the haze the far ranks dissolve into */
+const NEAR_CANOPY = new THREE.Color("#55643c");
+const HAZE = new THREE.Color("#7d8a70");
+/**
+ * Billboard tree sprites, drawn on a canvas at runtime (no texture to ship).
+ * The old one massed its blobs into a rectangle, so the far ranks read as grey
+ * cardboard; this draws a real silhouette — a tapered leaning trunk, a crown
+ * built from blobs inside a round (broadleaf) or conical (conifer) envelope,
+ * lighter toward the sun side and the top, then softened so the edge feathers.
+ */
+function makeTreeImpostor(seed: number, broadleaf: boolean): THREE.CanvasTexture {
+  const W = 160;
+  const H = 320;
   const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 256;
+  c.width = W;
+  c.height = H;
   const ctx = c.getContext("2d")!;
   const rnd = mulberry32(seed);
-  // trunk
-  ctx.fillStyle = "#1c160f";
-  ctx.fillRect(58, 150, 12, 106);
-  // canopy — overlapping soft blobs
-  for (let i = 0; i < 60; i++) {
-    const x = 64 + (rnd() - 0.5) * 96;
-    const y = 90 + (rnd() - 0.5) * 120;
-    const r = 12 + rnd() * 30;
-    const g = 0.16 + rnd() * 0.12;
-    ctx.fillStyle = `rgba(${Math.round(28 + g * 60)}, ${Math.round(40 + g * 90)}, ${Math.round(24 + g * 50)}, ${0.5 + rnd() * 0.4})`;
+
+  // trunk: tapered, with a little lean so a stand never looks stamped
+  const lean = (rnd() - 0.5) * 14;
+  const trunkTop = broadleaf ? H * 0.52 : H * 0.34;
+  ctx.fillStyle = "#1e1811";
+  for (let i = 0; i < 26; i++) {
+    const t = i / 25;
+    const y = H - t * (H - trunkTop);
+    const w = 11 * (1 - t * 0.55);
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.ellipse(W / 2 + lean * t, y, w / 2, 6, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  // crown
+  const cx = W / 2 + lean;
+  const cy = trunkTop - (broadleaf ? 40 : 10);
+  const rx = broadleaf ? W * 0.42 : W * 0.3;
+  const ry = broadleaf ? H * 0.22 : H * 0.3;
+  for (let i = 0; i < 120; i++) {
+    let px: number;
+    let py: number;
+    if (broadleaf) {
+      const a = rnd() * Math.PI * 2;
+      const rad = Math.sqrt(rnd());
+      px = cx + Math.cos(a) * rx * rad;
+      py = cy + Math.sin(a) * ry * rad * 1.05;
+    } else {
+      const t = rnd();
+      py = cy - ry * (t * 2 - 1);
+      const spread = rx * (0.25 + (1 - t) * 0.95);
+      px = cx + (rnd() - 0.5) * 2 * spread;
+    }
+    const blob = 9 + rnd() * (broadleaf ? 20 : 13);
+    const top = 1 - (py - (cy - ry)) / (2 * ry); // lighter toward the crown top
+    const sun = 1 - (px - (cx - rx)) / (2 * rx); // lighter toward the sun side
+    const g = (0.5 + 0.5 * top) * (0.85 + 0.3 * sun);
+    ctx.fillStyle = `rgba(${Math.round(26 + g * 46)}, ${Math.round(42 + g * 74)}, ${Math.round(22 + g * 38)}, ${(170 + rnd() * 70) / 255})`;
+    ctx.beginPath();
+    ctx.ellipse(px, py, blob, blob * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // feather the silhouette (Safari < 17 has no ctx.filter — it just stays crisp)
+  if ("filter" in ctx) {
+    ctx.filter = "blur(1.1px)";
+    ctx.drawImage(c, 0, 0);
+    ctx.filter = "none";
+  }
+
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
   return t;
 }
 
-function ImpostorForest({ config }: { config: QualityConfig }) {
+interface ImpostorItem {
+  x: number;
+  z: number;
+  h: number;
+  w: number;
+  yaw: number;
+  rad: number;
+  broadleaf: boolean;
+  hue: number;
+  light: number;
+}
+
+/** ring the playable bounds, thickening outward into the haze */
+function placeImpostors(count: number): ImpostorItem[] {
+  const rnd = mulberry32(2718);
+  const out: ImpostorItem[] = [];
+  let guard = 0;
+  while (out.length < count && guard++ < count * 20) {
+    const ang = rnd() * Math.PI * 2;
+    const rad = 34 + rnd() * 64;
+    const x = Math.cos(ang) * rad;
+    const z = -30 + Math.sin(ang) * rad;
+    if (
+      x > SANCTUM_BOUNDS.minX - 2 &&
+      x < SANCTUM_BOUNDS.maxX + 2 &&
+      z > SANCTUM_BOUNDS.minZ - 2 &&
+      z < SANCTUM_BOUNDS.maxZ + 2 &&
+      rad < 42
+    ) {
+      continue;
+    }
+    const h = 9 + rnd() * 12;
+    out.push({
+      x,
+      z,
+      h,
+      w: h * (0.55 + rnd() * 0.2),
+      yaw: rnd() * Math.PI,
+      rad,
+      broadleaf: rnd() > 0.42,
+      hue: (rnd() - 0.5) * 0.03,
+      light: (rnd() - 0.5) * 0.12,
+    });
+  }
+  return out;
+}
+
+function ImpostorLayer({ tex, items }: { tex: THREE.CanvasTexture; items: ImpostorItem[] }) {
   const ref = useRef<THREE.InstancedMesh>(null!);
-  const count = config.forestCount;
-  const tex = useMemo(() => makeTreeImpostor(7), []);
   const geom = useMemo(() => {
     // a cross of two perpendicular alpha planes reads as a 3D tree from any angle
     const a = new THREE.PlaneGeometry(1, 1);
@@ -420,37 +579,55 @@ function ImpostorForest({ config }: { config: QualityConfig }) {
     return mergeSimple([a, b]);
   }, []);
   const mat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.42, transparent: false, side: THREE.DoubleSide, roughness: 1, color: "#5b6b4e" });
+    const m = new THREE.MeshStandardMaterial({
+      map: tex,
+      alphaTest: 0.34,
+      transparent: false,
+      side: THREE.DoubleSide,
+      roughness: 1,
+      color: "#ffffff",
+    });
     applyLeafWind(m, 0.5, 0);
     return m;
   }, [tex]);
 
   useEffect(() => {
-    const rnd = mulberry32(2718);
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
-    let placed = 0;
-    let guard = 0;
-    while (placed < count && guard++ < count * 20) {
-      // ring the playable bounds, thickening outward into fog
-      const ang = rnd() * Math.PI * 2;
-      const rad = 34 + rnd() * 64;
-      const x = Math.cos(ang) * rad;
-      const z = -30 + Math.sin(ang) * rad;
-      if (x > SANCTUM_BOUNDS.minX - 2 && x < SANCTUM_BOUNDS.maxX + 2 && z > SANCTUM_BOUNDS.minZ - 2 && z < SANCTUM_BOUNDS.maxZ + 2 && rad < 42) continue;
-      const h = 9 + rnd() * 12;
-      const w = h * (0.55 + rnd() * 0.2);
-      q.setFromAxisAngle(up, rnd() * Math.PI);
-      m.compose(new THREE.Vector3(x, groundHeight(x, z) - 0.2, z), q, new THREE.Vector3(w, h, w));
-      ref.current.setMatrixAt(placed, m);
-      placed++;
-    }
-    ref.current.count = placed;
+    const col = new THREE.Color();
+    items.forEach((it, i) => {
+      q.setFromAxisAngle(up, it.yaw);
+      m.compose(new THREE.Vector3(it.x, groundHeight(it.x, it.z) - 0.2, it.z), q, new THREE.Vector3(it.w, it.h, it.w));
+      ref.current.setMatrixAt(i, m);
+      // aerial perspective: rank after rank washes toward the haze instead of
+      // stacking into one flat wall, with a little hue spread between trees
+      const depth = THREE.MathUtils.smoothstep(it.rad, 36, 96);
+      col.copy(NEAR_CANOPY).lerp(HAZE, depth * 0.6);
+      col.offsetHSL(it.hue, 0, it.light);
+      ref.current.setColorAt(i, col);
+    });
+    ref.current.count = items.length;
     ref.current.instanceMatrix.needsUpdate = true;
-  }, [count]);
+    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
+  }, [items]);
 
-  return <instancedMesh ref={ref} args={[geom, mat, count]} frustumCulled={false} castShadow />;
+  if (!items.length) return null;
+  return <instancedMesh ref={ref} args={[geom, mat, items.length]} frustumCulled={false} castShadow />;
+}
+
+function ImpostorForest({ config }: { config: QualityConfig }) {
+  const broadTex = useMemo(() => makeTreeImpostor(7, true), []);
+  const coniferTex = useMemo(() => makeTreeImpostor(33, false), []);
+  const items = useMemo(() => placeImpostors(config.forestCount), [config.forestCount]);
+  const broad = useMemo(() => items.filter((i) => i.broadleaf), [items]);
+  const conifers = useMemo(() => items.filter((i) => !i.broadleaf), [items]);
+  return (
+    <>
+      <ImpostorLayer tex={broadTex} items={broad} />
+      <ImpostorLayer tex={coniferTex} items={conifers} />
+    </>
+  );
 }
 
 /* ————— procedural atmospheric sky + distant mountain ridge ————— */
