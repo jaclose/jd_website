@@ -23,17 +23,17 @@ export interface Deployment {
 
 export const deployments: Deployment[] = [
   {
-    id: "noctyrium",
-    name: "Noctyrium",
-    art: "/cards/noctyrium.png",
+    id: "axom",
+    name: "AXOM",
+    // no raster art — AxomCardArt draws the official glyph as vector
     attribute: "NOCTURNAL",
-    cardType: "App / Effect",
+    cardType: "App / Continuous",
     level: 4,
     effect:
-      "The ultimate medical-school accountability and resource companion. While on the field: heatmaps, productivity tracking, study resources, and a second brain that keeps the night's work.",
+      "A private academic operating system. While on the field: courses, mastery tracking, sessions, questions and recovery resolve in one calm cockpit. Formerly summoned as Noctyrium.",
     stats: { version: "v0.03.01.5", platform: "Web", size: "—" },
     repoUrl: "https://github.com/jaclose/Noctyrium",
-    webUrl: "https://noctyrium-app.vercel.app",
+    webUrl: "https://www.axom.info/",
     downloadUrl: undefined, // Coming soon — desktop app in progress
     rarity: "foil",
     deployedAt: "2026-06-16",

@@ -8,6 +8,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { Deployment } from "@/data/deployments";
+import { AxomCardArt } from "./AxomMark";
 
 interface DuelCardProps {
   deployment: Deployment;
@@ -32,7 +33,8 @@ export function DuelCard({ deployment: d, tilt = false, mouseX = 0, mouseY = 0 }
     rx.set(-((e.clientY - r.top) / r.height - 0.5) * 18);
   };
 
-  const hasArt = d.art || d.id === "noctyrium";
+  // Cards without a raster asset fall back to a drawn mark rather than a broken image.
+  const hasArt = Boolean(d.art);
 
   return (
     <motion.div
@@ -88,11 +90,12 @@ export function DuelCard({ deployment: d, tilt = false, mouseX = 0, mouseY = 0 }
           className="relative mt-1.5 aspect-square w-full overflow-hidden rounded-[4px] border border-[rgba(212,184,134,0.3)] bg-[#05080f]"
           style={{ transform: "translateZ(16px)" }}
         >
+          {!hasArt && d.id === "axom" && <AxomCardArt />}
           {hasArt && (
             <>
               {/* Artwork */}
               <img
-                src={d.art || "/cards/noctyrium.png"}
+                src={d.art}
                 alt={d.name}
                 className="h-full w-full object-contain"
               />
