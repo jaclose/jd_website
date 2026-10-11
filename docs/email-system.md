@@ -1,148 +1,121 @@
-# Email System - Resend Broadcasts and Segments
+# Confirmed email subscriptions
 
-The mailing list lives in Resend. This site only collects signup intent, creates
-or reuses a Resend Contact, adds that contact to the right Segment, and creates
-Resend Broadcasts when new writing is published. There is no local subscriber
-table; Resend owns contacts, unsubscribes, personalization, export, and
-deliverability.
+Readers choose essays, field notes, and/or project updates. Sending the form
+creates a short-lived request and emails a private confirmation link. It does
+not subscribe a contact. The reader reviews the choices and confirms explicitly.
+The same flow manages existing preferences and unsubscribes from all three kinds
+of update. Every publication also carries Resend's native unsubscribe link.
 
-## Files
+## Configuration
 
-| File | Role |
-|---|---|
-| `components/newsletter/NewsletterSignup.tsx` | Client signup UI with email, optional first name, honeypot, and hidden source/slug/type fields. |
-| `components/newsletter/EssaySignup.tsx` | Essay and field-note footer wrapper. |
-| `app/api/newsletter/subscribe/route.ts` | Server-only signup route. Validates, rate-limits, creates Contacts, and adds Segments. |
-| `lib/newsletter/subscription.ts` | Testable subscription validation, rate limiting, and Resend contact/segment logic. |
-| `lib/resend/client.ts` | Server-only Resend client and environment wiring. |
-| `lib/email/templates/publicationBroadcast.ts` | Reusable HTML and plain-text broadcast template. |
-| `lib/email/sendPublicationBroadcast.ts` | Creates draft, immediate, or scheduled Resend Broadcasts. |
-| `scripts/send-publication-broadcast.ts` | Scans published essays and field notes, dedupes, and dispatches broadcasts. |
-| `data/email-dispatch-log.json` | Broadcast dedupe log. This is not a mailing list. Commit it after real dispatches. |
+Apply `supabase/migrations/20261011125729_newsletter_confirmations.sql` to the
+intended Supabase database after reviewing it. It only adds the newsletter table,
+indexes, and two server-only functions. Do not rerun older migrations blindly.
+The site uses `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` on the server.
+The public Supabase key cannot access newsletter records or execute the functions.
 
-## Environment
+In Resend, verify the sending domain and sender address, then create three
+**distinct segments** and three **distinct topics with default subscription
+`opt_out`**. Verify each topic's setting in the dashboard before activation.
+These are independent consent categories, not aliases of one audience:
 
-Set these in Vercel and in `.env.local` for local testing:
+| Category | Segment environment variable | Topic environment variable |
+| --- | --- | --- |
+| Essays | `SEGMENT_ESSAYS_ID` | `TOPIC_ESSAYS_ID` |
+| Field notes | `SEGMENT_FIELDNOTES_ID` | `TOPIC_FIELDNOTES_ID` |
+| Project updates | `SEGMENT_DEPLOYMENTS_ID` | `TOPIC_PROJECTS_ID` |
 
-```bash
-RESEND_API_KEY=          # full-access server-side key
-RESEND_FROM_EMAIL=notes@jafardabbagh.com
-RESEND_FROM_NAME=Jafar Dabbagh
-SEGMENT_ESSAYS_ID=
-SEGMENT_FIELDNOTES_ID=
-NEXT_PUBLIC_SITE_URL=https://www.jafardabbagh.com
-```
+Also set `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, optional `RESEND_FROM_NAME`, and
+`NEXT_PUBLIC_SITE_URL=https://www.jafardabbagh.com`. The API key needs contacts,
+segments, topics, email, and broadcast permissions. No secret may use a
+`NEXT_PUBLIC_` prefix. The retired `RESEND_TOPIC_ID` is not read.
 
-Optional:
+Production credentials must not be copied into previews. Preview email is blocked
+unless `NEWSLETTER_ALLOW_PREVIEW=true`; only enable this with isolated test
+Resend segments/topics, a test database, and the preview's own site origin.
+Missing configuration returns an honest unavailable state, never false success.
 
-```bash
-RESEND_TOPIC_ID=         # optional Broadcast topic for granular unsubscribes
-PUBLISH_WEBHOOK_SECRET=  # required only for POST /api/broadcast/new-publication
-DRY_RUN_EMAILS=true      # render previews without calling Resend
-```
+## State and privacy
 
-Create the two Segments in Resend first, either in the dashboard or with the
-Segments API:
+- Database: email address, requested choices, intent, timestamps, SHA-256 token
+  digest, and keyed IP hash. No raw token or raw IP is stored there.
+- Credentials: 32 random bytes, 30-minute expiry, single use. The token arrives in
+  the URL fragment, is removed immediately, and is posted in a no-cache body.
+  Opening the page does not change subscription preferences.
+- Rate limits: three requests per address and ten per connection per hour.
+  Advisory locks enforce limits across concurrent serverless requests. Honeypots
+  send no email. Records older than seven days are deleted on the next request.
+- Consumption invalidates all outstanding sibling links. A failed provider write
+  consumes the link too; the reader requests a new link and checks current state.
+- Provider writes set all three topic choices before changing memberships, so a
+  failed segment removal cannot override a topic opt-out. Multi-request provider
+  writes are not a database transaction; failures are surfaced, not called success.
+- Supabase is only the pending-request store. Resend owns subscriber contacts,
+  topic consent, delivery records, provider-side suppression, and export.
+- `GET` never subscribes or unsubscribes. Access is possession of a mailed token;
+  there is no public address lookup. UI does not reveal the full email address.
+- A globally suppressed contact is re-enabled only after a confirmed selection.
+  Unsubscribe-all here opts out of the site's three topics and removes its three
+  segment memberships; unrelated lists are not changed.
 
-- Essay subscribers -> `SEGMENT_ESSAYS_ID`
-- Field-note subscribers -> `SEGMENT_FIELDNOTES_ID`
+No existing contacts are automatically imported or opted into new topics.
+Review legacy contacts and invite fresh confirmation only with appropriate
+existing permission. Do not infer consent from old segment membership.
 
-Do not use `RESEND_AUDIENCE_ID`. Audiences are deprecated in the current SDK;
-Contacts plus Segments are the supported path.
+## Publishing one update
 
-## Subscribe Flow
+Use the manual `publication-email` GitHub Actions workflow on `main`. Configure
+its `newsletter` environment with required reviewers and the Resend variables
+above as environment secrets. Supabase secrets are not needed by broadcasts.
+Choose one exact publication type and slug. Leave `send` false to create a draft.
+Review its content and recipients in Resend, then run the same selection with
+`send` true when explicitly authorized to email the list.
 
-Essay pages and every field note render `EssaySignup`. The form sends:
+The workflow serializes dispatches and writes `data/email-dispatch-log.json` back
+to main. Verify repository rules permit this bot update, or arrange an approved
+log-commit path before sending. A failed log push must not prompt a manual resend:
+provider-name recovery checks existing drafts and sent/queued broadcasts first.
+Do not run concurrent local dispatch scripts; the workflow is the single sender.
+The former broadcast API returns 410 to authenticated callers and does not send.
 
-- `email`
-- optional `firstName`
-- hidden `source`: `essay_footer`, `fieldnote_footer`, or `site_footer`
-- hidden `slug`
-- hidden `contentType`: `essay`, `field_note`, or `all`
-- hidden honeypot field: `company`
+Local review commands (the first two never contact Resend):
 
-`POST /api/newsletter/subscribe` never exposes `RESEND_API_KEY`. It validates the
-email, rate-limits by IP and email, silently accepts honeypot submissions without
-calling Resend, creates the Contact with `resend.contacts.create`, then adds the
-Contact with `resend.contacts.segments.add`.
-
-Responses are intentionally small:
-
-```json
-{ "ok": true, "status": "subscribed" }
-{ "ok": true, "status": "already_subscribed" }
-{ "ok": false, "error": "Couldn't sign you up just now." }
-```
-
-## Broadcast Template
-
-The reusable template includes:
-
-- inline styles only
-- safe font stacks
-- HTML and plain-text output
-- greeting placeholder: `{{{contact.first_name|there}}}`
-- unsubscribe placeholder: `{{{RESEND_UNSUBSCRIBE_URL}}}`
-- title, excerpt, date, and a read-more link
-
-Resend replaces the personalization and unsubscribe placeholders at send time.
-
-## Dispatch On Publish
-
-After new content is fully committed, run the dispatch script:
-
-```bash
-# Preview only. Writes /tmp/email-preview.html and /tmp/email-preview.txt.
-DRY_RUN_EMAILS=true npm run email:dispatch
-
-# Create draft Broadcasts in Resend for manual review.
+```sh
 npm run email:dispatch
-
-# Create and send immediately.
-npm run email:dispatch -- --send
-
-# Create and schedule.
-npm run email:dispatch -- --schedule=2026-06-19T14:00:00.000Z
+DRY_RUN_EMAILS=true npm run email:dispatch -- --type=deployment --slug=axom
 ```
 
-The script scans `content/essays.json` and `content/field-notes.json`, skips
-anything already recorded in `data/email-dispatch-log.json`, and sends essays to
-`SEGMENT_ESSAYS_ID` and field notes to `SEGMENT_FIELDNOTES_ID`.
+The dry run writes `/tmp/email-preview.html` and `/tmp/email-preview.txt`.
+The inventory prints available slugs; it never sweeps the archive into drafts.
+Without `DRY_RUN_EMAILS`, the same selected command creates/reuses a provider
+draft. `--send` sends that reviewed draft; it does not silently update its content.
+`--test-to=<address>` sends only to that address and requires explicit authorization.
+Native unsubscribe tokens only resolve in real broadcasts; the single-address
+preview path substitutes a placeholder link and cannot prove unsubscribe behavior.
 
-After any real draft, send, or scheduled dispatch, commit
-`data/email-dispatch-log.json` so the same slug is not emailed again.
+If a draft needs editorial changes, edit it in Resend and review it there. Do not
+use a new slug solely to bypass deduplication. Historical Noctyrium dispatch log
+entries count as the same AXOM project publication, avoiding an accidental resend.
 
-## Single-Item Admin Route
+## Verification
 
-For CI or a trusted manual call:
-
-```bash
-curl -X POST "$SITE/api/broadcast/new-publication" \
-  -H "x-publish-secret: $PUBLISH_WEBHOOK_SECRET" \
-  -H "content-type: application/json" \
-  -d '{"type":"essay","title":"Title","slug":"slug","excerpt":"Short excerpt","sendImmediately":false}'
+```sh
+npm ci
+npm test
+npm run lint
+npm run build
+npm run typecheck
+npm run test:browser:newsletter
 ```
 
-This route is guarded by `PUBLISH_WEBHOOK_SECRET`. Prefer the script when you
-need dedupe logging in the repository.
+The browser script runs the built Next application, PGlite PostgreSQL, and a local
+Resend HTTP simulator. It tests signup, confirmation, single-use replay,
+preferences, unsubscribe, provider failure, and malformed input. It uses installed
+Chrome by default; set `PLAYWRIGHT_BROWSER=chromium` after
+`npx playwright-core install chromium` to use Playwright's browser. It sends no
+real email and proves no provider DNS or inbox-delivery behavior.
 
-## Deliverability
-
-Verify the sending domain in Resend before sending:
-
-- Use a real domain email, not Gmail.
-- Add Resend's SPF and DKIM DNS records.
-- Add a DMARC record for the domain.
-- Keep the unsubscribe link in every Broadcast.
-- Send only on real publish events.
-
-## Tests
-
-Run the newsletter-focused tests:
-
-```bash
-npm run test:newsletter
-```
-
-The tests cover new signups, duplicate Contact handling, Resend errors, invalid
-emails, and IP/email rate limiting.
+Before production activation, use an authorized test recipient and verify actual
+confirmation delivery, three category preferences, unsubscribe, expiry, provider
+suppression, and a draft's topic/segment assignment. Inspect provider DNS status
+(SPF/DKIM and the domain's DMARC), then send a test broadcast only with approval.

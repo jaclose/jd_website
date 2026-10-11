@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TreeGlyph from "@/components/TreeGlyph";
 import Reveal from "@/components/Reveal";
+import NewsletterSignup from "@/components/newsletter/NewsletterSignup";
 import type { Species } from "@/data/garden";
 import {
   visitorState,
@@ -50,8 +51,6 @@ export default function VaultConsole() {
   const [text, setText] = useState("");
   const [nameDraft, setNameDraft] = useState("");
   const [promptIdx, setPromptIdx] = useState(0);
-  const [email, setEmail] = useState("");
-  const [joined, setJoined] = useState(false);
 
   useEffect(() => {
     setPromptIdx(Math.floor(Math.random() * PROMPTS.length));
@@ -322,45 +321,7 @@ export default function VaultConsole() {
         </section>
       </Reveal>
 
-      {/* ——— dispatch list ——— */}
-      <Reveal delay={0.14}>
-        <section className="mt-16 border border-hairline bg-[rgba(8,10,16,0.5)] p-6 text-center">
-          <h2 className="label mb-2 text-[10px]! tracking-[0.3em]! text-starlight/80">
-            JOIN THE DISPATCH LIST
-          </h2>
-          <p className="mx-auto mb-5 max-w-md font-serif text-base italic leading-relaxed text-faint">
-            No noise — just a quiet signal when a new essay or field note leaves
-            the system.
-          </p>
-          {joined ? (
-            <p className="label text-[9px]! tracking-[0.26em]! text-leaf">
-              ✦ YOU'RE ON THE LIST — THE RELAY WILL CARRY IT WHEN IT'S LIVE
-            </p>
-          ) : (
-            <div className="mx-auto flex max-w-md gap-3">
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && email.includes("@") && setJoined(true)}
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 border-b border-[rgba(232,230,225,0.14)] bg-transparent px-1 py-2 text-center font-mono text-sm text-ink placeholder:text-dim focus:border-starlight/60 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => email.includes("@") && setJoined(true)}
-                disabled={!email.includes("@")}
-                className="label border border-[rgba(212,184,134,0.4)] px-4 py-2 text-[9px]! tracking-[0.28em]! text-starlight transition-colors hover:bg-starlight/10 disabled:opacity-30"
-              >
-                SUBSCRIBE
-              </button>
-            </div>
-          )}
-          <p className="label mt-4 text-[7px]! tracking-[0.2em]! text-dim">
-            STORED LOCALLY FOR NOW · WIRES TO THE EMAIL RELAY WHEN SUPABASE IS LIVE
-          </p>
-        </section>
-      </Reveal>
+      <div className="mt-16"><NewsletterSignup source="vault" /></div>
     </>
   );
 }

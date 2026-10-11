@@ -12,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const latestNote = fieldNotes[0]?.date ? new Date(fieldNotes[0].date) : now;
 
   const core: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/newsletter`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/newsletter/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${SITE_URL}/essays`, lastModified: latestEssay, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/field-notes`, lastModified: latestNote, changeFrequency: "weekly", priority: 0.7 },

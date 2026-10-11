@@ -1,166 +1,42 @@
-/**
- * Scan published essays + field notes + duel-field deployments and create a
- * Resend Broadcast for any that haven't been dispatched yet. Dedupes forever
- * via the dispatch log, so an item is only emailed once.
- *
- *   npm run email:dispatch            # create DRAFT broadcasts (review in Resend)
- *   npm run email:dispatch -- --send  # create AND send immediately
- *   npm run email:dispatch -- --schedule=2026-06-19T14:00:00.000Z
- *   DRY_RUN_EMAILS=true npm run email:dispatch   # render only, no Resend calls
- *
- *   # test mode: email ONE address the most recent item (or --slug=…),
- *   # using the real template — no broadcast, no log entry:
- *   npm run email:dispatch -- --test-to=you@example.com
- *   npm run email:dispatch -- --test-to=you@example.com --slug=the-cost-of-knowing-better
- *
- * Run locally or in CI after content lands. Commit the updated dispatch log.
- */
-import { readFileSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+/** Explicit publication only. Default creates a draft; --send sends that draft. */
+import { readFileSync, writeFileSync, renameSync } from "node:fs";
 import path from "node:path";
-import { essays, fieldNotes } from "@/lib/content";
-import { deployments } from "@/data/deployments";
-import { SITE_ORIGIN, DRY_RUN } from "@/lib/resend/client";
+import { fileURLToPath } from "node:url";
+import { publications, selectPublication } from "@/lib/email/publications";
+import { DRY_RUN } from "@/lib/resend/client";
 import { sendPublicationBroadcast, sendPublicationTest } from "@/lib/email/sendPublicationBroadcast";
 
-interface DispatchEntry {
-  contentType: "essay" | "field_note" | "deployment";
-  slug: string;
-  title: string;
-  broadcastId?: string;
-  createdAt: string;
-  sentAt?: string;
-  scheduledAt?: string;
-  status: string;
-}
-interface DispatchLog {
-  dispatches: DispatchEntry[];
-}
-
+type DispatchEntry = { contentType: string; slug: string; title: string; broadcastId?: string; createdAt: string; sentAt?: string; status: string };
 const LOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "email-dispatch-log.json");
-
-function loadLog(): DispatchLog {
-  try {
-    return JSON.parse(readFileSync(LOG_PATH, "utf8")) as DispatchLog;
-  } catch {
-    return { dispatches: [] };
-  }
-}
-function saveLog(log: DispatchLog) {
-  writeFileSync(LOG_PATH, `${JSON.stringify(log, null, 2)}\n`);
-}
-
-function allPublications() {
-  return [
-    ...essays.map((e) => ({
-      contentType: "essay" as const,
-      slug: e.slug,
-      title: e.title,
-      excerpt: e.excerpt,
-      publishedAt: e.date,
-      url: `${SITE_ORIGIN}/essays/${e.slug}`,
-    })),
-    ...fieldNotes.map((n) => ({
-      contentType: "field_note" as const,
-      slug: n.slug,
-      title: n.title,
-      excerpt: n.excerpt,
-      publishedAt: n.date,
-      url: `${SITE_ORIGIN}/field-notes#${n.slug}`,
-    })),
-    ...deployments.map((d) => ({
-      contentType: "deployment" as const,
-      slug: d.id,
-      title: d.name,
-      excerpt: d.effect,
-      publishedAt: d.deployedAt,
-      url: d.webUrl ?? `${SITE_ORIGIN}/#deployments`,
-    })),
-  ];
-}
-
+const argument = (name: string) => process.argv.find(v => v.startsWith(`--${name}=`))?.slice(name.length + 3);
 async function main() {
-  const send = process.argv.includes("--send");
-  const testTo = process.argv.find((arg) => arg.startsWith("--test-to="))?.split("=")[1];
-  const onlySlug = process.argv.find((arg) => arg.startsWith("--slug="))?.split("=")[1];
-  const scheduledAt =
-    process.argv.find((arg) => arg.startsWith("--scheduledAt="))?.split("=").slice(1).join("=") ||
-    process.argv.find((arg) => arg.startsWith("--schedule="))?.split("=").slice(1).join("=");
-
-  // ── test mode: one real email to one address, no broadcast, no log ──
+  const slug = argument("slug"); const type = argument("type");
+  if (!slug || !type) {
+    console.log("Select one publication with --type=essay|field_note|deployment --slug=<slug>. No email was created or sent.");
+    for (const item of publications()) console.log(`${item.type}: ${item.slug}`);
+    if (process.argv.includes("--send")) process.exitCode = 1;
+    return;
+  }
+  const item = selectPublication(type, slug);
+  if (!item) throw new Error("Publication not found. Use the exact type and slug.");
+  const testTo = argument("test-to");
   if (testTo) {
-    const pool = allPublications().filter((p) => !onlySlug || p.slug === onlySlug);
-    const item = pool.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))[0];
-    if (!item) {
-      console.error(onlySlug ? `No publication with slug "${onlySlug}".` : "Nothing published yet.");
-      process.exit(1);
-    }
-    console.log(`Test send → ${testTo}: ${item.contentType} "${item.title}"`);
-    const result = await sendPublicationTest(
-      {
-        type: item.contentType,
-        title: item.title,
-        slug: item.slug,
-        excerpt: item.excerpt,
-        publishedAt: item.publishedAt,
-        url: item.url,
-      },
-      testTo
-    );
-    console.log(`  → ${result.status}${result.broadcastId ? ` (${result.broadcastId})` : ""}${result.error ? ` — ${result.error}` : ""}`);
-    if (!result.ok) process.exit(1);
-    return;
+    const result = await sendPublicationTest(item, testTo);
+    if (!result.ok) throw new Error(result.error);
+    console.log(result.status); return;
   }
-
-  const log = loadLog();
-  const done = new Set(log.dispatches.map((d) => `${d.contentType}:${d.slug}`));
-
-  const queue = allPublications().filter(
-    (item) => !done.has(`${item.contentType}:${item.slug}`) && (!onlySlug || item.slug === onlySlug)
-  );
-
-  if (queue.length === 0) {
-    console.log("Nothing new to dispatch — every published item already has a broadcast.");
-    return;
-  }
-  console.log(
-    `${queue.length} item(s) to dispatch${DRY_RUN ? " (DRY RUN)" : scheduledAt ? ` (scheduled for ${scheduledAt})` : send ? " (will send)" : " (draft only)"}:`
-  );
-
-  for (const item of queue) {
-    const result = await sendPublicationBroadcast(
-      {
-        type: item.contentType,
-        title: item.title,
-        slug: item.slug,
-        excerpt: item.excerpt,
-        publishedAt: item.publishedAt,
-        url: item.url,
-      },
-      { sendImmediately: send, scheduledAt }
-    );
-    console.log(`  · ${item.contentType} "${item.title}" → ${result.status}${result.broadcastId ? ` (${result.broadcastId})` : ""}${result.error ? ` — ${result.error}` : ""}`);
-
-    // only record a permanent dispatch when Resend actually created something
-    if (result.ok && result.status !== "dry_run") {
-      log.dispatches.push({
-        contentType: item.contentType,
-        slug: item.slug,
-        title: item.title,
-        broadcastId: result.broadcastId,
-        createdAt: new Date().toISOString(),
-        sentAt: result.status === "sent" ? new Date().toISOString() : undefined,
-        scheduledAt: result.status === "scheduled" ? scheduledAt : undefined,
-        status: result.status,
-      });
-    }
-  }
-
-  if (!DRY_RUN) saveLog(log);
-  console.log("Done. Commit data/email-dispatch-log.json to keep the dedupe state.");
+  // Corrupt/missing state is an error, never an excuse to resend the archive.
+  const log = JSON.parse(readFileSync(LOG_PATH, "utf8")) as { dispatches: DispatchEntry[] };
+  if (!Array.isArray(log.dispatches)) throw new Error("Invalid dispatch log.");
+  const existing = log.dispatches.find(d => d.contentType === type && (d.slug === slug || (type === "deployment" && slug === "axom" && d.slug === "noctyrium")));
+  if (existing?.status === "sent" || existing?.status === "scheduled") { console.log("Already dispatched; no email sent."); return; }
+  const result = await sendPublicationBroadcast(item, { sendImmediately: process.argv.includes("--send") });
+  if (!result.ok) throw new Error(result.error);
+  console.log(`${type}:${slug} → ${result.status}`);
+  if (DRY_RUN) return;
+  const entry = { contentType: type, slug, title: item.title, broadcastId: result.broadcastId, createdAt: existing?.createdAt || new Date().toISOString(), sentAt: result.status === "sent" ? new Date().toISOString() : undefined, status: result.status };
+  if (existing) Object.assign(existing, entry); else log.dispatches.push(entry);
+  writeFileSync(`${LOG_PATH}.tmp`, `${JSON.stringify(log, null, 2)}\n`);
+  renameSync(`${LOG_PATH}.tmp`, LOG_PATH);
 }
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch(error => { console.error(error instanceof Error ? error.message : "Dispatch failed."); process.exitCode = 1; });

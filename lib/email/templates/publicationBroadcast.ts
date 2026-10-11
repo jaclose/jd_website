@@ -28,25 +28,25 @@ function esc(s: string): string {
 
 function kind(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Field Note";
-  if (type === "deployment") return "Deployment";
+  if (type === "deployment") return "Project update";
   return "Essay";
 }
 
 export function publicationSubject(p: PublicationPayload): string {
   if (p.type === "field_note") return `New Field Note: ${p.title}`;
-  if (p.type === "deployment") return `New Deployment: ${p.title}`;
+  if (p.type === "deployment") return `Project Update: ${p.title}`;
   return `New Essay: ${p.title}`;
 }
 
 function ctaLabel(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Read the field note";
-  if (type === "deployment") return "See it on the duel field";
+  if (type === "deployment") return "Explore the project";
   return "Read the full essay";
 }
 
 export function publicationPreviewText(p: PublicationPayload): string {
   if (p.type === "field_note") return "A new field note has been logged.";
-  if (p.type === "deployment") return "A new build has been summoned to the duel field.";
+  if (p.type === "deployment") return "An update from the workbench.";
   return "A new essay has been published.";
 }
 
@@ -94,8 +94,8 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
       </td></tr>
       <tr><td style="padding:28px 32px 30px;border-top:1px solid rgba(232,230,225,0.08);margin-top:20px;">
         <p style="margin:18px 0 0;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;color:${DIM};">
-          You're receiving this because you subscribed to new essays and field notes from ${SITE_NAME}.<br>
-          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${DIM};text-decoration:underline;">Unsubscribe</a> &middot; <a href="${SITE_ORIGIN}" style="color:${DIM};text-decoration:underline;">${esc(SITE_ORIGIN.replace(/^https?:\/\//, ""))}</a>
+          You're receiving this because you chose to receive these updates from ${SITE_NAME}.<br>
+          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${DIM};text-decoration:underline;">Preferences or unsubscribe</a> &middot; <a href="${SITE_ORIGIN}" style="color:${DIM};text-decoration:underline;">${esc(SITE_ORIGIN.replace(/^https?:\/\//, ""))}</a>
         </p>
       </td></tr>
     </table>
@@ -118,8 +118,8 @@ export function renderPublicationBroadcastText(p: PublicationPayload): string {
     `${ctaLabel(p.type)}: ${url}`,
     "",
     "—",
-    `You're receiving this because you subscribed to new essays and field notes from ${SITE_NAME}.`,
-    `Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
+    `You're receiving this because you chose to receive these updates from ${SITE_NAME}.`,
+    `Preferences or unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
   ]
     .filter((l) => l !== "")
     .join("\n");

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import type { NewsletterChannels } from "@/lib/newsletter/provider";
 import { SITE_URL } from "@/lib/seo";
 
 /**
@@ -12,7 +13,7 @@ import { SITE_URL } from "@/lib/seo";
  *   RESEND_FROM_NAME            e.g. Jafar Dabbagh
  *   SEGMENT_ESSAYS_ID           Resend segment for essay subscribers
  *   SEGMENT_FIELDNOTES_ID       Resend segment for field-note subscribers
- *   RESEND_TOPIC_ID             optional Resend topic for granular unsubscribes
+ *   TOPIC_{ESSAYS,FIELDNOTES,PROJECTS}_ID  three required opt-out-by-default topics
  *   PUBLISH_WEBHOOK_SECRET      guards the broadcast route
  *   NEXT_PUBLIC_SITE_URL        canonical origin (falls back to SITE_URL)
  */
@@ -20,14 +21,17 @@ export const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND
 
 export const SEGMENT_ESSAYS_ID = process.env.SEGMENT_ESSAYS_ID || "";
 export const SEGMENT_FIELDNOTES_ID = process.env.SEGMENT_FIELDNOTES_ID || "";
-/** deployments go to their own segment when configured, else ride with essays. */
-export const SEGMENT_DEPLOYMENTS_ID = process.env.SEGMENT_DEPLOYMENTS_ID || process.env.SEGMENT_ESSAYS_ID || "";
-export const RESEND_TOPIC_ID = process.env.RESEND_TOPIC_ID || "";
+/** Project updates require their own explicit subscription. */
+export const SEGMENT_DEPLOYMENTS_ID = process.env.SEGMENT_DEPLOYMENTS_ID || "";
 
-export const NEWSLETTER_SEGMENTS = {
-  essays: SEGMENT_ESSAYS_ID,
-  fieldNotes: SEGMENT_FIELDNOTES_ID,
+export const NEWSLETTER_CHANNELS: NewsletterChannels = {
+  essay: { segmentId: SEGMENT_ESSAYS_ID, topicId: process.env.TOPIC_ESSAYS_ID || "" },
+  field_note: { segmentId: SEGMENT_FIELDNOTES_ID, topicId: process.env.TOPIC_FIELDNOTES_ID || "" },
+  project: { segmentId: SEGMENT_DEPLOYMENTS_ID, topicId: process.env.TOPIC_PROJECTS_ID || "" },
 };
+export function topicIdForPublication(type: "essay" | "field_note" | "deployment") {
+  return NEWSLETTER_CHANNELS[type === "deployment" ? "project" : type].topicId;
+}
 
 export const RESEND_FROM = (() => {
   const name = process.env.RESEND_FROM_NAME || "Jafar Dabbagh";
@@ -38,7 +42,10 @@ export const RESEND_FROM = (() => {
 export const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
 
 export function canSubscribe(): boolean {
-  return !!resend && !!SEGMENT_ESSAYS_ID && !!SEGMENT_FIELDNOTES_ID;
+  const channels = Object.values(NEWSLETTER_CHANNELS);
+  return !!resend && !!RESEND_FROM && channels.every(c => c.segmentId && c.topicId)
+    && new Set(channels.map(c => c.segmentId)).size === 3
+    && new Set(channels.map(c => c.topicId)).size === 3;
 }
 
 export function segmentIdForPublication(type: "essay" | "field_note" | "deployment"): string {
@@ -47,7 +54,7 @@ export function segmentIdForPublication(type: "essay" | "field_note" | "deployme
 }
 
 export function canBroadcast(type: "essay" | "field_note" | "deployment"): boolean {
-  return !!resend && !!RESEND_FROM && !!segmentIdForPublication(type);
+  return !!resend && !!RESEND_FROM && !!segmentIdForPublication(type) && !!topicIdForPublication(type);
 }
 
 export const DRY_RUN = process.env.DRY_RUN_EMAILS === "true";

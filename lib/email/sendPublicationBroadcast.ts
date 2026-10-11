@@ -1,7 +1,8 @@
+import { resendRequest } from "@/lib/resend/request";
 import {
   resend,
   RESEND_FROM,
-  RESEND_TOPIC_ID,
+  topicIdForPublication,
   canBroadcast,
   DRY_RUN,
   segmentIdForPublication,
@@ -96,8 +97,21 @@ export async function sendPublicationBroadcast(
 
   try {
     const segmentId = segmentIdForPublication(payload.type);
-    const name = `${subject} · ${new Date().toISOString().slice(0, 10)}`;
-    const shouldSend = opts.sendImmediately || !!opts.scheduledAt;
+    if (!payload.slug) throw new Error("A publication slug is required.");
+    const name = `jd1184:${payload.type}:${payload.slug}`;
+    // Recover the same provider draft even if a previous run failed before its
+    // Git dispatch-log commit. The workflow serializes sends and owns this path.
+    let after: string | undefined;
+    let existing: { id: string; status: string } | undefined;
+    do {
+      const list = await resendRequest(() => resend!.broadcasts.list({ limit: 100, ...(after ? { after } : {}) }));
+      if (list.error) throw new Error(list.error.message);
+      existing = list.data?.data.find(b => b.name === name);
+      after = !existing && list.data?.has_more ? list.data.data[list.data.data.length - 1]?.id : undefined;
+    } while (after);
+    if (existing?.status === "sent" || existing?.status === "queued") {
+      return { ok: true, status: existing.status === "sent" ? "sent" : "scheduled", subject, broadcastId: existing.id };
+    }
     const base = {
       segmentId,
       from: RESEND_FROM,
@@ -106,19 +120,17 @@ export async function sendPublicationBroadcast(
       text,
       name,
       previewText: publicationPreviewText(payload),
-      topicId: RESEND_TOPIC_ID || undefined,
+      topicId: topicIdForPublication(payload.type),
     };
-    const created = await resend.broadcasts.create(
-      shouldSend
-        ? { ...base, send: true, ...(opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : {}) }
-        : { ...base, send: false }
-    );
-    if (created.error) {
-      return { ok: false, status: "failed", subject, error: created.error.message };
-    }
-    const broadcastId = created.data?.id;
+    let broadcastId = existing?.id;
     if (!broadcastId) {
-      return { ok: false, status: "failed", subject, error: "No broadcast id returned." };
+      const created = await resendRequest(() => resend!.broadcasts.create({ ...base, send: false }));
+      if (created.error || !created.data?.id) throw new Error(created.error?.message || "No broadcast ID returned.");
+      broadcastId = created.data.id;
+    }
+    if (opts.sendImmediately || opts.scheduledAt) {
+      const sent = await resendRequest(() => resend!.broadcasts.send(broadcastId!, opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : undefined));
+      if (sent.error) throw new Error(sent.error.message);
     }
     const status = opts.scheduledAt ? "scheduled" : opts.sendImmediately ? "sent" : "draft_created";
     return { ok: true, status, subject, broadcastId };

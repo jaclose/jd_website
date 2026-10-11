@@ -8,8 +8,8 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl border-b border-[rgba(232,230,225,0.08)] px-6 py-12 md:px-10">
         <NewsletterSignup
           source="site_footer"
-          heading="Receive transmissions"
-          blurb="A signal when a new essay or field note leaves the system. No spam. Unsubscribe anytime."
+          heading="Letters from JD-1184"
+          blurb="Essays, field notes, and occasional project updates. Choose what reaches you."
         />
       </div>
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16 md:flex-row md:items-end md:justify-between md:px-10">
@@ -41,6 +41,8 @@ export default function Footer() {
             ["The Archive", "/#archive"],
             ["The Vault", "/vault"],
             ["About", "/about"],
+            ["Email preferences", "/newsletter"],
+            ["Privacy", "/newsletter/privacy"],
           ].map(([label, href]) => (
             <Link key={href} href={href} className="label link-reveal text-[10px]! text-faint hover:text-ink">
               {label}

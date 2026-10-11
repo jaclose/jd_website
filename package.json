@@ -8,8 +8,11 @@
     "start": "next start",
     "spotify:token": "node scripts/spotify-refresh-token.mjs",
     "email:dispatch": "tsx scripts/send-publication-broadcast.ts",
-    "test:newsletter": "node --import tsx --test tests/newsletter.test.ts",
-    "lint": "next lint"
+    "test:newsletter": "node --import tsx --test tests/newsletter*.test.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:browser:newsletter": "node scripts/verify-newsletter.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",
@@ -33,11 +36,14 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.175.0",
+    "eslint": "9.39.4",
+    "eslint-config-next": "15.5.19",
     "playwright-core": "^1.60.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.22.4",

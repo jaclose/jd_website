@@ -42,22 +42,25 @@ CC0 (Poly Haven + ambientCG) under `public/sanctum/` — see
 
 ## Stack
 
-- **Next.js 15** (App Router, static output) + **TypeScript**
+- **Next.js 15** (App Router, static content + server routes) + **TypeScript**
 - **React Three Fiber / three.js** — the spatial hero (procedural canvas
   textures, raycast hover through a pointer-transparent canvas)
 - **Tailwind CSS 4** + **framer-motion**
 - **Supabase** (optional — schema in [supabase/migrations](supabase/migrations),
-  the site runs fully from local content without it)
+  reading runs from local content; email confirmation requires the server database)
 - Content migrated from WordPress via
   [scripts/import_wordpress.py](scripts/import_wordpress.py)
 
 ## Develop
 
 ```bash
-npm install
+npm ci
 npm run dev        # http://localhost:3000
 npm run build      # production build
-node scripts/screenshot.mjs   # visual smoke test (needs a running server)
+npm test           # domain, provider, database, and project-data checks
+npm run lint
+npm run typecheck
+npm run test:browser:newsletter # after build; Chrome installed, no remote services
 ```
 
 ## Deploy
@@ -81,3 +84,23 @@ framework to Next.js (the project must not use the "Other" preset / a
 - `data/quotes.ts` — quote of the week (first entry wins)
 - `data/changelog.ts` — the transmission log
 - `data/achievements.ts` — unlock conditions computed from site state
+
+## Current project and editorial direction
+
+The active medical study project is **AXOM**, linked to [axom.info](https://axom.info)
+and [jaclose/AXOM](https://github.com/jaclose/AXOM). Its own application mark is used
+in the Duel Field. The early Med App remains in the collapsed garden history;
+authored essays and dated changelog entries retain their original wording.
+
+The homepage offers direct reading and email entry points alongside the JD-1184
+solar navigation. Touch, reduced motion, and unavailable WebGL get a calm chart;
+mobile and reduced-motion project cards have direct links. The garden's readable
+catalog remains available alongside the 3D walk.
+
+## Email and release
+
+[Email setup and operations](docs/email-system.md) covers confirmed opt-in,
+preferences, unsubscribe, the migration, and manual publication dispatch.
+[Deployment audit and release gates](docs/release-2026-10-11.md) records the verified
+production repository and missing configuration. A branch preview is not an
+email-delivery acceptance test. Do not merge before the release gates are reviewed.
