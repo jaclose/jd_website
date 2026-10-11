@@ -1,11 +1,8 @@
-import { resendRequest } from "@/lib/resend/request";
+import { sendPreparedBroadcast } from "./sendPreparedBroadcast";
 import {
   resend,
   RESEND_FROM,
-  topicIdForPublication,
-  canBroadcast,
   DRY_RUN,
-  segmentIdForPublication,
 } from "@/lib/resend/client";
 import {
   publicationPreviewText,
@@ -44,13 +41,9 @@ export async function sendPublicationTest(
   const text = detokenize(renderPublicationBroadcastText(payload));
 
   if (DRY_RUN) {
-    try {
-      const fs = await import("node:fs");
-      fs.writeFileSync("/tmp/email-preview.html", html);
-      fs.writeFileSync("/tmp/email-preview.txt", text);
-    } catch {
-      /* preview is best-effort */
-    }
+    const fs = await import("node:fs");
+    fs.writeFileSync("/tmp/email-preview.html", html);
+    fs.writeFileSync("/tmp/email-preview.txt", text);
     return { ok: true, status: "dry_run", subject };
   }
 
@@ -81,59 +74,16 @@ export async function sendPublicationBroadcast(
   const text = renderPublicationBroadcastText(payload);
 
   if (DRY_RUN) {
-    try {
-      const fs = await import("node:fs");
-      fs.writeFileSync("/tmp/email-preview.html", html);
-      fs.writeFileSync("/tmp/email-preview.txt", text);
-    } catch {
-      /* preview is best-effort */
-    }
+    const fs = await import("node:fs");
+    fs.writeFileSync("/tmp/email-preview.html", html);
+    fs.writeFileSync("/tmp/email-preview.txt", text);
     return { ok: true, status: "dry_run", subject };
   }
 
-  if (!canBroadcast(payload.type) || !resend) {
-    return { ok: false, status: "failed", subject, error: "Resend broadcast env not configured." };
-  }
-
   try {
-    const segmentId = segmentIdForPublication(payload.type);
     if (!payload.slug) throw new Error("A publication slug is required.");
-    const name = `jd1184:${payload.type}:${payload.slug}`;
-    // Recover the same provider draft even if a previous run failed before its
-    // Git dispatch-log commit. The workflow serializes sends and owns this path.
-    let after: string | undefined;
-    let existing: { id: string; status: string } | undefined;
-    do {
-      const list = await resendRequest(() => resend!.broadcasts.list({ limit: 100, ...(after ? { after } : {}) }));
-      if (list.error) throw new Error(list.error.message);
-      existing = list.data?.data.find(b => b.name === name);
-      after = !existing && list.data?.has_more ? list.data.data[list.data.data.length - 1]?.id : undefined;
-    } while (after);
-    if (existing?.status === "sent" || existing?.status === "queued") {
-      return { ok: true, status: existing.status === "sent" ? "sent" : "scheduled", subject, broadcastId: existing.id };
-    }
-    const base = {
-      segmentId,
-      from: RESEND_FROM,
-      subject,
-      html,
-      text,
-      name,
-      previewText: publicationPreviewText(payload),
-      topicId: topicIdForPublication(payload.type),
-    };
-    let broadcastId = existing?.id;
-    if (!broadcastId) {
-      const created = await resendRequest(() => resend!.broadcasts.create({ ...base, send: false }));
-      if (created.error || !created.data?.id) throw new Error(created.error?.message || "No broadcast ID returned.");
-      broadcastId = created.data.id;
-    }
-    if (opts.sendImmediately || opts.scheduledAt) {
-      const sent = await resendRequest(() => resend!.broadcasts.send(broadcastId!, opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : undefined));
-      if (sent.error) throw new Error(sent.error.message);
-    }
-    const status = opts.scheduledAt ? "scheduled" : opts.sendImmediately ? "sent" : "draft_created";
-    return { ok: true, status, subject, broadcastId };
+    const result = await sendPreparedBroadcast({ channel: payload.type === "deployment" ? "project" : payload.type, name: `jd1184:${payload.type}:${payload.slug}`, subject, html, text, previewText: publicationPreviewText(payload) }, opts);
+    return { ok: true, ...result, subject };
   } catch (e) {
     return { ok: false, status: "failed", subject, error: e instanceof Error ? e.message : "Unknown error" };
   }

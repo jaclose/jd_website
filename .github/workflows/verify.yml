@@ -26,3 +26,6 @@ jobs:
       - run: npm run test:browser:newsletter
         env:
           PLAYWRIGHT_BROWSER: chromium
+      - run: npm run test:browser:journal
+        env:
+          PLAYWRIGHT_BROWSER: chromium

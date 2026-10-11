@@ -41,3 +41,6 @@ next-env.d.ts
 .playwright-cli/
 
 /supabase/.temp/
+
+# Local email previews (also uploaded as CI artifacts)
+/artifacts/

@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: publication-email
   cancel-in-progress: false
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run test:newsletter
@@ -41,9 +41,7 @@ jobs:
           SEND_PUBLICATION: ${{ inputs.send }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-          SEGMENT_ESSAYS_ID: ${{ secrets.SEGMENT_ESSAYS_ID }}
-          SEGMENT_FIELDNOTES_ID: ${{ secrets.SEGMENT_FIELDNOTES_ID }}
-          SEGMENT_DEPLOYMENTS_ID: ${{ secrets.SEGMENT_DEPLOYMENTS_ID }}
+          SEGMENT_NEWSLETTER_ID: ${{ secrets.SEGMENT_NEWSLETTER_ID }}
           TOPIC_ESSAYS_ID: ${{ secrets.TOPIC_ESSAYS_ID }}
           TOPIC_FIELDNOTES_ID: ${{ secrets.TOPIC_FIELDNOTES_ID }}
           TOPIC_PROJECTS_ID: ${{ secrets.TOPIC_PROJECTS_ID }}
@@ -52,11 +50,3 @@ jobs:
           args=("--type=$PUBLICATION_TYPE" "--slug=$PUBLICATION_SLUG")
           if [ "$SEND_PUBLICATION" = "true" ]; then args+=(--send); fi
           npm run email:dispatch -- "${args[@]}"
-      - name: Record provider state
-        run: |
-          if git diff --quiet data/email-dispatch-log.json; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/email-dispatch-log.json
-          git commit -m "chore(email): record selected publication dispatch"
-          git push

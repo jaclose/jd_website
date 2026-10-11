@@ -7,6 +7,7 @@ const db = new PGlite();
 try {
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
 await db.exec(readFileSync(new URL('../supabase/migrations/20261011125729_newsletter_confirmations.sql', import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/20261011170000_newsletter_digest_preferences.sql', import.meta.url),'utf8'));
 await db.exec('set role service_role');
 const issue = async (n: number, email='reader@example.com', ip='hashed-ip') => (await db.query<{ok: boolean}>('select newsletter_issue($1,$2,$3,$4,$5) as ok',[n.toString(16).padStart(64,'0'),email,['essay'],'subscribe',ip])).rows[0].ok;
 assert.equal(await issue(1),true); assert.equal(await issue(2),true); assert.equal(await issue(3),true); assert.equal(await issue(4),false);

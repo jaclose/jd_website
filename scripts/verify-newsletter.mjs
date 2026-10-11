@@ -11,6 +11,7 @@ import { chromium } from 'playwright-core';
 const db = new PGlite();
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
 await db.exec(readFileSync(new URL('../supabase/migrations/20261011125729_newsletter_confirmations.sql', import.meta.url), 'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/20261011170000_newsletter_digest_preferences.sql', import.meta.url), 'utf8'));
 const contacts = new Map(); const messages = []; let emailUnavailable = false;
 const server = createServer(async (req, res) => {
   res.setHeader('content-type', 'application/json');
@@ -58,8 +59,8 @@ const app = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start',
   stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, NODE_ENV: 'production', VERCEL_ENV: 'development',
     RESEND_API_KEY: 're_local_test_only', RESEND_BASE_URL: mockOrigin, RESEND_FROM_EMAIL: 'letters@example.com',
     SUPABASE_URL: mockOrigin, SUPABASE_SERVICE_ROLE_KEY: 'local-test-only', NEXT_PUBLIC_SITE_URL: origin,
-    SEGMENT_ESSAYS_ID: 's-e', SEGMENT_FIELDNOTES_ID: 's-f', SEGMENT_DEPLOYMENTS_ID: 's-p',
-    TOPIC_ESSAYS_ID: 't-e', TOPIC_FIELDNOTES_ID: 't-f', TOPIC_PROJECTS_ID: 't-p' },
+    SEGMENT_NEWSLETTER_ID: 's-site',
+    TOPIC_ESSAYS_ID: 't-e', TOPIC_FIELDNOTES_ID: 't-f', TOPIC_PROJECTS_ID: 't-p', TOPIC_WEEKLY_ID: 't-w', TOPIC_MONTHLY_ID: 't-m' },
 });
 let appOutput = ''; app.stdout.on('data', d => appOutput += d); app.stderr.on('data', d => appOutput += d);
 let browser;
@@ -88,7 +89,7 @@ try {
   assert.equal(await page.getByRole('checkbox', { name: /^Field notes/ }).isChecked(), false);
   await page.getByRole('button', { name: 'Confirm preferences' }).click();
   await page.getByRole('heading', { name: 'Your choices are saved.' }).waitFor();
-  assert.deepEqual(contacts.get('reader@example.com').segments, [{ id: 's-e' }, { id: 's-p' }]);
+  assert.deepEqual(contacts.get('reader@example.com').segments, [{ id: 's-site' }]);
   await page.goto(link);
   await page.getByRole('alert').filter({hasText:/expired|already used/}).waitFor();
   await page.goto(`${origin}/newsletter#preferences`);
@@ -102,10 +103,11 @@ try {
   await page.getByRole('checkbox', { name: /^Essays/ }).uncheck();
   await page.getByRole('checkbox', { name: /^Project updates/ }).uncheck();
   await page.getByRole('checkbox', { name: /^Field notes/ }).check();
+  await page.getByRole('checkbox', { name: /^Weekly letters/ }).check();
   await page.getByRole('button', { name: 'Confirm preferences' }).click();
   await page.getByRole('heading', { name: 'Your choices are saved.' }).waitFor();
-  assert.deepEqual(contacts.get('reader@example.com').segments, [{ id: 's-f' }]);
-  assert.deepEqual(contacts.get('reader@example.com').topics.filter(t => t.subscription === 'opt_in').map(t => t.id), ['t-f']);
+  assert.deepEqual(contacts.get('reader@example.com').segments, [{ id: 's-site' }]);
+  assert.deepEqual(contacts.get('reader@example.com').topics.filter(t => t.subscription === 'opt_in').map(t => t.id), ['t-f', 't-w']);
   await page.goto(`${origin}/newsletter#preferences`);
   const unsubscribe = page.getByRole('region', { name: 'Manage email preferences' });
   await unsubscribe.getByLabel('Email address').fill('reader@example.com');
@@ -116,7 +118,7 @@ try {
   await page.getByRole('button', { name: 'Unsubscribe from everything' }).click();
   await page.getByRole('heading', { name: 'You’re unsubscribed.' }).waitFor();
   assert.ok(contacts.get('reader@example.com').topics.every(t => t.subscription === 'opt_out'));
-  assert.equal(contacts.get('reader@example.com').segments.length, 0);
+  assert.equal(contacts.get('reader@example.com').segments.length, 1);
   emailUnavailable = true;
   const failure = await page.request.post(`${origin}/api/newsletter/subscribe`, { data: { email: 'failure@example.com', preferences: ['essay'], consent: true } });
   assert.equal(failure.status(), 502);

@@ -1,4 +1,4 @@
-import { SITE_ORIGIN } from "@/lib/resend/client";
+import { SITE_URL as SITE_ORIGIN } from "@/lib/seo";
 
 export interface PublicationPayload {
   type: "essay" | "field_note" | "deployment";
@@ -9,6 +9,7 @@ export interface PublicationPayload {
   url?: string;
   heroImage?: string;
   tags?: string[];
+  readingTime?: string;
 }
 
 const SITE_NAME = "Jafar Dabbagh";
@@ -45,6 +46,7 @@ function ctaLabel(type: PublicationPayload["type"]): string {
 }
 
 export function publicationPreviewText(p: PublicationPayload): string {
+  if (p.excerpt) return p.excerpt.slice(0, 180);
   if (p.type === "field_note") return "A new field note has been logged.";
   if (p.type === "deployment") return "An update from the workbench.";
   return "A new essay has been published.";
@@ -84,7 +86,7 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
       </td></tr>
       ${p.heroImage ? `<tr><td style="padding:14px 32px 0;"><img src="${esc(p.heroImage)}" alt="" width="496" style="width:100%;border-radius:4px;display:block;"></td></tr>` : ""}
       <tr><td style="padding:18px 32px 0;">
-        <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${GOLD};">${kind(p.type)}${date ? ` · ${esc(date)}` : ""}</div>
+        <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${GOLD};">${kind(p.type)}${date ? ` · ${esc(date)}` : ""}${p.readingTime ? ` · ${esc(p.readingTime)}` : ""}</div>
         <h1 style="margin:12px 0 0;font-size:28px;font-weight:400;line-height:1.2;color:${INK};">${esc(p.title)}</h1>
       </td></tr>
       <tr><td style="padding:18px 32px 0;"><p style="margin:0;font-size:16px;line-height:1.6;color:rgba(232,230,225,0.86);">Hi {{{contact.first_name|there}}},</p></td></tr>

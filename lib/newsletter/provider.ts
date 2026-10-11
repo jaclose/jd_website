@@ -42,17 +42,14 @@ export function createNewsletterProvider(client: Resend, from: string, channels:
       if (!contact.data) {
         if (!preferences.length) return;
         // Topic consent and membership are created in the same provider request.
-        requireSuccess(await resendRequest(() => client.contacts.create({ email, unsubscribed: false, topics, segments: preferences.map(id => ({ id: channels[id].segmentId })) })));
+        requireSuccess(await resendRequest(() => client.contacts.create({ email, unsubscribed: false, topics, segments: [{ id: channels.essay.segmentId }] })));
         return;
       }
-      // Set all three topic choices first. Broadcasts require these topics, so
-      // a failed segment update cannot re-enable a category the reader declined.
+      // Topics are the consent authority, including edits on Resend's hosted
+      // preference page. Keep a single audience membership even after opt-out.
       requireSuccess(await resendRequest(() => client.contacts.topics.update({ email: encodeURIComponent(email), topics })));
-      for (const { id } of NEWSLETTER_CHOICES) {
-        const payload = { email: encodeURIComponent(email), segmentId: channels[id].segmentId };
-        const response = preferences.includes(id) ? await resendRequest(() => client.contacts.segments.add(payload)) : await resendRequest(() => client.contacts.segments.remove(payload));
-        if (response.error && !(preferences.includes(id) ? errorCode(response.error) === 409 : errorCode(response.error) === 404)) requireSuccess(response);
-      }
+      const membership = await resendRequest(() => client.contacts.segments.add({ email: encodeURIComponent(email), segmentId: channels.essay.segmentId }));
+      if (membership.error && errorCode(membership.error) !== 409) requireSuccess(membership);
       if (preferences.length && contact.data.unsubscribed) requireSuccess(await resendRequest(() => client.contacts.update({ email: encodeURIComponent(email), unsubscribed: false })));
     },
   };

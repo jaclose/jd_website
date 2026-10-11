@@ -12,7 +12,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:browser:newsletter": "node scripts/verify-newsletter.mjs"
+    "test:browser:newsletter": "node scripts/verify-newsletter.mjs",
+    "email:preview": "tsx scripts/automate-newsletter.ts",
+    "email:automate": "tsx scripts/automate-newsletter.ts --send",
+    "test:browser:journal": "JOURNAL_MANAGED_SERVER=1 node scripts/verify-journal.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",
