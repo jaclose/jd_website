@@ -87,7 +87,7 @@ export default function LivingSanctum({
       <SanctumGuide />
 
       <SanctumFireflies count={config.fireflyCount} />
-      {/* a cooler cluster by the Noctyrium greenhouse */}
+      {/* a cooler cluster by the AXOM greenhouse */}
       <SanctumFireflies
         count={Math.round(config.fireflyCount * 0.3)}
         color="#9fd8e8"

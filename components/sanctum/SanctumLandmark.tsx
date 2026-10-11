@@ -1,4 +1,5 @@
 "use client";
+import { useTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
@@ -27,7 +28,7 @@ const ACCENT: Record<string, string> = {
 
 const ARCHETYPE: Record<string, string> = {
   "website-tree": "tower",
-  noctyrium: "greenhouse",
+  axom: "greenhouse",
   "term-3": "station",
   "term-2": "study",
   "term-1": "study",
@@ -204,6 +205,7 @@ function SignalTower({ accent }: { accent: string }) {
 }
 
 function Greenhouse({ accent, lowFx }: { accent: string; lowFx: boolean }) {
+  const mark = useTexture("/cards/axom.png");
   return (
     <group>
       {/* glass shell */}
@@ -224,6 +226,10 @@ function Greenhouse({ accent, lowFx }: { accent: string; lowFx: boolean }) {
           </mesh>
         )),
       )}
+      <mesh position={[0, 1.8, 1.04]}>
+        <planeGeometry args={[0.9, 0.9]} />
+        <meshBasicMaterial map={mark} toneMapped={false} />
+      </mesh>
       {/* a crystal-rooted sapling glowing within */}
       <mesh position={[0, 0.6, 0]}>
         <icosahedronGeometry args={[0.4, 0]} />

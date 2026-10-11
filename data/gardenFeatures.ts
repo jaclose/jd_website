@@ -114,8 +114,8 @@ export const gardenFeatures: GardenFeature[] = [
     tags: ["website", "identity", "portfolio"],
   },
   {
-    id: "noctyrium",
-    title: "Noctyrium",
+    id: "axom",
+    title: "AXOM",
     branch: "main",
     kind: "sapling",
     stage: "sapling",
@@ -123,9 +123,9 @@ export const gardenFeatures: GardenFeature[] = [
     scale: 1.08,
     description: "Active medical-school accountability and study-resource system.",
     plaqueText:
-      "A nocturnal medical-school accountability and resource companion: heatmaps, study resources, productivity tracking, and a second brain for the night's work.",
+      "A local-first study system: question banks, course tracking, and focused practice. Built through medical school and in active pre-beta development.",
     visualNotes:
-      "Young sapling supported by stakes, blue-violet crystal glow, subtle Noctyrium icon motif.",
+      "A glass greenhouse with the current AXOM mark: warm ivory on charcoal.",
     story: {
       summary:
         "A young active project tree: still being trained upward, but already glowing with the study system it is meant to become.",
@@ -136,8 +136,8 @@ export const gardenFeatures: GardenFeature[] = [
           status: "past",
         },
         {
-          label: "Night work",
-          detail: "The app becomes a second brain for late medical-school study sessions.",
+          label: "AXOM",
+          detail: "The study system brings question practice, course tracking, and local-first progress together.",
           status: "current",
         },
         {
@@ -147,20 +147,15 @@ export const gardenFeatures: GardenFeature[] = [
         },
       ],
     },
-    growth: [
-      { label: "Product", value: 64, detail: "Core direction is clear and actively growing." },
-      { label: "Study loop", value: 70, detail: "Accountability and resource habits are becoming the trunk." },
-      { label: "Polish", value: 42, detail: "The sapling still needs pruning, UI hardening, and deployment story." },
-    ],
     links: [
       {
-        label: "Open Web Deployment",
-        href: "https://vercel.com/jacloses-projects/noctyrium",
+        label: "Open AXOM",
+        href: "https://axom.info",
         type: "web",
       },
       {
         label: "View Repo",
-        href: "https://github.com/jaclose/Noctyrium",
+        href: "https://github.com/jaclose/AXOM",
         type: "repo",
       },
       {
@@ -169,7 +164,7 @@ export const gardenFeatures: GardenFeature[] = [
         type: "note",
       },
     ],
-    tags: ["noctyrium", "medicine", "study", "project"],
+    tags: ["axom", "medicine", "study", "project"],
   },
   {
     id: "term-3",

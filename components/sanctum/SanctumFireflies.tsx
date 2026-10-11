@@ -9,7 +9,7 @@ import { makeFireflyGeometry, makeFireflyMaterial } from "./shaders/fireflies";
  * Warm amber fireflies drifting on organic, curling paths (all motion on the
  * GPU — see shaders/fireflies). Scattered through the Living Sanctum region down
  * the trail; count scales with the quality tier. Colour can be overridden so a
- * Noctyrium-style landmark can host a cooler cluster.
+ * AXOM-style landmark can host a cooler cluster.
  */
 export default function SanctumFireflies({
   count,

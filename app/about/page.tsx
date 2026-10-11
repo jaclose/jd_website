@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { about } from "@/lib/content";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
@@ -39,6 +40,11 @@ export default function AboutPage() {
           </div>
         </Reveal>
 
+        <section className="about-now" aria-label="Introduction and current work">
+          <p>I’m Jafar Dabbagh, a medical student at St. George’s University, with a psychology degree from the University of Tennessee, Knoxville.</p>
+          <p>This is where I keep the writing and work that grow alongside medicine: essays on faith and attention, field notes from everyday life, and AXOM, a local-first study system in active pre-beta development.</p>
+          <div><Link href="/essays">Read the essays ↗</Link><a href="https://axom.info" target="_blank" rel="noopener noreferrer">Explore AXOM ↗</a><Link href="/newsletter">Letters by email ↗</Link></div>
+        </section>
         {/* the fault line — from the site itself */}
         <Reveal delay={0.08}>
           <blockquote className="mt-16 border-l border-starlight/50 pl-6 font-serif text-[clamp(1.3rem,2.6vw,1.7rem)] italic leading-relaxed text-[rgba(232,230,225,0.82)] md:pl-8">

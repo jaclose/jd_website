@@ -62,7 +62,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || caps.reducedMotion || !caps.webgl) return;
     const el = stage.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -77,7 +77,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [ready, mounted]);
+  }, [ready, mounted, caps.reducedMotion, caps.webgl]);
 
   // fps→tier auto-stepping (spec 07): sustained decline steps the tier down one
   // notch at a time (never back up, so it can't oscillate) until "low".

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import SpatialHero from "@/components/hero/SpatialHero";
-import SectionSnap from "@/components/SectionSnap";
+import HomeHero from "@/components/hero/HomeHero";
 import Statement from "@/components/sections/Statement";
 import EssaysGallery from "@/components/sections/EssaysGallery";
 import QuoteOfWeek from "@/components/sections/QuoteOfWeek";
 import SanctumExperience from "@/components/sanctum/SanctumExperience";
-import SanctumPreloader from "@/components/sanctum/SanctumPreloader";
 import FieldNotesSection from "@/components/sections/FieldNotesSection";
 import DeploymentsDeck from "@/components/sections/DeploymentsDeck";
 import WorksArchive from "@/components/sections/WorksArchive";
@@ -24,12 +22,7 @@ export default function Home() {
     <main>
       <JsonLd data={personJsonLd} />
       <JsonLd data={websiteJsonLd} />
-      {/* warm the Sanctum's asset caches from first load, off the critical path */}
-      <SanctumPreloader />
-      <SpatialHero />
-      <SectionSnap
-        ids={["statement", "essays", "quote", "garden", "field-notes", "deployments", "archive", "log", "signals"]}
-      />
+      <HomeHero />
       <div className="relative z-10">
         <Statement />
         <EssaysGallery />

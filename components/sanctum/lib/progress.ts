@@ -113,7 +113,7 @@ export const useProgress = create<ProgressState>((set, get) => ({
         const p = JSON.parse(raw) as Partial<ProgressState>;
         set({
           hydrated: true,
-          visited: p.visited ?? {},
+          visited: { ...p.visited, ...(p.visited?.noctyrium ? { axom: true as const } : {}) },
           secrets: p.secrets ?? {},
           achievements: p.achievements ?? {},
           metresWalked: typeof p.metresWalked === "number" ? p.metresWalked : 0,

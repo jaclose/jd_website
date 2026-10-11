@@ -38,7 +38,8 @@ export interface JourneyNav {
 function initialNode(): string {
   if (typeof window === "undefined") return FIRST_NODE;
   // ?sanctumStart=<nodeId> drops the camera at a node (debugging / deep links).
-  const id = new URLSearchParams(window.location.search).get("sanctumStart");
+  const requested = new URLSearchParams(window.location.search).get("sanctumStart");
+  const id = requested === "noctyrium" ? "axom" : requested;
   if (id) {
     try {
       journeyNodeById(id);

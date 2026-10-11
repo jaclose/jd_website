@@ -115,8 +115,8 @@ export const sanctumQuests: SanctumQuest[] = [
     id: "night-garden",
     title: "The Night Garden",
     kicker: "Main Trail",
-    brief: "Find the glass greenhouse where Noctyrium grows — study by starlight.",
-    objectives: [obj("noctyrium", "Visit the Noctyrium greenhouse")],
+    brief: "Find the glass greenhouse where AXOM grows — study by starlight.",
+    objectives: [obj("axom", "Visit the AXOM greenhouse")],
     achievementId: "night-gardener",
   },
   {
@@ -169,7 +169,7 @@ export const questById = new Map(sanctumQuests.map((q) => [q.id, q]));
 export const sanctumAchievements: SanctumAchievement[] = [
   { id: "first-light", title: "First Light", detail: "Stepped through the threshold into the Living Sanctum." },
   { id: "signal-keeper", title: "Signal Keeper", detail: "Stood before the tower that broadcasts this website." },
-  { id: "night-gardener", title: "Night Gardener", detail: "Visited the Noctyrium greenhouse." },
+  { id: "night-gardener", title: "Night Gardener", detail: "Visited the AXOM greenhouse." },
   { id: "scholars-road", title: "The Scholar's Road", detail: "Walked every station of the medical road." },
   { id: "works-of-hands", title: "Works of the Hands", detail: "Walked the projects fork end to end." },
   { id: "every-chapter", title: "Every Chapter", detail: "Visited every landmark in the Sanctum." },

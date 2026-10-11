@@ -122,7 +122,7 @@ export const bodies: CelestialBody[] = [
     color: "#5b4f86",
     accent: "#b8a6ea",
     blurb:
-      "Shipped builds, summoned onto a night-sky duel field. Noctyrium — a nocturnal medical-study companion — holds the field.",
+      "Shipped builds, summoned onto a night-sky duel field. AXOM — a local-first medical study system in pre-beta — holds the field.",
     links: [{ label: "Enter the duel field", href: "/#deployments" }],
     footnote: "1 build deployed",
   },
