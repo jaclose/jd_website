@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import ReadingBookmark from "@/components/reading/ReadingBookmark";
+import ReadingCheckpoint from "@/components/reading/ReadingCheckpoint";
 import { useEffect, useRef } from "react";
 import { formatDate } from "@/lib/content";
 import { essayThemes } from "@/data/essayThemes";
@@ -36,6 +38,16 @@ export default function EssayReaderModal({
 
   useEffect(() => {
     dialogRef.current?.focus();
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),textarea,input,select,[tabindex="0"]') ?? []).filter(el => el.getClientRects().length);
+      const first = controls[0], last = controls.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
   }, [artifact.id]);
 
   // reading progress — a hairline across the top of the chamber that fills
@@ -116,10 +128,12 @@ export default function EssayReaderModal({
         </div>
 
         <div className="ea-reader__body-frame">
+          <ReadingBookmark slug={artifact.id} scrollRoot={scrollRef} />
           <article
             className={`prose-space ${paperMode(artifact) ? "scientific-paper" : "dropcap"}`}
             dangerouslySetInnerHTML={{ __html: artifact.html }}
           />
+          <ReadingCheckpoint slug={artifact.id} scrollRoot={scrollRef} />
           <p className="ea-reader__colophon">
             <span aria-hidden>❦</span> {artifact.flavorText}
           </p>

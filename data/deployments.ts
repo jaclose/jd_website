@@ -25,7 +25,7 @@ export const deployments: Deployment[] = [
   {
     id: "axom",
     name: "AXOM",
-    art: "/cards/axom.png",
+    art: "/cards/axom-orb.svg",
     attribute: "STUDY",
     cardType: "Medical study system",
     level: 4,

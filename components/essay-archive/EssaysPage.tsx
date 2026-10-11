@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { essayArtifacts, featuredArtifact, shelfArtifacts } from "@/data/essays";
 import { essayThemes, type EssayThemeId } from "@/data/essayThemes";
 import EssayArtifact from "./EssayArtifact";
+import ReadingQuests from "@/components/reading/ReadingQuests";
 import FeaturedEssay from "./FeaturedEssay";
 import EssayReaderModal from "./EssayReaderModal";
 import { useEssayTransition } from "./useEssayTransition";
@@ -82,6 +83,8 @@ export default function EssaysPage() {
           </p>
         </div>
       </header>
+
+      <ReadingQuests />
 
       <FeaturedEssay artifact={featuredArtifact} onOpen={open} />
 

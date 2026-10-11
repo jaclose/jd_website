@@ -7,6 +7,7 @@ import VisitTracker from "@/components/VisitTracker";
 import AchievementToast from "@/components/AchievementToast";
 import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
+import "@/components/reading/journal.css";
 
 const siteTitle = "Jafar Dabbagh | JD-1184";
 const siteDescription =

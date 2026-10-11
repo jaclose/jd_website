@@ -27,6 +27,7 @@ export interface ProgressToast {
 
 interface ProgressState {
   hydrated: boolean;
+  storageError: string;
   visited: Record<string, true>;
   secrets: Record<string, true>;
   achievements: Record<string, number>;
@@ -47,16 +48,18 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleSave(get: () => ProgressState) {
   if (typeof window === "undefined") return;
-  if (saveTimer) clearTimeout(saveTimer);
+  if (saveTimer) return;
   saveTimer = setTimeout(() => {
+    saveTimer = null;
     const { visited, secrets, achievements, metresWalked, trackedQuestId } = get();
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({ visited, secrets, achievements, metresWalked, trackedQuestId }),
       );
+      useProgress.setState({ storageError: "" });
     } catch {
-      /* storage full/denied — progress just won't persist */
+      useProgress.setState({ storageError: "This browser couldn’t save your progress. Export your journal before leaving." });
     }
   }, 400);
 }
@@ -98,6 +101,7 @@ function evaluate(state: ProgressState): Partial<ProgressState> {
 
 export const useProgress = create<ProgressState>((set, get) => ({
   hydrated: false,
+  storageError: "",
   visited: {},
   secrets: {},
   achievements: {},
@@ -111,23 +115,26 @@ export const useProgress = create<ProgressState>((set, get) => ({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<ProgressState>;
+        if (!p || typeof p !== "object") throw new Error("Invalid journal");
+        const flags = (value: unknown, ids: string[]) => Object.fromEntries(Object.entries(value && typeof value === "object" ? value : {}).filter(([id, v]) => ids.includes(id) && v === true)) as Record<string, true>;
         set({
           hydrated: true,
-          visited: { ...p.visited, ...(p.visited?.noctyrium ? { axom: true as const } : {}) },
-          secrets: p.secrets ?? {},
-          achievements: p.achievements ?? {},
-          metresWalked: typeof p.metresWalked === "number" ? p.metresWalked : 0,
-          trackedQuestId: p.trackedQuestId !== undefined ? p.trackedQuestId : "first-signal",
+          visited: { ...flags(p.visited, [...ALL_FEATURE_IDS, "trailhead"]), ...(p.visited?.noctyrium ? { axom: true as const } : {}) },
+          secrets: flags(p.secrets, sanctumSecrets.map(s => s.id)),
+          achievements: Object.fromEntries(Object.entries(p.achievements && typeof p.achievements === "object" ? p.achievements : {}).filter(([id, v]) => achievementById.has(id) && typeof v === "number" && Number.isFinite(v) && v > 0)),
+          metresWalked: typeof p.metresWalked === "number" && Number.isFinite(p.metresWalked) ? Math.max(0, p.metresWalked) : 0,
+          trackedQuestId: p.trackedQuestId === null || sanctumQuests.some(q => q.id === p.trackedQuestId) ? p.trackedQuestId! : "first-signal",
         });
         return;
       }
     } catch {
-      /* corrupted state — start fresh */
+      set({ storageError: "This browser couldn’t open your saved progress. You can explore and export this session." });
     }
     set({ hydrated: true });
   },
 
   visit: (id) => {
+    if (id !== "trailhead" && !ALL_FEATURE_IDS.includes(id)) return;
     const s = get();
     if (s.visited[id]) return;
     let patch: Partial<ProgressState> = { visited: { ...s.visited, [id]: true } };
@@ -150,6 +157,7 @@ export const useProgress = create<ProgressState>((set, get) => ({
   },
 
   addMetres: (m) => {
+    if (!Number.isFinite(m) || m <= 0) return;
     const s = get();
     const metresWalked = s.metresWalked + m;
     let patch: Partial<ProgressState> = { metresWalked };
@@ -160,6 +168,7 @@ export const useProgress = create<ProgressState>((set, get) => ({
   },
 
   trackQuest: (id) => {
+    if (id !== null && !sanctumQuests.some(q => q.id === id)) return;
     set({ trackedQuestId: id });
     scheduleSave(get);
   },

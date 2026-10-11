@@ -1,4 +1,6 @@
 "use client";
+import { useReadingJournal } from "@/components/reading/useReadingJournal";
+import { readingQuests } from "@/data/readingQuests";
 import { useTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
@@ -205,7 +207,9 @@ function SignalTower({ accent }: { accent: string }) {
 }
 
 function Greenhouse({ accent, lowFx }: { accent: string; lowFx: boolean }) {
-  const mark = useTexture("/cards/axom.png");
+  const mark = useTexture("/cards/axom-orb.svg");
+  const reading = useReadingJournal(s => s.entries);
+  const chapters = readingQuests.flatMap(q => [...q.slugs]);
   return (
     <group>
       {/* glass shell */}
@@ -227,9 +231,19 @@ function Greenhouse({ accent, lowFx }: { accent: string; lowFx: boolean }) {
         )),
       )}
       <mesh position={[0, 1.8, 1.04]}>
-        <planeGeometry args={[0.9, 0.9]} />
-        <meshBasicMaterial map={mark} toneMapped={false} />
+        <planeGeometry args={[1.3, 1.3]} />
+        <meshBasicMaterial map={mark} transparent toneMapped={false} />
       </mesh>
+      {/* A lamp for each carried chapter. Shared local reading state also powers
+          the accessible journal; these never claim study or author achievements. */}
+      {chapters.map((slug, i) => {
+        const angle = (i / chapters.length) * Math.PI * 2 - Math.PI / 2;
+        const lit = !!reading[slug]?.completedAt;
+        return <mesh key={slug} position={[Math.cos(angle) * 0.7, 1.8 + Math.sin(angle) * 0.7, 1.06]}>
+          <sphereGeometry args={[0.035, 8, 8]} />
+          <meshStandardMaterial color={lit ? "#e9d6b0" : "#56625f"} emissive={lit ? "#d4b886" : "#000000"} emissiveIntensity={lit ? 1.6 : 0} roughness={0.4} />
+        </mesh>;
+      })}
       {/* a crystal-rooted sapling glowing within */}
       <mesh position={[0, 0.6, 0]}>
         <icosahedronGeometry args={[0.4, 0]} />
