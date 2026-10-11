@@ -80,6 +80,7 @@ export default function FieldNotesSection() {
           const isActive = active === i;
           return (
             <Link
+              prefetch={false}
               key={n.slug}
               href={`/field-notes#${n.slug}`}
               onMouseEnter={() => setActive(i)}

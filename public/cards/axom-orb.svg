@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="body" cx="34%" cy="19%" r="83%"><stop stop-color="#565958"/><stop offset=".3" stop-color="#252a2b"/><stop offset=".65" stop-color="#121719"/><stop offset=".9" stop-color="#06090b"/><stop offset="1" stop-color="#282d2f"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5e3da"/><stop offset=".27" stop-color="#727975"/><stop offset=".55" stop-color="#222729"/><stop offset="1" stop-color="#7b8582"/></linearGradient>
+    <linearGradient id="ivory" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#fffdf4"/><stop offset=".45" stop-color="#d6cfc2"/><stop offset=".7" stop-color="#a39b8c"/><stop offset="1" stop-color="#e8e3d7"/></linearGradient>
+    <radialGradient id="light" cx="30%" cy="0" r="80%"><stop stop-color="#fff" stop-opacity=".16"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="17"/></filter>
+  </defs>
+  <ellipse cx="512" cy="888" rx="297" ry="35" fill="#000" opacity=".6" filter="url(#shadow)"/>
+  <circle cx="512" cy="488" r="386" fill="url(#body)" stroke="url(#rim)" stroke-width="3"/>
+  <circle cx="512" cy="488" r="374" fill="url(#light)" stroke="#ecede5" stroke-opacity=".07"/>
+  <path d="M220 322 A345 345 0 0 1 659 171" fill="none" stroke="#f4f2e9" stroke-opacity=".2" stroke-width="2" stroke-linecap="round"/>
+  <!-- Official AXOM mark geometry, sourced from AXOM/web/src/components/ui/BrandMark.tsx. -->
+  <g transform="translate(267 245) scale(4.9)" fill="url(#ivory)">
+    <polygon points="50,6 72.4,45.5 58.1,58.1 65.3,44 50,21.3 34.7,44 41.9,58.1 27.6,45.5"/>
+    <polygon points="50,56.4 57.2,63.3 50,70.2 42.8,63.3"/>
+    <polygon points="22.88,54.34 28.97,56.55 6.83,94 0,93.1"/>
+    <polygon points="77.12,54.34 71.03,56.55 93.17,94 100,93.1"/>
+  </g>
+</svg>

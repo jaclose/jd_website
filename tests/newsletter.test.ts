@@ -1,169 +1,98 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  createNewsletterRateLimiter,
-  subscribeToNewsletter,
-  type NewsletterResendClient,
-} from "../lib/newsletter/subscription";
+import { subscribeToNewsletter, saveNewsletterPreferences, tokenDigest, type NewsletterRequest, type NewsletterStore, type NewsletterProvider } from "../lib/newsletter/subscription";
+import { parsePreferences } from "../lib/newsletter/preferences";
+import { readNewsletterBody } from "../lib/newsletter/runtime";
 
-type FakeError = { message: string; name?: string; statusCode?: number | null };
-
-function fakeResend({
-  createError = null,
-  addError = null,
-}: {
-  createError?: FakeError | null;
-  addError?: FakeError | null;
-} = {}) {
-  const calls = {
-    create: [] as unknown[],
-    add: [] as unknown[],
+function fixture() {
+  const requests = new Map<string, NewsletterRequest>();
+  const messages: { email: string; url: string }[] = [];
+  const saves: { email: string; preferences: string[] }[] = [];
+  const store: NewsletterStore = {
+    async issue(request) { requests.set(request.tokenHash, request); return true; },
+    async read(hash) { return requests.get(hash) ?? null; },
+    async consume(hash) { const r = requests.get(hash); requests.delete(hash); return r ?? null; },
   };
-
-  const client: NewsletterResendClient = {
-    contacts: {
-      async create(payload) {
-        calls.create.push(payload);
-        return createError
-          ? { data: null, error: createError }
-          : { data: { id: "contact_123" }, error: null };
-      },
-      segments: {
-        async add(payload) {
-          calls.add.push(payload);
-          return addError ? { data: null, error: addError } : { data: { id: payload.segmentId }, error: null };
-        },
-      },
-    },
+  const provider: NewsletterProvider = {
+    async sendLink(email, url) { messages.push({ email, url }); },
+    async preferences() { return ["essay"]; },
+    async save(email, preferences) { saves.push({ email, preferences }); },
   };
-
-  return { client, calls };
+  const args = { store, provider, origin: "https://www.jafardabbagh.com", ipHash: "hashed-ip" };
+  return { ...args, args, requests, messages, saves };
 }
+const signup = { email: " Reader@Example.com ", preferences: ["essay", "project"], consent: true };
 
-const segments = {
-  essays: "seg_essays",
-  fieldNotes: "seg_fieldnotes",
-};
-
-test("subscribes a new essay reader to the essay segment", async () => {
-  const { client, calls } = fakeResend();
-
-  const result = await subscribeToNewsletter({
-    body: {
-      email: " Reader@Example.com ",
-      firstName: " Reader ",
-      source: "essay_footer",
-      slug: "a-real-essay",
-      contentType: "essay",
-    },
-    resend: client,
-    segments,
-    ip: "203.0.113.10",
-  });
-
-  assert.deepEqual(result, { ok: true, status: "subscribed", httpStatus: 200 });
-  assert.deepEqual(calls.create, [
-    { email: "reader@example.com", firstName: "Reader", unsubscribed: false },
-  ]);
-  assert.deepEqual(calls.add, [{ email: "reader@example.com", segmentId: "seg_essays" }]);
+test("signup emails a one-time link but does not enroll anyone", async () => {
+  const f = fixture();
+  const result = await subscribeToNewsletter({ ...f.args, body: signup });
+  assert.equal(result.ok, true); assert.equal(f.saves.length, 0);
+  assert.equal(f.messages[0].email, "reader@example.com");
+  const url = new URL(f.messages[0].url);
+  assert.equal(url.search, ""); assert.equal(url.pathname, "/newsletter/confirm");
+  assert.match(url.hash, /^#[a-f0-9]{64}$/);
+  assert.ok(f.requests.has(tokenDigest(url.hash.slice(1))));
 });
-
-test("adds an existing contact to the requested segment and reports already_subscribed", async () => {
-  const { client, calls } = fakeResend({
-    createError: { message: "Contact already exists", statusCode: 409 },
-  });
-
-  const result = await subscribeToNewsletter({
-    body: { email: "reader@example.com", contentType: "field_note", source: "fieldnote_footer" },
-    resend: client,
-    segments,
-    ip: "203.0.113.10",
-  });
-
-  assert.deepEqual(result, { ok: true, status: "already_subscribed", httpStatus: 200 });
-  assert.equal(calls.create.length, 1);
-  assert.deepEqual(calls.add, [{ email: "reader@example.com", segmentId: "seg_fieldnotes" }]);
+test("valid confirmation applies exact choices, including projects, once", async () => {
+  const f = fixture(); await subscribeToNewsletter({ ...f.args, body: signup });
+  const token = new URL(f.messages[0].url).hash.slice(1);
+  const result = await saveNewsletterPreferences({ ...f.args, token, preferences: ["project"] });
+  assert.equal(result.ok, true); assert.deepEqual(f.saves, [{ email: "reader@example.com", preferences: ["project"] }]);
+  assert.equal((await saveNewsletterPreferences({ ...f.args, token, preferences: ["essay"] })).httpStatus, 410);
+  assert.equal(f.saves.length, 1);
 });
-
-test("site footer signups join both publication segments", async () => {
-  const { client, calls } = fakeResend();
-
-  const result = await subscribeToNewsletter({
-    body: { email: "reader@example.com", contentType: "all", source: "site_footer" },
-    resend: client,
-    segments,
-    ip: "203.0.113.10",
-  });
-
-  assert.equal(result.ok, true);
-  assert.deepEqual(calls.add, [
-    { email: "reader@example.com", segmentId: "seg_essays" },
-    { email: "reader@example.com", segmentId: "seg_fieldnotes" },
-  ]);
+test("empty confirmed selection unsubscribes all categories", async () => {
+  const f = fixture(); await subscribeToNewsletter({ ...f.args, body: { email: signup.email, intent: "manage" } });
+  const token = new URL(f.messages[0].url).hash.slice(1);
+  await saveNewsletterPreferences({ ...f.args, token, preferences: [] });
+  assert.deepEqual(f.saves[0].preferences, []);
 });
-
-test("rejects invalid emails before calling Resend", async () => {
-  const { client, calls } = fakeResend();
-
-  const result = await subscribeToNewsletter({
-    body: { email: "not-an-email", contentType: "essay" },
-    resend: client,
-    segments,
-    ip: "203.0.113.10",
-  });
-
-  assert.deepEqual(result, {
-    ok: false,
-    error: "That doesn't look like an email.",
-    httpStatus: 400,
-  });
-  assert.equal(calls.create.length, 0);
-  assert.equal(calls.add.length, 0);
+test("rejects malformed bodies, invalid email, absent consent and unknown categories", async () => {
+  for (const body of [null, [], "x", { ...signup, email: "a" }, { ...signup, consent: false }, { ...signup, preferences: [] }, { ...signup, preferences: ["ads"] }, { ...signup, email: `${"x".repeat(260)}@example.com` }]) {
+    const f = fixture(); assert.equal((await subscribeToNewsletter({ ...f.args, body })).httpStatus, 400); assert.equal(f.messages.length, 0);
+  }
 });
-
-test("returns a safe error when Resend segment enrollment fails", async () => {
-  const { client } = fakeResend({
-    addError: { message: "Resend internal error", name: "internal_server_error", statusCode: 500 },
-  });
-
-  const result = await subscribeToNewsletter({
-    body: { email: "reader@example.com", contentType: "essay" },
-    resend: client,
-    segments,
-    ip: "203.0.113.10",
-  });
-
-  assert.deepEqual(result, {
-    ok: false,
-    error: "Couldn't sign you up just now.",
-    httpStatus: 502,
-  });
+test("honeypot makes no storage or email calls", async () => {
+  const f = fixture(); await subscribeToNewsletter({ ...f.args, body: { ...signup, company: "spam" } });
+  assert.equal(f.requests.size, 0); assert.equal(f.messages.length, 0);
 });
-
-test("rate-limits repeated attempts by email and ip", async () => {
-  const { client, calls } = fakeResend();
-  const rateLimiter = createNewsletterRateLimiter({ maxPerIp: 1, maxPerEmail: 1, windowMs: 60_000 });
-
-  await subscribeToNewsletter({
-    body: { email: "reader@example.com", contentType: "essay" },
-    resend: client,
-    segments,
-    rateLimiter,
-    ip: "203.0.113.10",
-  });
-
-  const result = await subscribeToNewsletter({
-    body: { email: "reader@example.com", contentType: "essay" },
-    resend: client,
-    segments,
-    rateLimiter,
-    ip: "203.0.113.10",
-  });
-
-  assert.deepEqual(result, {
-    ok: false,
-    error: "Too many attempts - try again shortly.",
-    httpStatus: 429,
-  });
-  assert.equal(calls.create.length, 1);
+test("missing configuration, durable rate limits and provider errors fail honestly", async () => {
+  const f = fixture();
+  assert.equal((await subscribeToNewsletter({ ...f.args, body: signup, provider: null })).httpStatus, 503);
+  f.store.issue = async () => false;
+  assert.equal((await subscribeToNewsletter({ ...f.args, body: signup })).httpStatus, 429);
+  assert.equal(f.messages.length, 0);
+  f.store.issue = async () => { throw new Error("db"); };
+  assert.equal((await subscribeToNewsletter({ ...f.args, body: signup })).httpStatus, 502);
+});
+test("expired, tampered and replayed tokens never mutate contacts", async () => {
+  const f = fixture();
+  for (const token of [null, "bad", "a".repeat(64)]) {
+    assert.equal((await saveNewsletterPreferences({ ...f.args, token, preferences: ["essay"] })).ok, false);
+  }
+  assert.equal(f.saves.length, 0);
+});
+test("a failed save consumes its token so old consent cannot be replayed", async () => {
+  const f = fixture(); await subscribeToNewsletter({ ...f.args, body: signup });
+  const token = new URL(f.messages[0].url).hash.slice(1);
+  f.provider.save = async () => { throw new Error("Provider unavailable"); };
+  assert.equal((await saveNewsletterPreferences({ ...f.args, token, preferences: ["essay"] })).httpStatus, 502);
+  assert.equal((await saveNewsletterPreferences({ ...f.args, token, preferences: ["essay"] })).httpStatus, 410);
+});
+test("concurrent use of the same token makes only one provider write", async () => {
+  const f = fixture(); await subscribeToNewsletter({ ...f.args, body: signup });
+  const token = new URL(f.messages[0].url).hash.slice(1);
+  const results = await Promise.all([1, 2].map(() => saveNewsletterPreferences({ ...f.args, token, preferences: ["essay"] })));
+  assert.equal(results.filter(r => r.ok).length, 1); assert.equal(f.saves.length, 1);
+});
+test("preferences cannot broaden accidentally", () => {
+  assert.deepEqual(parsePreferences(["essay", "essay"]), ["essay"]);
+  assert.equal(parsePreferences("all"), null); assert.equal(parsePreferences(["essay", "unknown"]), null);
+});
+test("request boundary rejects cross-origin, wrong content type and oversized JSON", async () => {
+  const req = (body: string, headers = {}) => new Request("https://www.jafardabbagh.com/api/newsletter/subscribe", { method: "POST", body, headers: { "Content-Type": "application/json", ...headers } });
+  assert.deepEqual(await readNewsletterBody(req('{"email":"reader@example.com"}')), { email: "reader@example.com" });
+  await assert.rejects(readNewsletterBody(req('{}', { origin: "https://evil.example" })));
+  await assert.rejects(readNewsletterBody(req('{}', { "Content-Type": "text/plain" })));
+  await assert.rejects(readNewsletterBody(req(JSON.stringify({ email: "x".repeat(9000) }))));
 });

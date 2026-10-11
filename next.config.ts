@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
     // any remaining old→new pairs into the array below — they take effect on
     // the next deploy.
     return [
+      { source: "/noctyrium", destination: "https://axom.info", permanent: true },
+      { source: "/projects/noctyrium", destination: "https://axom.info", permanent: true },
       {
         source: "/evaluating-earthquake-preparedness-in-turkey-and-syria",
         destination: "/works/fault-lines-and-failures.pdf",

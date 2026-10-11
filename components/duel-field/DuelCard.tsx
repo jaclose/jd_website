@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import Image from "next/image";
+import { useRef } from "react";
 import {
   motion,
   useMotionValue,
@@ -12,11 +13,9 @@ import { Deployment } from "@/data/deployments";
 interface DuelCardProps {
   deployment: Deployment;
   tilt?: boolean;
-  mouseX?: number;
-  mouseY?: number;
 }
 
-export function DuelCard({ deployment: d, tilt = false, mouseX = 0, mouseY = 0 }: DuelCardProps) {
+export function DuelCard({ deployment: d, tilt = false }: DuelCardProps) {
   const rx = useMotionValue(0);
   const ry = useMotionValue(0);
   const srx = useSpring(rx, { stiffness: 200, damping: 18 });
@@ -31,8 +30,6 @@ export function DuelCard({ deployment: d, tilt = false, mouseX = 0, mouseY = 0 }
     ry.set(((e.clientX - r.left) / r.width - 0.5) * 18);
     rx.set(-((e.clientY - r.top) / r.height - 0.5) * 18);
   };
-
-  const hasArt = d.art || d.id === "noctyrium";
 
   return (
     <motion.div
@@ -88,11 +85,14 @@ export function DuelCard({ deployment: d, tilt = false, mouseX = 0, mouseY = 0 }
           className="relative mt-1.5 aspect-square w-full overflow-hidden rounded-[4px] border border-[rgba(212,184,134,0.3)] bg-[#05080f]"
           style={{ transform: "translateZ(16px)" }}
         >
-          {hasArt && (
+          {d.art && (
             <>
               {/* Artwork */}
-              <img
-                src={d.art || "/cards/noctyrium.png"}
+              <Image
+                src={d.art}
+                width={512}
+                height={512}
+                sizes="210px"
                 alt={d.name}
                 className="h-full w-full object-contain"
               />

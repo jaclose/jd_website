@@ -1,10 +1,8 @@
+import { sendPreparedBroadcast } from "./sendPreparedBroadcast";
 import {
   resend,
   RESEND_FROM,
-  RESEND_TOPIC_ID,
-  canBroadcast,
   DRY_RUN,
-  segmentIdForPublication,
 } from "@/lib/resend/client";
 import {
   publicationPreviewText,
@@ -43,13 +41,9 @@ export async function sendPublicationTest(
   const text = detokenize(renderPublicationBroadcastText(payload));
 
   if (DRY_RUN) {
-    try {
-      const fs = await import("node:fs");
-      fs.writeFileSync("/tmp/email-preview.html", html);
-      fs.writeFileSync("/tmp/email-preview.txt", text);
-    } catch {
-      /* preview is best-effort */
-    }
+    const fs = await import("node:fs");
+    fs.writeFileSync("/tmp/email-preview.html", html);
+    fs.writeFileSync("/tmp/email-preview.txt", text);
     return { ok: true, status: "dry_run", subject };
   }
 
@@ -80,48 +74,16 @@ export async function sendPublicationBroadcast(
   const text = renderPublicationBroadcastText(payload);
 
   if (DRY_RUN) {
-    try {
-      const fs = await import("node:fs");
-      fs.writeFileSync("/tmp/email-preview.html", html);
-      fs.writeFileSync("/tmp/email-preview.txt", text);
-    } catch {
-      /* preview is best-effort */
-    }
+    const fs = await import("node:fs");
+    fs.writeFileSync("/tmp/email-preview.html", html);
+    fs.writeFileSync("/tmp/email-preview.txt", text);
     return { ok: true, status: "dry_run", subject };
   }
 
-  if (!canBroadcast(payload.type) || !resend) {
-    return { ok: false, status: "failed", subject, error: "Resend broadcast env not configured." };
-  }
-
   try {
-    const segmentId = segmentIdForPublication(payload.type);
-    const name = `${subject} · ${new Date().toISOString().slice(0, 10)}`;
-    const shouldSend = opts.sendImmediately || !!opts.scheduledAt;
-    const base = {
-      segmentId,
-      from: RESEND_FROM,
-      subject,
-      html,
-      text,
-      name,
-      previewText: publicationPreviewText(payload),
-      topicId: RESEND_TOPIC_ID || undefined,
-    };
-    const created = await resend.broadcasts.create(
-      shouldSend
-        ? { ...base, send: true, ...(opts.scheduledAt ? { scheduledAt: opts.scheduledAt } : {}) }
-        : { ...base, send: false }
-    );
-    if (created.error) {
-      return { ok: false, status: "failed", subject, error: created.error.message };
-    }
-    const broadcastId = created.data?.id;
-    if (!broadcastId) {
-      return { ok: false, status: "failed", subject, error: "No broadcast id returned." };
-    }
-    const status = opts.scheduledAt ? "scheduled" : opts.sendImmediately ? "sent" : "draft_created";
-    return { ok: true, status, subject, broadcastId };
+    if (!payload.slug) throw new Error("A publication slug is required.");
+    const result = await sendPreparedBroadcast({ channel: payload.type === "deployment" ? "project" : payload.type, name: `jd1184:${payload.type}:${payload.slug}`, subject, html, text, previewText: publicationPreviewText(payload) }, opts);
+    return { ok: true, ...result, subject };
   } catch (e) {
     return { ok: false, status: "failed", subject, error: e instanceof Error ? e.message : "Unknown error" };
   }

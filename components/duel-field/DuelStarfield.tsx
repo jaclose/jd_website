@@ -25,6 +25,8 @@ interface DuelStarfieldProps {
 
 export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelStarfieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pointer = useRef({ x: mouseX, y: mouseY });
+  useEffect(() => { pointer.current = { x: mouseX, y: mouseY }; }, [mouseX, mouseY]);
   const starsRef = useRef<Star[]>([]);
   const animationRef = useRef<number | undefined>(undefined);
   const [quality, setQuality] = useState<"high" | "medium" | "low">("high");
@@ -47,13 +49,13 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
     if (!ctx) return;
 
     // Set canvas size
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = canvas.offsetWidth * dpr;
     canvas.height = canvas.offsetHeight * dpr;
     ctx.scale(dpr, dpr);
 
-    const w = canvas.offsetWidth;
-    const h = canvas.offsetHeight;
+    let w = canvas.offsetWidth;
+    let h = canvas.offsetHeight;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Star count based on quality
@@ -86,6 +88,9 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
     let frameCount = 0;
     const animate = () => {
       frameCount++;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = pointer.current.x - rect.left;
+      const mouseY = pointer.current.y - rect.top;
 
       // Clear with deep space color
       ctx.fillStyle = "#030712";
@@ -116,7 +121,7 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
           const dist = Math.sqrt(dx * dx + dy * dy);
           const maxDist = 240;
 
-          if (dist < maxDist) {
+          if (dist > 0 && dist < maxDist) {
             const force = (1 - dist / maxDist) * 0.08;
             star.vx += (dx / dist) * force;
             star.vy += (dy / dist) * force;
@@ -189,13 +194,25 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    let inView = false;
+    const syncActivity = () => {
+      if (inView && !document.hidden) {
+        if (animationRef.current === undefined) animate();
+      } else if (animationRef.current !== undefined) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+    };
+    const observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; syncActivity(); });
+    observer.observe(canvas);
+    document.addEventListener("visibilitychange", syncActivity);
 
     // Handle resize
     const handleResize = () => {
       const newW = canvas.offsetWidth * dpr;
       const newH = canvas.offsetHeight * dpr;
       if (newW !== canvas.width || newH !== canvas.height) {
+        w = canvas.offsetWidth; h = canvas.offsetHeight;
         canvas.width = newW;
         canvas.height = newH;
         ctx.scale(dpr, dpr);
@@ -206,9 +223,12 @@ export function DuelStarfield({ active = false, mouseX = 0, mouseY = 0 }: DuelSt
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      animationRef.current = undefined;
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", syncActivity);
       window.removeEventListener("resize", handleResize);
     };
-  }, [active, quality, mouseX, mouseY]);
+  }, [active, quality]);
 
   return (
     <canvas

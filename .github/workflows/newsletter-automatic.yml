@@ -1,0 +1,62 @@
+name: automatic-newsletter
+on:
+  push:
+    branches: [main]
+    paths: ["content/**", "data/projectUpdates.ts"]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview examples, or dispatch eligible live content after activation
+        type: choice
+        options: [preview, send]
+        default: preview
+permissions:
+  contents: read
+concurrency:
+  group: publication-email
+  cancel-in-progress: false
+jobs:
+  dispatch:
+    if: github.ref == 'refs/heads/main' && (vars.NEWSLETTER_AUTOMATION_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'preview'))
+    environment: newsletter
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:newsletter
+      - name: Verify publication on the live site, then prepare letters
+        env:
+          SEND_NEWSLETTER: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'send' }}
+          NEWSLETTER_AUTOMATION_ENABLED: ${{ vars.NEWSLETTER_AUTOMATION_ENABLED }}
+          NEWSLETTER_STARTS_AT: ${{ vars.NEWSLETTER_STARTS_AT }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          SEGMENT_NEWSLETTER_ID: ${{ secrets.SEGMENT_NEWSLETTER_ID }}
+          TOPIC_ESSAYS_ID: ${{ secrets.TOPIC_ESSAYS_ID }}
+          TOPIC_FIELDNOTES_ID: ${{ secrets.TOPIC_FIELDNOTES_ID }}
+          TOPIC_PROJECTS_ID: ${{ secrets.TOPIC_PROJECTS_ID }}
+          TOPIC_WEEKLY_ID: ${{ secrets.TOPIC_WEEKLY_ID }}
+          TOPIC_MONTHLY_ID: ${{ secrets.TOPIC_MONTHLY_ID }}
+        run: |
+          if [ "$SEND_NEWSLETTER" = "true" ]; then
+            npm run email:automate
+          else
+            npm run email:preview
+          fi
+      - name: Save the rendered letters for review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: newsletter-previews
+          path: artifacts/newsletter/
+          if-no-files-found: ignore
+          retention-days: 14

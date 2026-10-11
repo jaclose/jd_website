@@ -181,7 +181,7 @@ export default function EssayDeck() {
           {/* PC header */}
           <div className="mb-2 flex items-center gap-2 border-b border-[rgba(80,120,160,0.3)] pb-2">
             <span className="h-2 w-2 rounded-full bg-[#e74c3c]" aria-hidden />
-            <span className="label text-[8px]! tracking-[0.24em]! text-comet/90">JAFAR'S PC</span>
+            <span className="label text-[8px]! tracking-[0.24em]! text-comet/90">JAFAR’S PC</span>
             <span className="ml-auto label text-[7px]! text-dim">BOX 1</span>
           </div>
 

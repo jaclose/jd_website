@@ -14,6 +14,7 @@ import { detectQuality, resolveConfig } from "./SanctumQualityManager";
 import { branchLabel } from "./lib/journey";
 import { preloadZone } from "./lib/assets";
 import { useProgress } from "./lib/progress";
+import { useReadingJournal } from "@/components/reading/useReadingJournal";
 import { pointerLook, sanctumAudio, sanctumControl } from "./lib/store";
 
 const SanctumCanvas = dynamic(() => import("./SanctumCanvas"), { ssr: false });
@@ -59,10 +60,11 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     pointerLook.enabled = true;
     // restore quests / achievements / secrets from the last visit
     useProgress.getState().hydrate();
+    useReadingJournal.getState().hydrate();
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || caps.reducedMotion || !caps.webgl) return;
     const el = stage.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -77,7 +79,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [ready, mounted]);
+  }, [ready, mounted, caps.reducedMotion, caps.webgl]);
 
   // fps→tier auto-stepping (spec 07): sustained decline steps the tier down one
   // notch at a time (never back up, so it can't oscillate) until "low".
@@ -206,6 +208,7 @@ export default function SanctumExperience({ id }: { id?: string } = {}) {
       onPointerLeave={onPointerLeave}
       className={`relative h-svh w-full overflow-hidden bg-space-deep ${walking ? "touch-none" : ""}`}
     >
+      <a href="/garden#quest-journal" className="absolute left-5 top-60 z-40 md:top-56 border border-hairline bg-space-deep/80 px-4 py-3 font-mono text-xs text-ink backdrop-blur-md">Open your journal ↗</a>
       {!ready ? null : fallback ? (
         <>
           <SanctumFallback

@@ -1,80 +1,31 @@
-"use client";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { essays, fieldNotes, formatDate } from "@/lib/content";
+import { essayMeta } from "@/data/meta";
 
-const LINE = "Chasing truth in struggle and stillness.";
-
-/**
- * The brand moment — the system has collapsed into the bar, and the
- * first thing on solid ground is the mark and the sentence the whole
- * site lives by.
- */
 export default function Statement() {
-  const words = LINE.split(" ");
+  const latest = essays[0];
+  const note = fieldNotes[0];
+  const art = latest && essayMeta[latest.slug];
   return (
-    <section
-      id="statement"
-      className="relative flex min-h-svh items-center justify-center px-6 py-32 text-center"
-    >
-      <div className="max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-10 flex justify-center"
-        >
-          <Image
-            src="/brand/mark.png"
-            alt="DabbaghMed — the mark"
-            width={64}
-            height={64}
-            className="h-16 w-16"
-          />
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 1, delay: 0.25 }}
-          className="label mb-8 text-[10px]! text-starlight/70"
-        >
-          DABBAGHMED · EST. 2025
-        </motion.p>
-
-        <h2 className="font-display text-[clamp(2.2rem,6vw,4.8rem)] font-light leading-[1.12] text-ink">
-          {words.map((w, i) => (
-            <motion.span
-              key={i}
-              className="inline-block whitespace-pre"
-              initial={{ opacity: 0, y: 26 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{
-                duration: 0.9,
-                delay: 0.35 + i * 0.09,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              {w}
-              {i < words.length - 1 ? " " : ""}
-            </motion.span>
-          ))}
-        </h2>
-
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 1.1, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto mt-10 max-w-xl font-serif text-xl italic leading-relaxed text-faint"
-        >
-          I’m a medical student learning that healing begins long before
-          diagnosis. This space gathers my reflections on growth, faith, and
-          the human anatomy of resilience.
-        </motion.p>
+    <section id="statement" className="editorial-entry scroll-mt-24">
+      <div className="editorial-intro">
+        <p className="label text-starlight">A field guide to JD-1184</p>
+        <h2>Chasing truth in<br /><em>struggle & stillness.</em></h2>
+        <p>I’m Jafar, a medical student at St. George’s University. I write about faith, attention, and the work of becoming useful. I also build the tools I wish I had.</p>
+        <Link prefetch={false} className="editorial-link" href="/about">Meet the person behind the system <span aria-hidden>↗</span></Link>
       </div>
+      <div className="editorial-dispatches">
+        {latest && <Link prefetch={false} href={`/essays/${latest.slug}`} className="editorial-feature">
+          {art && <div className="editorial-cover"><Image src={art.cover} alt={art.alt} fill sizes="(max-width: 700px) 34vw, 230px" /></div>}
+          <div><p className="label">Latest essay · {formatDate(latest.date)}</p><h3>{latest.title}</h3><p>{art?.subtitle || latest.excerpt}</p><span className="editorial-link">Read the essay <span aria-hidden>↗</span></span></div>
+        </Link>}
+        {note && <Link prefetch={false} className="editorial-row" href={`/field-notes#${note.slug}`}><span className="label">From the field · {formatDate(note.date)}</span><h3>{note.title}</h3><span aria-hidden>↗</span></Link>}
+        <a className="editorial-row" href="https://axom.info" target="_blank" rel="noopener noreferrer"><span className="label">On the workbench · Pre-beta</span><h3>AXOM. A system for the work.</h3><span aria-hidden>↗</span></a>
+      </div>
+      <nav className="editorial-index" aria-label="Explore the site">
+        {[['01', 'Essays', '/essays'], ['02', 'Field Notes', '/field-notes'], ['03', 'The Sanctum', '/garden'], ['04', 'Projects', '/#deployments'], ['05', 'Letters by email', '/newsletter']].map(([n, label, href]) => <Link prefetch={false} key={href} href={href}><span>{n}</span>{label}<span aria-hidden>↗</span></Link>)}
+      </nav>
     </section>
   );
 }

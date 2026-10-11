@@ -239,22 +239,6 @@ export const garden: GardenItem[] = [
     tags: ["medicine", "clinical", "study"],
   },
   {
-    id: "jd-med-app",
-    title: "Med App",
-    domain: "mind",
-    type: "greenhouse",
-    stage: 2,
-    status: "active",
-    note: "A study tool taking shape — exam logic, made walkable.",
-    description:
-      "A greenhouse on the study trail: an app to make medical learning quicker to traverse. Early, but rooted.",
-    planted: "2026-03-01",
-    lastUpdated: "2026-04-06",
-    repoUrl: "https://github.com/jaclose/jd-med-app",
-    symbol: "⌘",
-    tags: ["medicine", "app", "education"],
-  },
-  {
     id: "spaced-repetition",
     title: "Spaced Repetition",
     domain: "mind",
@@ -297,25 +281,26 @@ export const garden: GardenItem[] = [
     planted: "2026-06-11",
     lastUpdated: "2026-06-14",
     repoUrl: "https://github.com/jaclose/jd_website",
-    projectUrl: "https://jd-website-wheat.vercel.app",
+    projectUrl: "https://www.jafardabbagh.com",
     symbol: "✦",
     tags: ["nextjs", "three.js", "design"],
   },
   {
-    id: "noctyrium",
-    title: "Noctyrium",
+    id: "axom",
+    title: "AXOM",
     domain: "craft",
-    type: "workshop",
+    type: "greenhouse",
     stage: 2,
     status: "active",
-    note: "A night-built thing in Swift — still under construction.",
+    note: "A local-first medical study system, growing through daily use.",
     description:
-      "A Swift app taking shape in the workshop. Built in the quiet hours; not yet open to the trail.",
+      "Question banks, course tracking, and focused practice. AXOM is in active pre-beta development; the current product and source live at axom.info and jaclose/AXOM.",
     planted: "2026-05-01",
-    lastUpdated: "2026-06-14",
-    repoUrl: "https://github.com/jaclose/Noctyrium",
-    symbol: "☾",
-    tags: ["swift", "app"],
+    lastUpdated: "2026-10-11",
+    repoUrl: "https://github.com/jaclose/AXOM",
+    projectUrl: "https://axom.info",
+    symbol: "A",
+    tags: ["study", "local-first", "app"],
   },
   {
     id: "design-systems",
@@ -434,6 +419,26 @@ export const garden: GardenItem[] = [
     planted: "2025-02-11",
     symbol: "❧",
     tags: ["family", "legacy"],
+  },
+];
+
+/** Preserved history; excluded from active plots and biosphere totals. */
+export const gardenArchive: GardenItem[] = [
+  {
+    id: "jd-med-app",
+    title: "Med App · early prototype",
+    domain: "mind",
+    type: "greenhouse",
+    stage: 2,
+    status: "archived",
+    note: "An early study-tool prototype, retained as project history.",
+    description:
+      "An earlier medical study experiment. The current study-system work is presented under AXOM; this record preserves the original project.",
+    planted: "2026-03-01",
+    lastUpdated: "2026-04-06",
+    repoUrl: "https://github.com/jaclose/jd-med-app",
+    symbol: "⌘",
+    tags: ["medicine", "app", "education"],
   },
 ];
 

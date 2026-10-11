@@ -1,4 +1,4 @@
-import { SITE_ORIGIN } from "@/lib/resend/client";
+import { SITE_URL as SITE_ORIGIN } from "@/lib/seo";
 
 export interface PublicationPayload {
   type: "essay" | "field_note" | "deployment";
@@ -9,6 +9,7 @@ export interface PublicationPayload {
   url?: string;
   heroImage?: string;
   tags?: string[];
+  readingTime?: string;
 }
 
 const SITE_NAME = "Jafar Dabbagh";
@@ -28,25 +29,26 @@ function esc(s: string): string {
 
 function kind(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Field Note";
-  if (type === "deployment") return "Deployment";
+  if (type === "deployment") return "Project update";
   return "Essay";
 }
 
 export function publicationSubject(p: PublicationPayload): string {
   if (p.type === "field_note") return `New Field Note: ${p.title}`;
-  if (p.type === "deployment") return `New Deployment: ${p.title}`;
+  if (p.type === "deployment") return `Project Update: ${p.title}`;
   return `New Essay: ${p.title}`;
 }
 
 function ctaLabel(type: PublicationPayload["type"]): string {
   if (type === "field_note") return "Read the field note";
-  if (type === "deployment") return "See it on the duel field";
+  if (type === "deployment") return "Explore the project";
   return "Read the full essay";
 }
 
 export function publicationPreviewText(p: PublicationPayload): string {
+  if (p.excerpt) return p.excerpt.slice(0, 180);
   if (p.type === "field_note") return "A new field note has been logged.";
-  if (p.type === "deployment") return "A new build has been summoned to the duel field.";
+  if (p.type === "deployment") return "An update from the workbench.";
   return "A new essay has been published.";
 }
 
@@ -84,7 +86,7 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
       </td></tr>
       ${p.heroImage ? `<tr><td style="padding:14px 32px 0;"><img src="${esc(p.heroImage)}" alt="" width="496" style="width:100%;border-radius:4px;display:block;"></td></tr>` : ""}
       <tr><td style="padding:18px 32px 0;">
-        <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${GOLD};">${kind(p.type)}${date ? ` · ${esc(date)}` : ""}</div>
+        <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${GOLD};">${kind(p.type)}${date ? ` · ${esc(date)}` : ""}${p.readingTime ? ` · ${esc(p.readingTime)}` : ""}</div>
         <h1 style="margin:12px 0 0;font-size:28px;font-weight:400;line-height:1.2;color:${INK};">${esc(p.title)}</h1>
       </td></tr>
       <tr><td style="padding:18px 32px 0;"><p style="margin:0;font-size:16px;line-height:1.6;color:rgba(232,230,225,0.86);">Hi {{{contact.first_name|there}}},</p></td></tr>
@@ -94,8 +96,8 @@ export function renderPublicationBroadcastHtml(p: PublicationPayload): string {
       </td></tr>
       <tr><td style="padding:28px 32px 30px;border-top:1px solid rgba(232,230,225,0.08);margin-top:20px;">
         <p style="margin:18px 0 0;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;color:${DIM};">
-          You're receiving this because you subscribed to new essays and field notes from ${SITE_NAME}.<br>
-          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${DIM};text-decoration:underline;">Unsubscribe</a> &middot; <a href="${SITE_ORIGIN}" style="color:${DIM};text-decoration:underline;">${esc(SITE_ORIGIN.replace(/^https?:\/\//, ""))}</a>
+          You're receiving this because you chose to receive these updates from ${SITE_NAME}.<br>
+          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${DIM};text-decoration:underline;">Preferences or unsubscribe</a> &middot; <a href="${SITE_ORIGIN}" style="color:${DIM};text-decoration:underline;">${esc(SITE_ORIGIN.replace(/^https?:\/\//, ""))}</a>
         </p>
       </td></tr>
     </table>
@@ -118,8 +120,8 @@ export function renderPublicationBroadcastText(p: PublicationPayload): string {
     `${ctaLabel(p.type)}: ${url}`,
     "",
     "—",
-    `You're receiving this because you subscribed to new essays and field notes from ${SITE_NAME}.`,
-    `Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
+    `You're receiving this because you chose to receive these updates from ${SITE_NAME}.`,
+    `Preferences or unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
   ]
     .filter((l) => l !== "")
     .join("\n");

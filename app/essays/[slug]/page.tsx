@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ReadingBookmark from "@/components/reading/ReadingBookmark";
+import ReadingCheckpoint from "@/components/reading/ReadingCheckpoint";
 import { notFound } from "next/navigation";
 import { essays, essayBySlug, formatDate, readingTime } from "@/lib/content";
 import { essayMeta } from "@/data/meta";
@@ -153,11 +155,13 @@ export default async function EssayPage({
           </figure>
         )}
 
+        <ReadingBookmark slug={slug} />
         <article
           className={`prose-space ${paperMode ? "scientific-paper" : "dropcap"}`}
           dangerouslySetInnerHTML={{ __html: essay.html }}
         />
         {paperMode && <EssayFigureGuard />}
+        <ReadingCheckpoint slug={slug} />
 
         <div className="mt-20">
           <EssaySignup slug={slug} type="essay" />

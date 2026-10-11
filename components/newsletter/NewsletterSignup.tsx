@@ -1,130 +1,43 @@
 "use client";
+import Link from "next/link";
 import { useId, useState } from "react";
+import PreferenceChoices from "./PreferenceChoices";
+import type { NewsletterPreference } from "@/lib/newsletter/preferences";
 
-type Status = "idle" | "loading" | "subscribed" | "already" | "error";
-
-/**
- * Newsletter signup → /api/newsletter/subscribe (Resend). Honeypot + all UI
- * states, accessible, mobile-friendly, dark, literary — not SaaS-slop.
- */
-export default function NewsletterSignup({
-  source,
-  contentSlug,
-  contentType = "all",
-  heading = "Subscribe to new writing",
-  blurb = "New essays and field notes. No spam. Unsubscribe anytime.",
-}: {
-  source?: string;
-  contentSlug?: string;
-  contentType?: "essay" | "field_note" | "all";
-  heading?: string;
-  blurb?: string;
+export default function NewsletterSignup({ source, contentSlug, contentType = "all", heading = "Letters from JD-1184", blurb = "Essays, field notes, and occasional project updates. Choose what reaches you.", manage = false }: {
+  source?: string; contentSlug?: string; contentType?: "essay" | "field_note" | "all"; heading?: string; blurb?: string; manage?: boolean;
 }) {
-  const formId = useId();
-  const nameId = `${formId}-name`;
-  const emailId = `${formId}-email`;
+  const id = useId();
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [company, setCompany] = useState(""); // honeypot
-  const [status, setStatus] = useState<Status>("idle");
+  const [company, setCompany] = useState("");
+  const [preferences, setPreferences] = useState<NewsletterPreference[]>(contentType === "all" ? [] : [contentType]);
+  const [consent, setConsent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [error, setError] = useState("");
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (status === "loading") return;
-    setStatus("loading");
-    setError("");
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); if (status === "loading") return;
+    if (!manage && !preferences.length) { setError("Choose at least one kind of update."); setStatus("error"); return; }
+    setStatus("loading"); setError("");
     try {
-      const res = await fetch("/api/newsletter/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, firstName, company, source, slug: contentSlug, contentType }),
-      });
-      const data = await res.json().catch(() => ({ ok: false, error: "" }));
-      if (data.ok) {
-        setStatus(data.status === "already_subscribed" ? "already" : "subscribed");
-      } else {
-        setStatus("error");
-        setError(data.error || "Couldn't sign you up just now.");
-      }
-    } catch {
-      setStatus("error");
-      setError("The relay is down — try again shortly.");
-    }
-  };
-
-  const done = status === "subscribed" || status === "already";
-
-  return (
-    <section
-      aria-label="Newsletter signup"
-      className="mx-auto max-w-xl border border-hairline bg-[rgba(8,11,18,0.5)] p-6 backdrop-blur-sm md:p-8"
-    >
-      <p className="label text-[9px]! tracking-[0.28em]! text-starlight/70">{heading.toUpperCase()}</p>
-      {done ? (
-        <p className="mt-3 font-serif text-base italic leading-snug text-leaf">
-          {status === "already"
-            ? "You're already on the list — watch the sky."
-            : "You're on the manifest. The next transmission will find you."}
-        </p>
-      ) : (
-        <>
-          <p className="mt-2 font-serif text-base italic leading-snug text-faint">{blurb}</p>
-          <form onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-stretch">
-            <input type="hidden" name="source" value={source ?? ""} />
-            <input type="hidden" name="slug" value={contentSlug ?? ""} />
-            <input type="hidden" name="contentType" value={contentType} />
-            {/* honeypot — visually hidden, not display:none, off the a11y tree */}
-            <input
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              name="company"
-              className="absolute h-0 w-0 overflow-hidden opacity-0"
-            />
-            <label className="sr-only" htmlFor={nameId}>
-              First name (optional)
-            </label>
-            <input
-              id={nameId}
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First name"
-              autoComplete="given-name"
-              className="w-full border border-hairline bg-[rgba(0,0,0,0.25)] px-3 py-2.5 font-mono text-xs text-ink outline-none transition-colors placeholder:text-dim focus:border-starlight/50 sm:w-32"
-            />
-            <label className="sr-only" htmlFor={emailId}>
-              Email address
-            </label>
-            <input
-              id={emailId}
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              autoComplete="email"
-              className="w-full flex-1 border border-hairline bg-[rgba(0,0,0,0.25)] px-3 py-2.5 font-mono text-xs text-ink outline-none transition-colors placeholder:text-dim focus:border-starlight/50"
-            />
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className="label shrink-0 border border-[rgba(212,184,134,0.5)] bg-[rgba(212,184,134,0.1)] px-5 py-2.5 text-[9px]! tracking-[0.24em]! text-starlight transition-colors hover:bg-[rgba(212,184,134,0.2)] disabled:opacity-50"
-            >
-              {status === "loading" ? "···" : "SUBSCRIBE"}
-            </button>
-          </form>
-          {status === "error" && error ? (
-            <p role="alert" className="mt-3 font-mono text-[11px] text-comet/80">
-              {error}
-            </p>
-          ) : null}
-        </>
-      )}
-    </section>
-  );
+      const response = await fetch("/api/newsletter/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, company, preferences, consent, intent: manage ? "manage" : "subscribe", source, slug: contentSlug }) });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || "We couldn’t send your link. Please try again later.");
+      setStatus("sent");
+    } catch (err) { setError(err instanceof Error ? err.message : "Connection failed. Please try again."); setStatus("error"); }
+  }
+  return <section className="newsletter-signup" aria-label={manage ? "Manage email preferences" : "Newsletter signup"}>
+    <p className="label text-starlight">{heading}</p>
+    {status === "sent" ? <div role="status" className="newsletter-success"><h2>Check your inbox.</h2><p>Open the link to review and confirm your preferences. It expires in 30 minutes. You’re only subscribed after you confirm.</p><button type="button" className="editorial-link" onClick={() => setStatus("idle")}>Use a different address</button></div> : <>
+      <p className="newsletter-blurb">{blurb}</p>
+      <form onSubmit={submit} aria-busy={status === "loading"}>
+        <div className="newsletter-honeypot" aria-hidden="true"><label>Leave empty<input name="company" tabIndex={-1} autoComplete="off" value={company} onChange={e => setCompany(e.target.value)} /></label></div>
+        {!manage && <PreferenceChoices value={preferences} onChange={setPreferences} disabled={status === "loading"} />}
+        <label className="newsletter-email" htmlFor={`${id}-email`}>Email address<input id={`${id}-email`} type="email" name="email" autoComplete="email" required maxLength={254} placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} disabled={status === "loading"} /></label>
+        {!manage && <label className="newsletter-consent"><input type="checkbox" required checked={consent} onChange={e => setConsent(e.target.checked)} disabled={status === "loading"} /><span>Email me the updates I select. I can change my preferences or unsubscribe at any time.</span></label>}
+        <button className="newsletter-submit" disabled={status === "loading"}>{status === "loading" ? "Sending your link…" : manage ? "Email my preference link →" : "Send confirmation link →"}</button>
+        {status === "error" && <p role="alert" className="newsletter-error">{error}</p>}
+      </form>
+      <p className="newsletter-footnote">{!manage && <>Already subscribed? <Link href="/newsletter#preferences">Manage preferences</Link>. </>}<Link href="/newsletter/privacy">How your email is used</Link>.</p>
+    </>}
+  </section>;
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import SiteTelemetry from "@/components/SiteTelemetry";
 import { Fraunces, Cormorant_Garamond, IBM_Plex_Mono, Amiri } from "next/font/google";
 import SmoothScroll from "@/components/SmoothScroll";
 import Cursor from "@/components/Cursor";
@@ -8,6 +7,7 @@ import VisitTracker from "@/components/VisitTracker";
 import AchievementToast from "@/components/AchievementToast";
 import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
+import "@/components/reading/journal.css";
 
 const siteTitle = "Jafar Dabbagh | JD-1184";
 const siteDescription =
@@ -76,13 +76,13 @@ export default function RootLayout({
         id="page-root"
         className={`${fraunces.variable} ${cormorant.variable} ${plexMono.variable} ${amiri.variable} grain`}
       >
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <SmoothScroll />
         <VisitTracker />
-        {children}
+        <div id="main-content" tabIndex={-1}>{children}</div>
         <Cursor />
         <AchievementToast />
-        <Analytics />
-        <SpeedInsights />
+        {process.env.VERCEL && <SiteTelemetry />}
       </body>
     </html>
   );

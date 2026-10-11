@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
   useReducedMotion,
 } from "framer-motion";
-import { deployments, type Deployment } from "@/data/deployments";
+import { deployments } from "@/data/deployments";
 import { DuelStarfield } from "./DuelStarfield";
 import { DuelFieldBoard } from "./DuelFieldBoard";
 import { DuelCard } from "./DuelCard";
@@ -282,6 +282,8 @@ export default function DeploymentsDeck() {
             }
             className="absolute left-1/2 top-[46%] z-30 h-[clamp(13rem,26vw,18rem)] w-[clamp(9.5rem,19vw,13rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer"
             onClick={() => (phase === "hand" ? summon() : setRevealed((v) => !v))}
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (phase === "hand") summon(); else setRevealed(v => !v); } }}
             role="button"
             aria-label={
               phase === "hand" ? `Summon ${active.name}` : `Inspect ${active.name}`
@@ -289,9 +291,7 @@ export default function DeploymentsDeck() {
           >
             <DuelCard
               deployment={active}
-              tilt={phase === "field"}
-              mouseX={mousePos.x}
-              mouseY={mousePos.y}
+              tilt={phase === "field" && !reduce}
             />
             {phase === "hand" && (
               <motion.span

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
+import SanctumJournal from "@/components/sanctum/SanctumJournal";
 import SanctumExperience from "@/components/sanctum/SanctumExperience";
 import GardenGallery from "@/components/garden/GardenGallery";
 import AchievementsGrid from "@/components/garden/AchievementsGrid";
@@ -22,6 +23,7 @@ export default function GardenPage() {
       <main>
         {/* the walk itself — Room of Entanglement → Threshold → Living Sanctum */}
         <SanctumExperience />
+        <SanctumJournal />
 
         {/* planet status — how the sanctum terraforms JD-1184 c */}
         <section id="terraform" className="mx-auto max-w-4xl px-6 py-28 text-center md:px-10">

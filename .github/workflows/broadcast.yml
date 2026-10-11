@@ -1,61 +1,52 @@
-# Auto-broadcast: whenever new writing or a new deployment lands on main,
-# email the list about anything not yet dispatched (the committed dispatch log
-# is the forever-dedupe), then commit the updated log back.
-#
-# Requires repo secrets: RESEND_API_KEY, RESEND_FROM_EMAIL, SEGMENT_ESSAYS_ID,
-# SEGMENT_FIELDNOTES_ID (optional: SEGMENT_DEPLOYMENTS_ID, RESEND_TOPIC_ID).
-# Until those are set, the job exits quietly without sending anything.
-name: broadcast-new-publications
-
+name: publication-email
+# Publishing content never implicitly sends the historical archive.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "content/**"
-      - "data/deployments.ts"
-      - "data/email-dispatch-log.json"
-
+  workflow_dispatch:
+    inputs:
+      type:
+        description: Publication type
+        type: choice
+        options: [essay, field_note, deployment]
+        required: true
+      slug:
+        description: Exact published slug (AXOM is axom)
+        type: string
+        required: true
+      send:
+        description: Send the reviewed draft now
+        type: boolean
+        default: false
 permissions:
-  contents: write
-
+  contents: read
 concurrency:
-  group: broadcast
+  group: publication-email
   cancel-in-progress: false
-
 jobs:
   dispatch:
+    if: github.ref == 'refs/heads/main'
+    environment: newsletter
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
-      - name: Dispatch broadcasts for new publications
+      - run: npm run test:newsletter
+      - name: Create or send the selected publication
         env:
+          PUBLICATION_TYPE: ${{ inputs.type }}
+          PUBLICATION_SLUG: ${{ inputs.slug }}
+          SEND_PUBLICATION: ${{ inputs.send }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-          RESEND_FROM_NAME: "Jafar Dabbagh"
-          SEGMENT_ESSAYS_ID: ${{ secrets.SEGMENT_ESSAYS_ID }}
-          SEGMENT_FIELDNOTES_ID: ${{ secrets.SEGMENT_FIELDNOTES_ID }}
-          SEGMENT_DEPLOYMENTS_ID: ${{ secrets.SEGMENT_DEPLOYMENTS_ID }}
-          RESEND_TOPIC_ID: ${{ secrets.RESEND_TOPIC_ID }}
-          NEXT_PUBLIC_SITE_URL: "https://www.jafardabbagh.com"
+          SEGMENT_NEWSLETTER_ID: ${{ secrets.SEGMENT_NEWSLETTER_ID }}
+          TOPIC_ESSAYS_ID: ${{ secrets.TOPIC_ESSAYS_ID }}
+          TOPIC_FIELDNOTES_ID: ${{ secrets.TOPIC_FIELDNOTES_ID }}
+          TOPIC_PROJECTS_ID: ${{ secrets.TOPIC_PROJECTS_ID }}
+          NEXT_PUBLIC_SITE_URL: https://www.jafardabbagh.com
         run: |
-          if [ -z "$RESEND_API_KEY" ]; then
-            echo "RESEND_API_KEY secret not set — skipping broadcast."
-            exit 0
-          fi
-          npm run email:dispatch -- --send
-      - name: Commit updated dispatch log
-        run: |
-          if git diff --quiet data/email-dispatch-log.json; then
-            echo "No new dispatches."
-            exit 0
-          fi
-          git config user.name "broadcast-bot"
-          git config user.email "actions@github.com"
-          git add data/email-dispatch-log.json
-          git commit -m "chore: record email dispatches [skip ci]"
-          git push
+          args=("--type=$PUBLICATION_TYPE" "--slug=$PUBLICATION_SLUG")
+          if [ "$SEND_PUBLICATION" = "true" ]; then args+=(--send); fi
+          npm run email:dispatch -- "${args[@]}"

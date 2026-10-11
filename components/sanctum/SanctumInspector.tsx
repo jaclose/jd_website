@@ -11,7 +11,7 @@ import type { GardenFeature } from "@/data/gardenFeatures";
  * so the walk stays a walk and reading is a choice.
  */
 function featureKicker(feature: GardenFeature) {
-  if (feature.id === "noctyrium") return "Active Project · Medical Study System";
+  if (feature.id === "axom") return "Active Project · Medical Study System";
   if (feature.branch === "medicine") return "Academic Timeline";
   if (feature.branch === "projects") return "Projects & Life";
   return "Site Landmark";

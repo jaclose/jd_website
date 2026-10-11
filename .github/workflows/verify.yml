@@ -1,0 +1,42 @@
+name: verify-website
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npx playwright-core install --with-deps chromium
+      - run: npm run test:browser:newsletter
+        env:
+          PLAYWRIGHT_BROWSER: chromium
+      - run: npm run test:browser:journal
+        env:
+          PLAYWRIGHT_BROWSER: chromium
+          # CI has a software GPU. Exercise the actual no-WebGL fallback here;
+          # full 3D rendering and frame pacing are checked on a GPU locally.
+          JOURNAL_WEBGL: "off"
+      - name: Save journal screenshots and browser report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: journal-browser-report
+          path: artifacts/journal/
+          if-no-files-found: ignore
+          retention-days: 14

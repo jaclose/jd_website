@@ -38,6 +38,10 @@ export default function SanctumAudioSystem({ zone }: { zone: Zone }) {
 
   useEffect(() => {
     let cleanup = () => {};
+    let initialized = false;
+    const initialize = () => {
+    if (initialized) return;
+    initialized = true;
     try {
       const listener = new THREE.AudioListener();
       camera.add(listener);
@@ -230,7 +234,10 @@ export default function SanctumAudioSystem({ zone }: { zone: Zone }) {
     } catch {
       /* WebAudio unavailable — fail silent, never break the scene */
     }
-    return () => cleanup();
+    };
+    // Create the audio graph inside the actual sound-toggle gesture.
+    sanctumAudio.resume = initialize;
+    return () => { cleanup(); sanctumAudio.resume = () => {}; };
   }, [camera, scene]);
 
   // crossfade whenever the active zone changes (graph is built once, above).
