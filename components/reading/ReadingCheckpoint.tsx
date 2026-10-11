@@ -27,7 +27,7 @@ export default function ReadingCheckpoint({ slug, scrollRoot }: { slug: string; 
     {entry?.completedAt && <button type="button" className="journal-undo editorial-link" onClick={() => update(slug, { completedAt: undefined })}>Mark unread</button>}
     <label className="journal-reflection">A thought to keep <span>Optional · private · {entry?.reflection.length ?? 0}/1600</span><textarea maxLength={1600} rows={3} placeholder="What stayed with you?" value={entry?.reflection ?? ""} onChange={e => update(slug, { reflection: e.target.value })} /></label>
     {error && <p role="alert">{error}</p>}
-    <div className="journal-actions">{next && <Link className="editorial-link" href={`/essays/${next}`}>Next chapter →</Link>}<Link className="editorial-link" href={`/essays${trail ? `?trail=${trail.id}` : ""}#reading-quests`}>Return to your reading trail ↗</Link></div>
+    <div className="journal-actions">{next && <Link prefetch={false} className="editorial-link" href={`/essays/${next}`}>Next chapter →</Link>}<Link prefetch={false} className="editorial-link" href={`/essays${trail ? `?trail=${trail.id}` : ""}#reading-quests`}>Return to your reading trail ↗</Link></div>
     <span role="status" className="sr-only">{entry?.completedAt ? "Chapter completed. Your reading trail has been updated." : ""}</span>
   </section>;
 }

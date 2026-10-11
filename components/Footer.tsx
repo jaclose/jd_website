@@ -44,7 +44,7 @@ export default function Footer() {
             ["Email preferences", "/newsletter"],
             ["Privacy", "/newsletter/privacy"],
           ].map(([label, href]) => (
-            <Link key={href} href={href} className="label link-reveal text-[10px]! text-faint hover:text-ink">
+            <Link prefetch={false} key={href} href={href} className="label link-reveal text-[10px]! text-faint hover:text-ink">
               {label}
             </Link>
           ))}
