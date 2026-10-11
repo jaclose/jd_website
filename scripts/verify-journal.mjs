@@ -14,7 +14,7 @@ if (managed) {
 }
 const out = process.env.JOURNAL_OUTPUT || 'artifacts/journal';
 await fs.mkdir(out, {recursive:true});
-const browser = await chromium.launch({...process.env.PLAYWRIGHT_BROWSER === 'chromium' ? {} : {channel:'chrome'},headless:true});
+const browser = await chromium.launch({...process.env.PLAYWRIGHT_BROWSER === 'chromium' ? {} : {channel:'chrome'},headless:true,...(process.env.JOURNAL_WEBGL === 'off' ? {args:['--disable-webgl']} : {})});
 const report=[];
 try {
 for (const mode of [{name:'desktop',width:1440,height:900,motion:'no-preference'},{name:'mobile',width:390,height:844,motion:'reduce'}]) {
@@ -52,6 +52,7 @@ for (const mode of [{name:'desktop',width:1440,height:900,motion:'no-preference'
  await bookmark.click();assert.ok(await page.evaluate(()=>window.scrollY>1000));
  await page.goto(`${origin}/garden?sanctumQuality=low#quest-journal`,{waitUntil:'networkidle'});await settle();
  const journal=page.getByRole('region',{name:'Sanctum quest journal',exact:true});
+ if(process.env.JOURNAL_WEBGL === 'off') assert.equal(await page.locator('canvas').count(),0);
  await journal.scrollIntoViewIfNeeded();
  await page.evaluate(()=>{const el=document.getElementById('quest-journal');window.scrollTo(0,el.offsetTop-80)});
  await page.screenshot({path:`${out}/sanctum-orb-${mode.name}.png`});
@@ -79,7 +80,7 @@ for (const mode of [{name:'desktop',width:1440,height:900,motion:'no-preference'
  for(let i=0;i<15;i++){const bottom=await page.evaluate(()=>{window.scrollBy(0,innerHeight*.8);return scrollY+innerHeight>=document.documentElement.scrollHeight-2});await page.waitForTimeout(50);if(bottom)break;}
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
  assert.equal(overflow,false);
- report.push({mode:mode.name,faults:[...new Set(faults)],overflow});
+ report.push({mode:mode.name,webgl:process.env.JOURNAL_WEBGL === 'off' ? 'disabled: fallback verified' : 'available',faults:[...new Set(faults)],overflow});
  await context.close();
 }
 } finally {await browser.close(); app?.kill('SIGTERM'); await fs.writeFile(`${out}/journal-browser-checks.json`,JSON.stringify(report,null,2));}
